@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "Authorization": "${CONTEXT7_API_KEY:-}"
+      }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    },
+    "21st": {
+      "type": "http",
+      "url": "https://21st.dev/api/mcp",
+      "headers": {
+        "x-api-key": "${TWENTY_FIRST_API_KEY:-}"
+      }
+    }
+  }
+}

@@ -1,0 +1,145 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  Outlet,
+  Link,
+  createRootRouteWithContext,
+  useRouter,
+  HeadContent,
+  Scripts,
+} from "@tanstack/react-router";
+import { useEffect, type ReactNode } from "react";
+
+import appCss from "../styles.css?url";
+import { ThemeProvider } from "@/components/theme";
+import { Header, Footer } from "@/components/chrome";
+
+function NotFoundComponent() {
+  return (
+    <div className="shell flex min-h-[70vh] flex-col justify-center py-24">
+      <p className="label">Error / 404</p>
+      <h1 className="display-xl mt-6">404</h1>
+      <p className="mt-6 max-w-md text-muted">
+        This route is not part of the MaCo system. It may have moved, or it never existed.
+      </p>
+      <div className="mt-10">
+        <Link to="/" className="btn-line">
+          Back to index <span aria-hidden="true">→</span>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  console.error(error);
+  const router = useRouter();
+  useEffect(() => {}, [error]);
+
+  return (
+    <div className="shell flex min-h-[70vh] flex-col justify-center py-24">
+      <p className="label">Error / Runtime</p>
+      <h1 className="display-lg mt-6 max-w-2xl">This page didn't load.</h1>
+      <p className="mt-6 max-w-md text-muted">
+        Something failed on our side. Try again, or go back to the index.
+      </p>
+      <div className="mt-10 flex flex-wrap gap-3">
+        <button
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
+          className="btn-solid"
+        >
+          Try again
+        </button>
+        <a href="/" className="btn-line">
+          Index
+        </a>
+      </div>
+    </div>
+  );
+}
+
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  head: () => ({
+    meta: [
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "MaCo — Software & IT solutions" },
+      {
+        name: "description",
+        content:
+          "MaCo builds and maintains software that carries operational weight: client platforms, web development, app development and long-term support.",
+      },
+      { name: "author", content: "MaCo" },
+      { property: "og:title", content: "MaCo — Software & IT solutions" },
+      {
+        property: "og:description",
+        content: "Software and IT solutions for products that need to work.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..150,400..700&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@500..800&display=swap",
+      },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
+    ],
+  }),
+  shellComponent: RootShell,
+  component: RootComponent,
+  notFoundComponent: NotFoundComponent,
+  errorComponent: ErrorComponent,
+});
+
+function RootShell({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en" data-theme="obsidian">
+      <head>
+        <HeadContent />
+        {/* Runs before hydration — kills hijacking Workbox SWs from other localhost:5173 apps */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(!('serviceWorker'in navigator))return;navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()});});if('caches'in window){caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)});});}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    // Dynamic import keeps this client-only
+    void import("@/lib/clear-service-workers").then((m) => m.clearStaleServiceWorkers());
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-surface focus:px-4 focus:py-2"
+        >
+          Skip to content
+        </a>
+        <Header />
+        <main id="main">
+          <Outlet />
+        </main>
+        <Footer />
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
