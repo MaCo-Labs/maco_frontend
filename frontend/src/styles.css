@@ -94,6 +94,33 @@
      rest state, not an arbitrary one. */
   initial-value: 0;
 }
+@property --scatter {
+  syntax: "<number>";
+  inherits: true;
+  /* 1, not 0: the scattered arrangement IS the section's rest state — the
+     correct thing to paint for reduced motion, SSR, or a blocked GSAP
+     import, same reasoning as --c below (services-convergence.tsx). The
+     scroll scrub runs 0 (stacked) -> 1 (scattered) as a gsap.fromTo
+     override once the runtime resolves. */
+  initial-value: 1;
+}
+@property --expand {
+  syntax: "<number>";
+  inherits: true;
+  /* 0 = small contained card (today's PRODUCTS resting composition). The
+     fullscreen takeover only exists as a scroll-linked effect; a static
+     fallback should look like a normal media card, not a permanently
+     fullscreen video with no scroll context to explain it. */
+  initial-value: 0;
+}
+@property --reel {
+  syntax: "<number>";
+  inherits: true;
+  /* 0 = Bridge showing, Driver's Diary not yet crossfaded in — pairs with
+     --expand's 0 above so the two properties agree on one coherent rest
+     frame instead of each defaulting independently. */
+  initial-value: 0;
+}
 
 /* CAPABILITY's convergence — backs components/home/services-convergence.tsx.
    --c and --d are set on the pinned stage and inherited by both cards, so
@@ -655,6 +682,67 @@ html.lenis:has(:target) {
    this composes to a zero translate with no separate mobile branch. */
 @utility grid-column-drift {
   transform: translate3d(0, calc(var(--p, 0) * var(--col-shift, 0rem)), 0);
+}
+
+/* CLIENTS' scatter tiles — client-field.tsx. Each tile is positioned
+   dead-centre (top/left 50%, translate -50%/-50%) then displaced by its
+   own hand-authored --tx/--ty/--rot (set inline per tile, unitless
+   numbers consumed as vw/vh/deg here) scaled by the inherited --scatter
+   (0 = stacked centre, 1 = fully scattered — see the @property above).
+   The ambient float tween (a plain gsap.to, no ScrollTrigger) targets a
+   SEPARATE inner element, never this one — stacking two transform
+   sources on one element is the bug portfolio-grid.tsx's GridCard doc
+   comment already flagged and split around; the same split applies here. */
+@utility client-tile {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate3d(-50%, -50%, 0)
+    translate3d(
+      calc(var(--tx, 0) * 1vw * var(--scatter, 1)),
+      calc(var(--ty, 0) * 1vh * var(--scatter, 1)),
+      0
+    )
+    rotate(calc(var(--rot, 0) * 1deg * var(--scatter, 1)))
+    scale(calc(0.72 + 0.28 * var(--scatter, 1)));
+  opacity: clamp(0, calc(0.55 + 0.45 * var(--scatter, 1)), 1);
+}
+
+/* PRODUCTS' expanding window (Task 1 of the brief) — product-showcase.tsx.
+   Sized via calc() off the inherited --expand (0 = small card, 1 =
+   fullscreen — see the @property above), positioned by a --expand-radius
+   custom property declared right here so <ProductVideo>'s own `radius`
+   prop (a literal "var(--expand-radius)" string, never a per-render
+   value) can clip the actual <video>/<img> element — an ancestor's
+   border-radius doesn't reliably clip <video> in every engine, per
+   media/product-video.tsx's own doc comment. --reel (0..1, driven by the
+   same trigger, see the @property above) fades/tilts this panel OUT as
+   the reel's second phase crossfades to product-reel-media below. */
+@utility product-expand-media {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  overflow: hidden;
+  width: calc(58% + var(--expand, 0) * 42%);
+  height: calc(58% + var(--expand, 0) * 42%);
+  --expand-radius: calc((1 - var(--expand, 0)) * 2rem);
+  border-radius: var(--expand-radius);
+  transform: scale(calc(1 - var(--reel, 0) * 0.08)) rotateY(calc(var(--reel, 0) * -10deg));
+  opacity: clamp(0, calc(1 - var(--reel, 0) * 1.6), 1);
+}
+
+/* PRODUCTS' reel second phase (Task 4) — the same stage, crossfading in
+   as --reel goes 0 -> 1 once product-expand-media above has fully
+   expanded. Always full-bleed (no size scrub of its own) since it only
+   becomes visible after the expand phase has already reached fullscreen. */
+@utility product-reel-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 0;
+  transform: translate3d(calc((1 - var(--reel, 0)) * 8%), 0, 0)
+    rotateY(calc((1 - var(--reel, 0)) * 10deg));
+  opacity: var(--reel, 0);
 }
 
 /* Light pass — the one signature device, reused at every scale.
