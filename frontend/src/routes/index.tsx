@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { OpenLogo } from "@/components/home/open-logo";
 import { WorkingSurface } from "@/components/home/working-surface";
 import { EvidenceExpand } from "@/components/home/evidence-expand";
-import { PortfolioGrid } from "@/components/home/portfolio-grid";
+import { WorkReveal } from "@/components/home/work-reveal";
+import { ClientField } from "@/components/home/client-field";
 import { ServicesConvergence } from "@/components/home/services-convergence";
-import { ProductStory } from "@/components/home/product-story";
+import { ProductShowcase } from "@/components/home/product-showcase";
 import { Identity } from "@/components/home/identity";
 import { MethodLine } from "@/components/home/method-line";
 import { Record } from "@/components/home/record";
@@ -43,14 +44,17 @@ function Home() {
       {/* EVIDENCE — cinematic scroll-expand, Bridge in motion */}
       <EvidenceExpand />
 
-      {/* WORK — four real client projects, as a two-column grid */}
-      <PortfolioGrid />
+      {/* WORK — four real client projects, Cuberto-style hover-reveal list */}
+      <WorkReveal />
+
+      {/* CLIENTS — the same 4 clients, scroll-scrubbed scatter + magnetic hover */}
+      <ClientField />
 
       {/* CAPABILITY — services convergence */}
       <ServicesConvergence />
 
-      {/* PRODUCTS — Bridge + Driver's Diary */}
-      <ProductStory />
+      {/* PRODUCTS — Bridge + Driver's Diary, expanding window into a showcase reel */}
+      <ProductShowcase />
 
       {/* IDENTITY — one name, many scripts */}
       <Identity />

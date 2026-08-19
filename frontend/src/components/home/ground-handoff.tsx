@@ -14,15 +14,15 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  * section that HOSTS a pin would silently break it. Four of the ten
  * homepage sections host one (directly or, on a `gsap.matchMedia`-gated
  * desktop-only descendant): EVIDENCE, CAPABILITY, IDENTITY, METHOD. WORK
- * (the portfolio grid) is pin-free, which is what makes it safe as the
- * OUTGOING side of the "Selected client work" -> "Capabilities" pair below
- * even though CAPABILITY itself now hosts one. Only the OUTGOING section
- * is ever transformed here (the incoming section is just the
- * ScrollTrigger's reference point, never itself touched) — so a pair is
- * safe whenever the OUTGOING side is pin-free, regardless of what the
- * incoming side hosts. PRODUCTS' own cards are `position: sticky`, not
- * `fixed` — ancestor transforms don't reposition sticky elements the way
- * they do fixed ones, so PRODUCTS is safe as an outgoing section too.
+ * (`work-reveal.tsx`) and PRODUCTS (`product-showcase.tsx`) are pin-free —
+ * PRODUCTS uses `position: sticky` for its expand/reel stage, never a
+ * literal ScrollTrigger `pin: true`, specifically so it stays eligible as
+ * the outgoing side below. CLIENTS (`client-field.tsx`, between WORK and
+ * CAPABILITY) is pin-free too, but has no pair here — nothing currently
+ * calls for one at that boundary. Only the OUTGOING section is ever
+ * transformed here (the incoming section is just the ScrollTrigger's
+ * reference point, never itself touched) — so a pair is safe whenever the
+ * OUTGOING side is pin-free, regardless of what the incoming side hosts.
  *
  * Two of the four pairs (marked `sheet: true` in PAIRS) also get a
  * curved-corner reveal on the INCOMING side: `clip-path: inset(...
@@ -45,7 +45,7 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  */
 const PAIRS: readonly [outgoing: string, incoming: string, sheet?: boolean][] = [
   ["What MaCo does", "Bridge in motion"],
-  ["Selected client work", "Capabilities"],
+  ["Selected client work", "Who we work with"],
   ["Products", "MaCo, in one name and many scripts", true],
   ["Clients and company", "Start a project", true],
 ];
