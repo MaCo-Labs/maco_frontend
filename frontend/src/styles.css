@@ -30,6 +30,51 @@
 
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Overshoot — discrete UI only (tab fills, toggle settles). Never on
+     anything scroll-scrubbed: a scrubbed value must be monotonic with
+     scroll position, and an overshoot curve isn't. */
+  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --duration-fast: 0.25s;
+  --duration-standard: 0.45s;
+  --duration-slow: 0.85s;
+}
+
+/* Scroll-driven custom properties, registered so an unset element resolves
+   to its AT-REST value rather than an invalid/zero one — the mechanism
+   that makes every reduced-motion and blocked-import fallback "just the
+   section, correctly composed" instead of a second render branch. JS never
+   needs to seed these before a ScrollTrigger's first onUpdate; the browser
+   already renders the finished state.
+     --r     ScrubReveal progress            1 = fully revealed
+     --p     generic scrub progress          1 = end state
+     --t     IDENTITY's dial position        0 = first script centred
+     --lay   SURFACE panel lay-flat          1 = flat (rest)
+     --sweep light-pass band position        0.5 = centred, not moving */
+@property --r {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --p {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --t {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --lay {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --sweep {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0.5;
 }
 
 :root,
@@ -70,6 +115,19 @@
   --accent-inverted: oklch(0.98 0 0);
   --accent-inverted-ink: oklch(0.13 0 0);
 
+  /* The light-pass tint — near-white and cool, deliberately NOT derived
+     from --text (see the Cobalt block: mixing toward a chromatic --text
+     reads as haze, not light). Obsidian's own --text is already
+     near-white/near-black, so this mostly matches it — the token exists
+     so both themes share one mechanism, not because Obsidian needs it. */
+  --sweep-light: oklch(1 0 0);
+
+  /* Motion register — Obsidian is architectural and restrained: the
+     standard ease, shorter travel, a critically-damped spring with no
+     bounce (SPRING_DEFAULT in lib/motion.ts). */
+  --motion-ease: var(--ease-standard);
+  --motion-travel: 0.75;
+
   /* Typography — Obsidian mode: bold architectural geometry.
      Each theme runs its own type family, not a recolor of one. */
   --maco-font-display: "Unbounded", "Arial Black", sans-serif;
@@ -106,15 +164,31 @@
   --accent-paper: oklch(0.46 0.165 264);
   --accent-ink-paper: oklch(0.993 0.004 264);
 
-  /* Deep ground — blue as material, not a tint */
-  --surface-inverted: oklch(0.34 0.15 264);
-  --surface-inverted-2: oklch(0.4 0.145 264);
+  /* Deep ground — blue as material, not a tint. Darkened from the
+     original 0.34L (a mid-tone card colour, not read as "deep" next to
+     Obsidian's 0.13L near-black) while holding chroma, so it stays a
+     genuinely saturated blue material rather than blue-tinted black. */
+  --surface-inverted: oklch(0.24 0.125 264);
+  --surface-inverted-2: oklch(0.3 0.12 264);
   --text-inverted: oklch(0.98 0.01 264);
   --muted-inverted: oklch(0.82 0.04 264);
   --line-inverted: oklch(0.98 0.01 264 / 18%);
   --line-inverted-strong: oklch(0.98 0.01 264 / 45%);
   --accent-inverted: oklch(0.98 0.01 264);
-  --accent-inverted-ink: oklch(0.34 0.15 264);
+  --accent-inverted-ink: oklch(0.24 0.125 264);
+
+  /* The light-pass tint — brighter and warmer than Obsidian's, so raking
+     light reads as light crossing a blue material rather than mixing
+     into haze (mixing toward Cobalt's chromatic --text was the previous,
+     wrong, default — see the base .light-pass::after rule). */
+  --sweep-light: oklch(0.97 0.05 85);
+
+  /* Motion register — Cobalt is kinetic and expressive: the emphasis
+     ease, fuller travel, a spring with a touch of overshoot
+     (SPRING_MOMENTUM in lib/motion.ts). This is the other half of "two
+     modes of one brand" — not just a different palette, a different feel. */
+  --motion-ease: var(--ease-emphasis);
+  --motion-travel: 1;
 
   /* Typography — Cobalt mode: a different set entirely, not a recolor. */
   --maco-font-display: "Michroma", "Arial Black", sans-serif;
@@ -445,6 +519,38 @@ html.lenis:has(:target) {
   animation: maco-rise 0.7s var(--ease-emphasis) both;
 }
 
+/* ---------- scroll-linked primitives ---------- */
+/* Backs components/motion/{scrub-reveal,rule-draw,stagger}.tsx. All read
+   the --r/--sr custom properties registered above (or their var()
+   fallback) so an element nothing has animated yet — SSR, no-JS, reduced
+   motion, a blocked dynamic import — renders its correct at-rest
+   composition without a second render branch. */
+
+@utility scrub-reveal {
+  opacity: var(--r);
+  transform: translate3d(0, calc((1 - var(--r)) * var(--reveal-rise, 1.75rem)), 0);
+}
+
+@utility rule-draw-x {
+  transform: scaleX(var(--r));
+}
+
+@utility rule-draw-y {
+  transform: scaleY(var(--r));
+}
+
+/* Reveal math identical in shape to MethodLine's original hand-written
+   band logic — see components/motion/stagger.tsx's doc comment. */
+@utility stagger-item {
+  --stagger-local: clamp(
+    0,
+    calc((var(--sr, 1) - var(--i, 0) * var(--stagger-gap, 0.08)) / var(--stagger-band, 0.3)),
+    1
+  );
+  opacity: var(--stagger-local);
+  transform: translate3d(0, calc((1 - var(--stagger-local)) * var(--stagger-rise, 1.5rem)), 0);
+}
+
 /* Light pass — the one signature device, reused at every scale.
    A single raking light travelling across a surface. Position is
    driven by --sweep (0..1) from scroll or motion values — transform
@@ -459,22 +565,38 @@ html.lenis:has(:target) {
   content: "";
   position: absolute;
   inset: -20% -40%;
+  /* Mixes toward --sweep-light (near-white on Obsidian, a warm bright
+     highlight on Cobalt) rather than --text — mixing toward a chromatic
+     --text on Cobalt's deep ground read as blue haze, not a light source.
+     Peak raised from a 16% sheen (effectively invisible) to 55%. */
   background: linear-gradient(
     115deg,
-    transparent 42%,
-    color-mix(in oklab, var(--text) 16%, transparent) 49%,
-    color-mix(in oklab, var(--text) 6%, transparent) 52%,
+    transparent 40%,
+    color-mix(in oklab, var(--sweep-light) 55%, transparent) 48%,
+    color-mix(in oklab, var(--sweep-light) 85%, transparent) 50%,
+    color-mix(in oklab, var(--sweep-light) 55%, transparent) 52%,
     transparent 60%
   );
-  transform: translate3d(calc((var(--sweep, 0) - 0.5) * 140%), 0, 0);
+  transform: translate3d(calc((var(--sweep, 0.5) - 0.5) * 140%), 0, 0);
   mix-blend-mode: overlay;
   pointer-events: none;
+}
+
+/* will-change is scoped to .is-lit rather than permanent — a page with
+   10+ light-pass surfaces otherwise promotes every one to its own
+   compositor layer for the entire page lifetime. RakingSurface toggles
+   the class while its scene is mounted. */
+.light-pass.is-lit::after {
   will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .light-pass::after {
-    display: none;
+    /* A static rake, not an absent one — the signature device should
+       still be PRESENT as light held still, matching whatever --sweep
+       each section's reduced-motion branch composes (see RECORD,
+       PRODUCTS, CLOSE), not disappear outright. */
+    will-change: auto;
   }
 }
 
