@@ -677,13 +677,23 @@ html.lenis:has(:target) {
   transform: translate3d(0, calc(var(--p, 0) * var(--col-shift, 0rem)), 0);
 }
 
-/* Supersedes .maco-thread for the WORK -> CAPABILITY -> PRODUCTS run
-   (scroll-thread.tsx). The dormant .maco-thread keyframe below is left
-   alone — theme-atmosphere.tsx still references it; removing it belongs
-   to a separate dead-code purge, not this feature. */
+/* Supersedes .maco-thread for the full page (scroll-thread.tsx). The
+   dormant .maco-thread keyframe below is left alone — theme-atmosphere.tsx
+   still references it; removing it belongs to a separate dead-code purge,
+   not this feature.
+
+   stroke is a fixed white + mix-blend-mode: difference, not a --line-*
+   token: the path now crosses 5 different [data-ground] regions, and a
+   token-based stroke can only resolve one color via DOM-ancestry
+   inheritance — it can't adapt per ground region it visually passes
+   over. difference(white, backdrop) is an exact channel-wise inversion
+   of whatever's actually rendered behind the stroke at each point along
+   it, so it stays legible crossing any ground region without per-segment
+   color logic. */
 @utility maco-scroll-thread {
   fill: none;
-  stroke: var(--line-strong);
+  stroke: #fff;
+  mix-blend-mode: difference;
   stroke-width: 1;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
