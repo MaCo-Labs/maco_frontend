@@ -61,7 +61,7 @@ function WorkList() {
     let cancelled = false;
     getScrollRuntime().then((rt) => {
       if (cancelled || !rt || !panelRef.current) return;
-      setPanelY.current = rt.gsap.quickSetter(panelRef.current, "y", "px");
+      setPanelY.current = rt.gsap.quickSetter(panelRef.current, "y", "px") as (v: number) => void;
     });
     return () => {
       cancelled = true;
