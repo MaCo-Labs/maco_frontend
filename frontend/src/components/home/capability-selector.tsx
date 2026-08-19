@@ -1,7 +1,9 @@
-import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { useId, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { services, getProject, getProduct } from "@/content/maco";
-import { MotionSection } from "@/components/motion-section";
+import { ScrubReveal } from "@/components/motion/scrub-reveal";
+import { Stagger } from "@/components/motion/stagger";
+import { RuleDraw } from "@/components/motion/rule-draw";
 
 /**
  * CAPABILITY — the services selector. A real ARIA tablist with arrow-key
@@ -32,12 +34,13 @@ export function CapabilitySelector() {
   return (
     <section data-ground="paper" className="rule-t" aria-label="Capabilities">
       <div className="shell py-24 md:py-32">
-        <MotionSection>
+        <ScrubReveal hold>
           <p className="label">Capability</p>
-        </MotionSection>
+        </ScrubReveal>
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-16">
-          <div role="tablist" aria-label="Services" className="flex flex-col border-t border-line">
+          <div role="tablist" aria-label="Services" className="relative flex flex-col">
+            <RuleDraw className="absolute -top-px left-0 h-px w-full" />
             {services.map((s, i) => {
               const selected = i === active;
               return (
@@ -73,23 +76,33 @@ export function CapabilitySelector() {
             <p className="mt-4" style={{ color: "var(--muted)" }}>
               {service.description}
             </p>
-            <ul className="mt-8 space-y-5 border-t border-line pt-8">
-              {service.capabilities.map((c) => (
-                <li key={c.title}>
-                  <p className="font-display text-lg" style={{ color: "var(--text)" }}>
-                    {c.title}
-                  </p>
-                  <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
-                    {c.description}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            <div className="relative mt-8 pt-8">
+              <RuleDraw className="absolute top-0 left-0 h-px w-full" />
+              <Stagger as="ul" className="space-y-5" gap={0.15} band={0.4}>
+                {service.capabilities.map((c, i) => (
+                  <li key={c.title} className="stagger-item" style={{ "--i": i } as CSSProperties}>
+                    <p className="font-display text-lg" style={{ color: "var(--text)" }}>
+                      {c.title}
+                    </p>
+                    <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+                      {c.description}
+                    </p>
+                  </li>
+                ))}
+              </Stagger>
+            </div>
             {service.evidence.length > 0 && (
-              <div className="mt-8 border-t border-line pt-6">
+              <div className="relative mt-8 pt-6">
+                <RuleDraw className="absolute top-0 left-0 h-px w-full" />
                 <p className="label mb-3">Evidence</p>
-                <div className="flex flex-wrap gap-2">
-                  {service.evidence.map((slug) => {
+                <Stagger
+                  as="div"
+                  className="flex flex-wrap gap-2"
+                  gap={0.2}
+                  band={0.5}
+                  rise="0.5rem"
+                >
+                  {service.evidence.map((slug, i) => {
                     const project = getProject(slug);
                     const product = getProduct(slug);
                     const title = project?.title ?? product?.title;
@@ -99,14 +112,14 @@ export function CapabilitySelector() {
                         key={slug}
                         to={project ? "/work/$slug" : "/products/$slug"}
                         params={{ slug }}
-                        className="link-draw label border border-line px-3 py-1.5"
-                        style={{ color: "var(--text)" }}
+                        className="stagger-item link-draw label border border-line px-3 py-1.5"
+                        style={{ color: "var(--text)", "--i": i } as CSSProperties}
                       >
                         {title}
                       </Link>
                     );
                   })}
-                </div>
+                </Stagger>
               </div>
             )}
             <Link to="/services/$slug" params={{ slug: service.slug }} className="btn-line mt-8">
