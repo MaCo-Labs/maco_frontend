@@ -130,25 +130,6 @@
   initial-value: 0px;
 }
 
-/* The connective thread — components/home/scroll-thread.tsx. */
-@property --thread {
-  syntax: "<number>";
-  inherits: true;
-  /* 1 = fully drawn. A progress thread with no progress source is a
-     static hairline connecting three sections — this site's own
-     rule-drawing vocabulary, not a frozen frame of an animation. */
-  initial-value: 1;
-}
-@property --thread-len {
-  syntax: "<number>";
-  inherits: false;
-  /* 0 does more work here than "full length" would: a stroke-dasharray
-     whose values are all zero is spec'd as NO dash pattern, so with no JS
-     there is not merely one very long dash, there is no dashing at all —
-     and therefore no sub-pixel dash artifact at any preserveAspectRatio
-     stretch factor. */
-  initial-value: 0;
-}
 
 :root,
 [data-theme="obsidian"] {
@@ -675,31 +656,6 @@ html.lenis:has(:target) {
    this composes to a zero translate with no separate mobile branch. */
 @utility grid-column-drift {
   transform: translate3d(0, calc(var(--p, 0) * var(--col-shift, 0rem)), 0);
-}
-
-/* Supersedes .maco-thread for the full page (scroll-thread.tsx). The
-   dormant .maco-thread keyframe below is left alone — theme-atmosphere.tsx
-   still references it; removing it belongs to a separate dead-code purge,
-   not this feature.
-
-   stroke is a fixed white + mix-blend-mode: difference, not a --line-*
-   token: the path now crosses 5 different [data-ground] regions, and a
-   token-based stroke can only resolve one color via DOM-ancestry
-   inheritance — it can't adapt per ground region it visually passes
-   over. difference(white, backdrop) is an exact channel-wise inversion
-   of whatever's actually rendered behind the stroke at each point along
-   it, so it stays legible crossing any ground region without per-segment
-   color logic. */
-@utility maco-scroll-thread {
-  fill: none;
-  stroke: #fff;
-  mix-blend-mode: difference;
-  stroke-width: 1;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-  opacity: 0.3;
-  stroke-dasharray: var(--thread-len, 0);
-  stroke-dashoffset: calc(var(--thread-len, 0) * (1 - var(--thread, 1)));
 }
 
 /* Light pass — the one signature device, reused at every scale.

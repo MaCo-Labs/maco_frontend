@@ -10,7 +10,6 @@ import { MethodLine } from "@/components/home/method-line";
 import { Record } from "@/components/home/record";
 import { CloseIntake } from "@/components/home/close-intake";
 import { GroundHandoff } from "@/components/home/ground-handoff";
-import { ScrollThread } from "@/components/home/scroll-thread";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,44 +34,35 @@ export const Route = createFileRoute("/")({
 function Home() {
   return (
     <>
-      {/* Every section (but not GroundHandoff, which renders nothing) is
-          wrapped so ScrollThread can draw one continuous line the full
-          page — the wrapper carries no transform of its own, so it stays
-          safe as an ancestor of EVIDENCE's, CAPABILITY's, IDENTITY's and
-          METHOD's pins (see scroll-thread.tsx's doc comment). */}
-      <div className="relative">
-        {/* OPEN — the brand alone: mark + "MaCo" */}
-        <OpenLogo />
+      {/* OPEN — the brand alone: mark + "MaCo" */}
+      <OpenLogo />
 
-        {/* SURFACE — the promise, the proof row, Bridge in motion (merges the old hero + CLAIM) */}
-        <WorkingSurface />
+      {/* SURFACE — the promise, the proof row, Bridge in motion (merges the old hero + CLAIM) */}
+      <WorkingSurface />
 
-        {/* EVIDENCE — cinematic scroll-expand, Bridge in motion */}
-        <EvidenceExpand />
+      {/* EVIDENCE — cinematic scroll-expand, Bridge in motion */}
+      <EvidenceExpand />
 
-        {/* WORK — four real client projects, as a two-column grid */}
-        <PortfolioGrid />
+      {/* WORK — four real client projects, as a two-column grid */}
+      <PortfolioGrid />
 
-        {/* CAPABILITY — services convergence */}
-        <ServicesConvergence />
+      {/* CAPABILITY — services convergence */}
+      <ServicesConvergence />
 
-        {/* PRODUCTS — Bridge + Driver's Diary */}
-        <ProductStory />
+      {/* PRODUCTS — Bridge + Driver's Diary */}
+      <ProductStory />
 
-        {/* IDENTITY — one name, many scripts */}
-        <Identity />
+      {/* IDENTITY — one name, many scripts */}
+      <Identity />
 
-        {/* METHOD — A→B→C→D, launch is not the finish line */}
-        <MethodLine />
+      {/* METHOD — A→B→C→D, launch is not the finish line */}
+      <MethodLine />
 
-        {/* RECORD — clients + company, deliberate rest */}
-        <Record />
+      {/* RECORD — clients + company, deliberate rest */}
+      <Record />
 
-        {/* CLOSE — intake + final statement */}
-        <CloseIntake />
-
-        <ScrollThread />
-      </div>
+      {/* CLOSE — intake + final statement */}
+      <CloseIntake />
 
       {/* Cross-section continuity — renders nothing itself */}
       <GroundHandoff />
