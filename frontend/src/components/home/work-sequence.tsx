@@ -1,8 +1,10 @@
 import { useRef, type CSSProperties } from "react";
 import { projects, type Project } from "@/content/maco";
 import { Link } from "@tanstack/react-router";
-import { MotionSection } from "@/components/motion-section";
 import { Magnetic } from "@/components/motion/magnetic";
+import { ScrubReveal } from "@/components/motion/scrub-reveal";
+import { RuleDraw } from "@/components/motion/rule-draw";
+import { Stagger } from "@/components/motion/stagger";
 import { usePointerField } from "@/hooks/use-pointer-field";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 
@@ -53,19 +55,22 @@ export function WorkSequence() {
 function WorkList() {
   return (
     <div className="shell py-24 md:py-32">
-      <MotionSection>
+      <ScrubReveal hold>
         <p className="label">Work</p>
         <h2 className="display-lg mt-3 max-w-2xl" style={{ color: "var(--text)" }}>
           Four clients. Real software, in production.
         </h2>
-      </MotionSection>
+      </ScrubReveal>
 
-      <div className="mt-14 border-b border-line">
-        {projects.map((project, i) => (
-          <MotionSection key={project.slug} delay={i * 80}>
-            <WorkRow project={project} />
-          </MotionSection>
-        ))}
+      <div className="relative mt-14">
+        <RuleDraw className="absolute bottom-0 left-0 h-px w-full" />
+        <Stagger as="div" gap={0.1} band={0.4}>
+          {projects.map((project, i) => (
+            <div key={project.slug} className="stagger-item" style={{ "--i": i } as CSSProperties}>
+              <WorkRow project={project} />
+            </div>
+          ))}
+        </Stagger>
       </div>
 
       <div className="mt-10 flex justify-end">

@@ -35,10 +35,28 @@ export function ProductStory() {
           </LineReveal>
         </ScrubReveal>
 
-        <div className="mt-16 space-y-20">
+        {/* Sticky overlap stack on desktop: each product is position:sticky
+            with an ascending z-index and an opaque background, so the
+            SECOND card physically rises and covers the first rather than
+            the two simply appearing one after another — "two platforms",
+            not "a list of two". Below lg, cards flow normally (a sticky
+            stack with only ~1 viewport of headroom per card just looks
+            like two overlapping fixed panels on a short screen). */}
+        <div className="mt-16 space-y-20 lg:space-y-0">
           {products.map((product, i) => (
-            <ScrubReveal key={product.slug} rise="2.5rem">
-              <article className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-14">
+            <div key={product.slug} className={i === 0 ? undefined : "lg:pt-24"}>
+              <ScrubReveal
+                as="article"
+                rise="2.5rem"
+                className="grid gap-8 lg:sticky lg:grid-cols-2 lg:items-center lg:gap-14 lg:rounded-2xl lg:border lg:border-line lg:p-10 lg:shadow-[0_-12px_40px_rgba(0,0,0,0.12)]"
+                style={
+                  {
+                    top: `calc(6rem + ${i * 2}rem)`,
+                    zIndex: i + 1,
+                    background: "var(--bg)",
+                  } as CSSProperties
+                }
+              >
                 <div className={i % 2 === 1 ? "lg:order-2" : undefined}>
                   <ProductMedia product={product} />
                 </div>
@@ -99,8 +117,8 @@ export function ProductStory() {
                     </a>
                   </Magnetic>
                 </div>
-              </article>
-            </ScrubReveal>
+              </ScrubReveal>
+            </div>
           ))}
         </div>
       </div>

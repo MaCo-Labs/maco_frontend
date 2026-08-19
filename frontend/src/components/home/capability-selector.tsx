@@ -4,17 +4,68 @@ import { services, getProject, getProduct } from "@/content/maco";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
 import { RuleDraw } from "@/components/motion/rule-draw";
+import { useScrollScene } from "@/hooks/use-scroll-scene";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 /**
  * CAPABILITY — the services selector. A real ARIA tablist with arrow-key
  * navigation, fixing the previous homepage's tablist-in-name-only
  * (role="tablist" with no keyboard handling).
+ *
+ * Desktop (lg+): the section gets extra scroll height (`lg:min-h-[170vh]`)
+ * and the tablist column goes `lg:sticky` — scrolling through that extra
+ * height advances `active` on its own, so reading through the services
+ * is something scroll does, not just something clicking does. A click or
+ * arrow-key still wins outright (`userPicked`, cleared once the section
+ * scrolls fully out of view either direction) — scroll proposes, the
+ * user's own action always overrides.
  */
 export function CapabilitySelector() {
   const [active, setActive] = useState(0);
   const baseId = useId();
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const userPicked = useRef(false);
   const service = services[active];
+  // The extra 70vh of scroll height only pays for itself if something is
+  // actually driving `active` from it — under reduced motion no trigger
+  // ever runs, so reserving it would just be 70vh of dead scroll with the
+  // second service reachable only by clicking. Falls back to the
+  // section's natural (untalled, non-sticky) height instead.
+  const reduced = useReducedMotion();
+
+  useScrollScene((rt) => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const mm = rt.gsap.matchMedia();
+    mm.add("(min-width: 1024px)", () => {
+      const trigger = rt.ScrollTrigger.create({
+        trigger: section,
+        start: "top top",
+        end: "bottom bottom",
+        onUpdate: (self) => {
+          if (userPicked.current) return;
+          const next = Math.min(
+            services.length - 1,
+            Math.max(0, Math.floor(self.progress * services.length)),
+          );
+          setActive((prev) => (prev === next ? prev : next));
+        },
+        onLeave: () => {
+          userPicked.current = false;
+        },
+        onLeaveBack: () => {
+          userPicked.current = false;
+        },
+      });
+      return () => trigger.kill();
+    });
+  }, []);
+
+  const selectTab = (i: number) => {
+    userPicked.current = true;
+    setActive(i);
+  };
 
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
     let next = active;
@@ -25,15 +76,24 @@ export function CapabilitySelector() {
     else if (e.key === "End") next = services.length - 1;
     else return;
     e.preventDefault();
-    setActive(next);
+    selectTab(next);
     tabRefs.current[next]?.focus();
   };
 
   if (!service) return null;
 
   return (
-    <section data-ground="paper" className="rule-t" aria-label="Capabilities">
-      <div className="shell py-24 md:py-32">
+    <section
+      ref={sectionRef as never}
+      data-ground="paper"
+      className={`rule-t ${reduced ? "" : "lg:min-h-[170vh]"}`}
+      aria-label="Capabilities"
+    >
+      <div
+        className={`shell py-24 md:py-32 ${
+          reduced ? "" : "lg:sticky lg:top-24 lg:flex lg:min-h-screen lg:flex-col lg:justify-center"
+        }`}
+      >
         <ScrubReveal hold>
           <p className="label">Capability</p>
         </ScrubReveal>
@@ -54,7 +114,7 @@ export function CapabilitySelector() {
                   aria-selected={selected}
                   aria-controls={`${baseId}-panel-${i}`}
                   tabIndex={selected ? 0 : -1}
-                  onClick={() => setActive(i)}
+                  onClick={() => selectTab(i)}
                   onKeyDown={onKeyDown}
                   className="border-b border-line py-5 text-left transition-colors"
                   style={{ color: selected ? "var(--text)" : "var(--muted)" }}
