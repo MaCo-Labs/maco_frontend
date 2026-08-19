@@ -23,20 +23,36 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  * incoming side hosts. PRODUCTS' own cards are `position: sticky`, not
  * `fixed` — ancestor transforms don't reposition sticky elements the way
  * they do fixed ones, so PRODUCTS is safe as an outgoing section too.
+ *
+ * Two of the four pairs (marked `sheet: true` in PAIRS) also get a
+ * curved-corner reveal on the INCOMING side: `clip-path: inset(...
+ * round ...)` scrubbed from a rounded rect down to square, on the same
+ * scrollTrigger window as the recede above, so the two motions read as
+ * one gesture. Only applied where the boundary is also a ground change
+ * (PRODUCTS -> IDENTITY, RECORD -> CLOSE) — the other two pairs keep a
+ * plain recede since their ground doesn't change either side.
  */
-const PAIRS: readonly [outgoing: string, incoming: string][] = [
+const PAIRS: readonly [outgoing: string, incoming: string, sheet?: boolean][] = [
   ["What MaCo does", "Bridge in motion"],
   ["Selected client work", "Capabilities"],
-  ["Products", "MaCo, in one name and many scripts"],
-  ["Clients and company", "Start a project"],
+  ["Products", "MaCo, in one name and many scripts", true],
+  ["Clients and company", "Start a project", true],
 ];
 
 export function GroundHandoff() {
   useScrollScene((rt) => {
-    for (const [outLabel, inLabel] of PAIRS) {
+    for (const [outLabel, inLabel, sheet] of PAIRS) {
       const outgoing = document.querySelector<HTMLElement>(`[aria-label="${outLabel}"]`);
       const incoming = document.querySelector<HTMLElement>(`[aria-label="${inLabel}"]`);
       if (!outgoing || !incoming) continue;
+
+      const scrollTrigger = {
+        trigger: incoming,
+        start: "top bottom",
+        end: "top 25%",
+        scrub: 0.4,
+        invalidateOnRefresh: true,
+      };
 
       rt.gsap.fromTo(
         outgoing,
@@ -47,15 +63,27 @@ export function GroundHandoff() {
           opacity: 0.55,
           ease: "none",
           transformOrigin: "50% 0%",
-          scrollTrigger: {
-            trigger: incoming,
-            start: "top bottom",
-            end: "top 25%",
-            scrub: 0.4,
-            invalidateOnRefresh: true,
-          },
+          scrollTrigger,
         },
       );
+
+      // Curved sheet: the incoming section's top corners round off as it
+      // rises, then flatten back to square once settled — a transient
+      // "sheet lifting into place" cue layered on the recede above, only
+      // where the boundary is ALSO a ground change (see PAIRS above).
+      // clip-path defaults to `none` in the JSX (no inline style), so with
+      // no JS / reduced motion the section just renders with its normal
+      // square top edge — the settled end-state, per this file's own
+      // "only the OUTGOING section is ever transformed" rule: this reads
+      // as an incoming-side reveal, not a transform, so it never touches
+      // a pinned section's ancestor chain.
+      if (sheet) {
+        rt.gsap.fromTo(
+          incoming,
+          { clipPath: "inset(0px round 48px 48px 0px 0px)" },
+          { clipPath: "inset(0px round 0px 0px 0px 0px)", ease: "none", scrollTrigger },
+        );
+      }
     }
   }, []);
 
