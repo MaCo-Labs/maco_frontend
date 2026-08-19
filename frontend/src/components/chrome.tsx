@@ -250,7 +250,7 @@ export function Header() {
 
   return (
     <>
-      <header ref={headerRef} className="header-scroll sticky top-0 z-40 rule-b">
+      <header ref={headerRef} className="header-scroll fixed inset-x-0 top-0 z-[42] rule-b">
         <div className="shell flex h-20 items-center justify-between gap-6 md:h-24">
           <Link to="/" className="transition-opacity hover:opacity-70" aria-label="MaCo — home">
             <Wordmark />

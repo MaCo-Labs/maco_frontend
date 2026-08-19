@@ -105,10 +105,10 @@ export function OpenLogo() {
     <section
       ref={sectionRef as never}
       data-ground="deep"
-      // z-[41]: harmless while position:static (default); once ScrollTrigger
-      // pins this section it becomes position:fixed, and without an explicit
-      // z-index above the header's z-40 it renders BEHIND the sticky,
-      // backdrop-blurred header.
+      // z-[41]: the header is `position: fixed` at z-[42] (chrome.tsx) so it
+      // can float transparently over this hero instead of pushing it down
+      // in normal flow — this section's z-[41] just needs to clear any
+      // other in-flow content, not the header itself.
       className="relative z-[41] flex min-h-[100svh] flex-col justify-between overflow-hidden"
       aria-label="Introduction"
     >
