@@ -46,34 +46,42 @@
    section, correctly composed" instead of a second render branch. JS never
    needs to seed these before a ScrollTrigger's first onUpdate; the browser
    already renders the finished state.
-     --r     ScrubReveal progress            1 = fully revealed
-     --p     generic scrub progress          1 = end state
-     --t     IDENTITY's dial position        0 = first script centred
-     --lay   SURFACE panel lay-flat          1 = flat (rest)
-     --sweep light-pass band position        0.5 = centred, not moving */
+
+   `inherits` matters here and is NOT uniform: false for a property an
+   element sets and reads on ITSELF (inheritance is irrelevant to
+   self-reference, and false stops it leaking into unrelated descendants);
+   true for one a wrapper sets and a CHILD or `::after` pseudo-element
+   reads — inherits:false would block exactly that propagation, since a
+   pseudo-element inherits from its originating element like any other
+   descendant.
+     --r     ScrubReveal progress            1 = fully revealed   (self)
+     --lay   SURFACE panel lay-flat          1 = flat (rest)      (self)
+     --p     generic scrub progress          1 = end state        (inherited — WorkPanel reads the rail's --p)
+     --t     IDENTITY's dial position        0 = first script centred (inherited — each script reads the track's --t)
+     --sweep light-pass band position        0.5 = centred, not moving (inherited — .light-pass::after reads its own element's --sweep) */
 @property --r {
   syntax: "<number>";
   inherits: false;
   initial-value: 1;
-}
-@property --p {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 1;
-}
-@property --t {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 0;
 }
 @property --lay {
   syntax: "<number>";
   inherits: false;
   initial-value: 1;
 }
+@property --p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+@property --t {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
 @property --sweep {
   syntax: "<number>";
-  inherits: false;
+  inherits: true;
   initial-value: 0.5;
 }
 
