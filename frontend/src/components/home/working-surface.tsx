@@ -25,7 +25,7 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  * independent inputs, one 3D surface. `--sweep` moved OFF the pointer
  * and onto the panel's own scroll transit (matching RakingSurface's
  * mechanism, though not literally that component — see the equivalent
- * note in product-story.tsx about not double-wrapping a `.light-pass`
+ * note in product-showcase.tsx about not double-wrapping a `.light-pass`
  * surface): the pointer's job here is tilt only.
  *
  * Proof row uses real array lengths only (services/projects/products) —

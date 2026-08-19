@@ -158,7 +158,7 @@ function ClientScatter() {
               floatRefs.current[i] = el;
             }}
           >
-            <Magnetic className="block">
+            <Magnetic className="block p-6 -m-6">
               <a
                 href={client.website}
                 target="_blank"

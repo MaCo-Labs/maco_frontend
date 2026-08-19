@@ -101,8 +101,8 @@ function ProductStage({ bridge, driversDiary }: { bridge: Product; driversDiary:
     <div ref={wrapRef} className="relative h-[300vh]">
       <div
         ref={stageRef}
-        className="sticky top-0 h-screen w-full overflow-hidden"
-        style={{ background: "var(--surface)" }}
+        className="relative z-[41] sticky top-0 h-screen w-full overflow-hidden"
+        style={{ background: "var(--surface)", perspective: "1200px" }}
       >
         <div className="product-expand-media" data-ground="deep">
           {bridge.media && (
@@ -116,7 +116,7 @@ function ProductStage({ bridge, driversDiary }: { bridge: Product; driversDiary:
         </div>
         <div className="product-reel-media" data-ground="deep">
           {driversDiary.media && (
-            <ProductVideo media={driversDiary.media} priority="low" objectFit="cover" />
+            <ProductVideo media={driversDiary.media} priority="low" objectFit="contain" />
           )}
         </div>
       </div>

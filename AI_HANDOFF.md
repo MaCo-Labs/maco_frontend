@@ -5,12 +5,12 @@
 Overall: **IN PROGRESS** — the homepage motion rebuild (plan:
 `C:\Users\LENOVO\.claude\plans\act-as-an-elite-piped-scone.md`) is functionally
 complete and, unlike the two passes before it, **live-verified via Playwright**
-at every commit, not just statically checked. All 10 sections now carry real
+at every commit, not just statically checked. All 11 sections now carry real
 scroll-linked choreography (previously 6 had none), the reduced-motion kill
 switch and dev-mode Lenis-death bugs are fixed, WORK's mount-order race and a
 matching one in IDENTITY are fixed, CAPABILITY and PRODUCTS got sticky
 scroll-driven mechanics, and cross-section recession continuity (`GroundHandoff`)
-ties all 10 movements into one surface. Remaining work is QA breadth (full
+ties all 11 movements into one surface. Remaining work is QA breadth (full
 width matrix, formal performance audit, screen-reader walkthrough) and two
 lower-priority polish items never requested again after being deferred — see
 "Next exact actions."
@@ -763,15 +763,16 @@ Entries in earlier versions of this document describing "THE MONUMENT" hero, `ca
 
 ## What the homepage is now
 
-Ten movements, composed in `frontend/src/routes/index.tsx`, each built under `frontend/src/components/home/`:
+Eleven movements, composed in `frontend/src/routes/index.tsx`, each built under `frontend/src/components/home/`:
 
 ```
 OPEN         deep    open-logo.tsx            hero — MaCo's brand alone: mark + animated "MaCo" (SplitReveal)
 SURFACE      deep    working-surface.tsx      promise + proof row + CTAs + Bridge video, scrubbed lay-flat + sweep
 EVIDENCE     deep    evidence-expand.tsx      ScrollTrigger pin+scrub expand, aspect-locked to real 16:9 footage
-WORK         paper   work-sequence.tsx        4 real projects — ScrollTrigger pin+scrub rail (desktop) / list (mobile)
+WORK         paper   work-reveal.tsx          4 real projects — Cuberto-style hover-reveal list, pin-free (desktop) / stacked plates (mobile)
+CLIENTS      paper   client-field.tsx         4 client logos — scroll-scrubbed stack → scatter (desktop) / static grid (mobile)
 CAPABILITY   paper   capability-selector.tsx  sticky scroll-driven service selection (2 tabs), click/arrow still wins
-PRODUCTS     paper   product-story.tsx        sticky overlap stack — each card a deep tile on the paper page
+PRODUCTS     paper   product-showcase.tsx     sticky expanding window → showcase reel, Bridge ↔ Driver's Diary
 IDENTITY     deep    identity.tsx             "One name. Many scripts." — fully scroll-driven dial, --t custom prop
 METHOD       paper   method-line.tsx          A → B → C → D — ScrollTrigger pinned vertical step-through
 RECORD       paper   record.tsx               clients + company — one RakingSurface pass + low-amplitude settle

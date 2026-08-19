@@ -740,6 +740,7 @@ html.lenis:has(:target) {
   inset: 0;
   overflow: hidden;
   border-radius: 0;
+  pointer-events: none;
   transform: translate3d(calc((1 - var(--reel, 0)) * 8%), 0, 0)
     rotateY(calc((1 - var(--reel, 0)) * 10deg));
   opacity: var(--reel, 0);

@@ -11,7 +11,7 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  * `[data-ground]` boundary: a `transform` on an ancestor of a
  * `position: fixed` element repositions that fixed element relative to
  * the TRANSFORMED ancestor instead of the viewport — applying this to a
- * section that HOSTS a pin would silently break it. Four of the ten
+ * section that HOSTS a pin would silently break it. Four of the eleven
  * homepage sections host one (directly or, on a `gsap.matchMedia`-gated
  * desktop-only descendant): EVIDENCE, CAPABILITY, IDENTITY, METHOD. WORK
  * (`work-reveal.tsx`) and PRODUCTS (`product-showcase.tsx`) are pin-free —

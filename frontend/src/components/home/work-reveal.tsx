@@ -70,13 +70,17 @@ function WorkList() {
 
   function onListPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     const list = listRef.current;
-    if (!list || !setPanelY.current) return;
+    const panel = panelRef.current;
+    if (!list || !panel || !setPanelY.current) return;
     const rect = list.getBoundingClientRect();
-    // Clamp to the list's own bounds and centre the panel (roughly half
-    // its own height, 140px) on the pointer, so it never drifts past the
-    // rows it's tracking.
+    // Measure the panel's real height (rather than guessing at half of
+    // it) and clamp its TOP position to the list's own bounds, so it's
+    // centred on the pointer but never overshoots past the rows it's
+    // tracking.
+    const panelH = panel.offsetHeight || 480;
     const y = Math.min(Math.max(e.clientY - rect.top, 0), rect.height);
-    setPanelY.current(y - 140);
+    const clampedTop = Math.min(Math.max(y - panelH / 2, 0), Math.max(0, rect.height - panelH));
+    setPanelY.current(clampedTop);
   }
 
   const activeProject = active !== null ? (projects[active] ?? null) : null;
@@ -91,10 +95,8 @@ function WorkList() {
           className="divide-y divide-line border-t border-line"
         >
           {projects.map((project, i) => (
-            <Link
+            <div
               key={project.slug}
-              to="/work/$slug"
-              params={{ slug: project.slug }}
               onPointerEnter={() => setActive(i)}
               onFocus={() => setActive(i)}
               onPointerLeave={() => setActive((cur) => (cur === i ? null : cur))}
@@ -102,20 +104,35 @@ function WorkList() {
               className="stagger-item index-row group flex items-center justify-between gap-4 py-8"
               style={{ "--i": i } as CSSProperties}
             >
-              <span className="relative z-[1] flex items-baseline gap-4">
+              <Link
+                to="/work/$slug"
+                params={{ slug: project.slug }}
+                className="relative z-[1] flex items-baseline gap-4"
+              >
                 <span className="label">{project.index}</span>
                 <span className="display-md" style={{ color: "var(--text)" }}>
                   {project.title}
                 </span>
+              </Link>
+              <span className="relative z-[1] flex items-center gap-5">
+                <a
+                  href={project.external_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link-draw label inline-flex items-center gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  style={{ color: "var(--text)" }}
+                >
+                  Visit site <span aria-hidden="true">↗</span>
+                </a>
+                <span
+                  aria-hidden="true"
+                  className="label opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  style={{ color: "var(--muted)" }}
+                >
+                  {project.sector}
+                </span>
               </span>
-              <span
-                aria-hidden="true"
-                className="label relative z-[1] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                style={{ color: "var(--muted)" }}
-              >
-                {project.sector}
-              </span>
-            </Link>
+            </div>
           ))}
         </Stagger>
       </div>

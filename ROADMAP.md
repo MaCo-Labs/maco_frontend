@@ -125,9 +125,10 @@ themselves. See `CONTEXT.md §11` for the full breakdown.
 OPEN         deep    open-logo.tsx           hero — MaCo's brand alone: mark + animated "MaCo" wordmark, over a cursor-reactive WebGL `<BlindsField>` (2026-08-19)
 SURFACE      paper   working-surface.tsx     promise + proof row + CTAs + Bridge video, scrubbed lay-flat + sweep
 EVIDENCE     deep    evidence-expand.tsx     ScrollTrigger pin+scrub expand, aspect-locked to real 16:9 footage
-WORK         deep    work-sequence.tsx       4 projects — ScrollTrigger pin+scrub rail (desktop) / list (mobile)
+WORK         deep    work-reveal.tsx         4 projects — Cuberto-style hover-reveal list, pin-free (desktop) / stacked plates (mobile)
+CLIENTS      paper   client-field.tsx        4 client logos — scroll-scrubbed stack → scatter (desktop) / static grid (mobile)
 CAPABILITY   paper   capability-selector.tsx sticky scroll-driven service selection (2 tabs)
-PRODUCTS     paper   product-story.tsx       sticky overlap stack — each card a deep tile on paper
+PRODUCTS     paper   product-showcase.tsx    sticky expanding window → showcase reel, Bridge ↔ Driver's Diary
 IDENTITY     deep    identity.tsx            "One name. Many scripts." — fully scroll-driven dial
 METHOD       paper   method-line.tsx         A → B → C → D — ScrollTrigger pinned vertical step-through
 RECORD       paper   record.tsx              clients + company — one RakingSurface pass + settle
