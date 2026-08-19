@@ -84,10 +84,10 @@ export function GroundHandoff() {
       // where the boundary is ALSO a ground change (see PAIRS above).
       // clip-path defaults to `none` in the JSX (no inline style), so with
       // no JS / reduced motion the section just renders with its normal
-      // square top edge — the settled end-state, per this file's own
-      // "only the OUTGOING section is ever transformed" rule: this reads
-      // as an incoming-side reveal, not a transform, so it never touches
-      // a pinned section's ancestor chain.
+      // square top edge — the settled end-state. Safe here specifically
+      // because `incoming` either pins ITSELF (IDENTITY) or doesn't pin
+      // at all (CLOSE) — never a descendant — per the doc comment above;
+      // this is not a blanket exemption from the pin hazard.
       if (sheet) {
         rt.gsap.fromTo(
           incoming,
