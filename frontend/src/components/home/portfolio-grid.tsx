@@ -174,7 +174,12 @@ function GridCard({ project, tintIndex }: { project: Project; tintIndex: number 
       >
         <div
           className="absolute inset-6 flex items-center justify-center rounded-xl border border-line md:inset-10"
-          style={{ background: "var(--bg)" }}
+          // --surface-2 rather than bare --bg: same fix record.tsx's logo
+          // wall already made (see its doc comment) — two of the four real
+          // client marks are dark-on-dark and lose contrast against a flat
+          // --bg on this deep-ground plate, so a step-off-background tile
+          // lifts every mark's contrast without per-logo special-casing.
+          style={{ background: "var(--surface-2)" }}
         >
           {project.brand ? (
             <img

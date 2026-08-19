@@ -340,18 +340,12 @@ paper card there; a paper tile on a deep card here) — giving real
 brightness contrast in both themes instead of a color-only effect that only
 existed in one of them.
 
-**`ScrollThread`** (`components/home/scroll-thread.tsx`) — one SVG path
-spanning WORK→CAPABILITY→PRODUCTS (wrapped in a plain, transform-free
-`<div className="relative">` in `routes/index.tsx`, safe as a pin ancestor),
-drawn via `stroke-dashoffset` off a `--thread` progress property and a
-`--thread-len` measured from `path.getTotalLength()` on `ScrollTrigger`'s
-`onRefresh` — not once at setup, so it re-measures after
-`document.fonts.ready` changes section heights. `initial-value: 0` on
-`--thread-len` means `stroke-dasharray: 0`, which the SVG spec defines as
-*no dash pattern at all* — so a blocked import or reduced motion draws one
-continuous hairline, not a half-drawn animation frame. Supersedes
-`.maco-thread` for this run of the page without deleting it —
-`theme-atmosphere.tsx` still references it.
+**`ScrollThread`** — built (an SVG path spanning WORK→CAPABILITY→PRODUCTS,
+later extended to the full page) then removed the same day at the user's
+explicit request: they didn't want the drawn-line device. It is no longer
+part of the homepage; `components/home/scroll-thread.tsx` doesn't exist.
+`.maco-thread` (`theme-atmosphere.tsx`) is unaffected — that's a separate,
+unrelated device.
 
 **Interaction pass** — six existing sections each got one small,
 pointer-fine-gated addition reusing `usePointerField`/CSS-only hover, no new
@@ -773,9 +767,9 @@ Ten movements, composed in `frontend/src/routes/index.tsx`, each built under `fr
 
 ```
 OPEN         deep    open-logo.tsx            hero — MaCo's brand alone: mark + animated "MaCo" (SplitReveal)
-SURFACE      paper   working-surface.tsx      promise + proof row + CTAs + Bridge video, scrubbed lay-flat + sweep
+SURFACE      deep    working-surface.tsx      promise + proof row + CTAs + Bridge video, scrubbed lay-flat + sweep
 EVIDENCE     deep    evidence-expand.tsx      ScrollTrigger pin+scrub expand, aspect-locked to real 16:9 footage
-WORK         deep    work-sequence.tsx        4 real projects — ScrollTrigger pin+scrub rail (desktop) / list (mobile)
+WORK         paper   work-sequence.tsx        4 real projects — ScrollTrigger pin+scrub rail (desktop) / list (mobile)
 CAPABILITY   paper   capability-selector.tsx  sticky scroll-driven service selection (2 tabs), click/arrow still wins
 PRODUCTS     paper   product-story.tsx        sticky overlap stack — each card a deep tile on the paper page
 IDENTITY     deep    identity.tsx             "One name. Many scripts." — fully scroll-driven dial, --t custom prop

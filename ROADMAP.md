@@ -181,7 +181,7 @@ full detail in `CONTEXT.md §10`.
    driven off Lenis `documentElement` progress instead of per-`RakingSurface`
    independent triggers.
 8. The paused `/21st-ai` sketch for `/work/$slug` remains blocked on the `21st` MCP server's OAuth authorization, unavailable in a non-interactive session — run `/mcp` interactively to unblock, if that work resumes.
-9. Deferred at the user's explicit choice, 2026-08-19 ("hero first"): the sitewide half of that day's hero-upgrade request — regroup homepage sections into continuous light/dark blocks instead of the current deliberate `paper`/`deep` alternation, curved "sheet" section overlays between them, and extend `ScrollThread` from WORK→CAPABILITY→PRODUCTS to the full page. A real re-theme of the homepage's visual rhythm; needs its own brainstorm/design pass before implementation, not a follow-on tweak to this one.
+9. Done: the sitewide half of the 2026-08-19 hero-upgrade request, previously deferred ("hero first") — homepage sections regrouped into continuous light/dark blocks, curved "sheet" section overlays added between the ground-changing pairs. See `docs/superpowers/plans/2026-08-19-sitewide-restructure.md` and `docs/superpowers/specs/2026-08-19-sitewide-restructure-design.md` for what shipped. `ScrollThread` (extended from WORK→CAPABILITY→PRODUCTS to the full page as part of this work) was reverted afterward per the user's explicit choice — they didn't want the drawn-line device.
 
 ---
 

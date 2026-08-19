@@ -30,7 +30,18 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  * scrollTrigger window as the recede above, so the two motions read as
  * one gesture. Only applied where the boundary is also a ground change
  * (PRODUCTS -> IDENTITY, RECORD -> CLOSE) — the other two pairs keep a
- * plain recede since their ground doesn't change either side.
+ * plain recede since their ground doesn't change either side. Unlike the
+ * plain recede, this DOES touch the incoming section — so the "outgoing
+ * side pin-free" rule above isn't sufficient for a `sheet: true` pair; the
+ * INCOMING side matters too. `clip-path` on an element clips its entire
+ * painted subtree, including `position: fixed` descendants, so a
+ * `sheet: true` incoming section is only safe if it either pins ITSELF
+ * (IDENTITY does — `identity.tsx`) or doesn't pin at all (CLOSE doesn't).
+ * It must never pin via a descendant: CAPABILITY's `ServicesStage`
+ * (`services-convergence.tsx`) pins `stage`, a child of the `<section>`,
+ * not the section itself — so CAPABILITY must never get `sheet: true` as
+ * an incoming section, or clipping the outer section would clip its own
+ * pinned stage mid-pin.
  */
 const PAIRS: readonly [outgoing: string, incoming: string, sheet?: boolean][] = [
   ["What MaCo does", "Bridge in motion"],
@@ -67,8 +78,8 @@ export function GroundHandoff() {
         },
       );
 
-      // Curved sheet: the incoming section's top corners round off as it
-      // rises, then flatten back to square once settled — a transient
+      // Curved sheet: the incoming section's top corners start rounded
+      // and flatten to square as it settles into place — a one-way
       // "sheet lifting into place" cue layered on the recede above, only
       // where the boundary is ALSO a ground change (see PAIRS above).
       // clip-path defaults to `none` in the JSX (no inline style), so with

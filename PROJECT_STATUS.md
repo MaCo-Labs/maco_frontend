@@ -130,4 +130,3 @@ The homepage went through a full creative reset (see `HOMEPAGE_REDESIGN_PLAN.md`
 
 - Tiers 1–2 of `SurfaceMedia` (real video/image) — the repo still has zero product photography or screen recordings, so every media slot ships the plan's tier-3 designed fallback. This is a content gap, not a code gap; upgrading one slot is a one-file change to `content/maco.ts` per the plan (§11).
 - Backend seed verification on a fresh machine (unrelated to this reset).
-- Sitewide section-order regroup, curved "sheet" section overlays, and extending `ScrollThread` to the full page — the second half of the 2026-08-19 hero-upgrade request, deferred to a later pass at the user's choice. Would change the current deliberate `paper`/`deep` alternation into continuous light/dark blocks; needs its own brainstorm/design pass, not a small tweak.
