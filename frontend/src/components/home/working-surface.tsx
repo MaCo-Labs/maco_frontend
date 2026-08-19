@@ -53,7 +53,7 @@ export function WorkingSurface() {
   }, []);
 
   return (
-    <section data-ground="paper" className="rule-t" aria-label="What MaCo does">
+    <section data-ground="deep" className="rule-t" aria-label="What MaCo does">
       <div className="shell grid items-center gap-10 py-24 lg:grid-cols-2 lg:gap-16 lg:py-32">
         <div>
           <LineReveal

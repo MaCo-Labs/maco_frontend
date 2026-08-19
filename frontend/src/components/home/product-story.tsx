@@ -16,8 +16,11 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  *
  * Paper ground (Phase 4 rhythm swap, was deep): each product's media
  * panel is a deep-ground tile SITTING on a paper page — that's a
- * stronger material read than dark-on-dark, and reads as a release after
- * EVIDENCE+WORK's dark passage just before it.
+ * stronger material read than dark-on-dark. Since the Phase 5 ground
+ * regroup, PRODUCTS continues the same paper run WORK and CAPABILITY
+ * already started rather than releasing out of a preceding dark
+ * passage — EVIDENCE (deep) is now the only dark section directly
+ * before this chapter.
  */
 export function ProductStory() {
   return (

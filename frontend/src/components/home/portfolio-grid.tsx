@@ -46,7 +46,7 @@ export function PortfolioGrid() {
   const right = withIndex.filter((_, i) => i % 2 === 1);
 
   return (
-    <section data-ground="deep" className="rule-t" aria-label="Selected client work">
+    <section data-ground="paper" className="rule-t" aria-label="Selected client work">
       <div className="shell py-24 md:py-32">
         <ScrubReveal hold>
           <p className="label">Work</p>
@@ -140,7 +140,7 @@ function GridCard({ project, tintIndex }: { project: Project; tintIndex: number 
   // achromatic by design (two genuinely different themes, not a recolor
   // — see styles.css), the same formula degrades gracefully to a
   // deliberate light/dark value block instead of a color one, which is
-  // what data-ground="paper" below is actually doing the work for.
+  // what data-ground="deep" below is actually doing the work for.
   const tint = 20 + tintIndex * 12;
 
   return (
@@ -156,16 +156,16 @@ function GridCard({ project, tintIndex }: { project: Project; tintIndex: number 
     >
       {/* The "vibrant backdrop card" the reference asks for, adapted to
           this design system's actual palette: WORK's section ground is
-          deep (dark), so flipping just this image plate to
-          `data-ground="paper"` reads as a bright card popping out of a
-          dark frame — real value contrast in both themes, and on Cobalt
-          the paper ground's OWN accent is still chromatic, so the
-          color-mix below still lands as a genuine blue tint on top of
-          that brightness. Same ground-swap device product-story.tsx's
-          `ProductMedia` already uses, just inverted (paper tile on a
-          deep card here, vs. a deep tile on a paper card there). */}
+          paper (light) since the Phase 5 ground regroup, so flipping
+          just this image plate to `data-ground="deep"` reads as a dark
+          tile sitting on a light frame — real value contrast in both
+          themes, and on Cobalt the deep ground's OWN accent is still
+          chromatic, so the color-mix below still lands as a genuine blue
+          tint on top of that darkness. Same ground-swap device
+          product-story.tsx's `ProductMedia` already uses, same direction
+          this time (deep tile on a paper card, both places). */}
       <div
-        data-ground="paper"
+        data-ground="deep"
         className="relative"
         style={{
           aspectRatio: aspect,
