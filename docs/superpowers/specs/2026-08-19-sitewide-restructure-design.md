@@ -63,7 +63,9 @@ Five chapters:
 - **Process & record** (paper): METHOD, RECORD
 - **Close** (deep): CLOSE
 
-Implementation: change the `data-ground` value on `working-surface.tsx`'s and `portfolio-grid.tsx`'s outer `<section>` tags only. No other prop, layout, or content changes. (Note: `portfolio-grid.tsx` and `product-story.tsx` each also set `data-ground` on a nested nested element for a deliberate contrast effect — per their own inline comments, "bright card popping out" and "dark tile sitting on" — those nested overrides are unrelated to the section-level regroup and are out of scope.)
+Implementation: change the `data-ground` value on `working-surface.tsx`'s and `portfolio-grid.tsx`'s outer `<section>` tags. `product-story.tsx`'s outer ground (paper) is unchanged, so its nested `data-ground="deep"` tile (the "dark tile sitting on" a paper card) keeps working as-is — out of scope.
+
+`portfolio-grid.tsx` is different: its `GridCard` nests a `data-ground="paper"` image plate, and the component's own comment (lines 157-166) is explicit that this only pops because "WORK's section ground is deep" — a paper tile on a now-paper section is no contrast at all. Flipping WORK's outer ground to paper must also flip that nested tile's `data-ground` to `"deep"` (and its explanatory comment) to preserve the pop; this is a direct, in-scope consequence of the outer flip, not an unrelated nested override.
 
 ## 2. Curved-sheet device — boundary selection
 
