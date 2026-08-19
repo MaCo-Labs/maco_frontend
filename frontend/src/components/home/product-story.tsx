@@ -1,31 +1,43 @@
-import { useEffect, useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 import { products, type Product } from "@/content/maco";
 import { SurfaceMedia } from "@/components/media/surface-media";
 import { ProductVideo } from "@/components/media/product-video";
-import { MotionSection } from "@/components/motion-section";
 import { Magnetic } from "@/components/motion/magnetic";
-import { getScrollRuntime } from "@/lib/scroll-runtime";
+import { ScrubReveal } from "@/components/motion/scrub-reveal";
+import { Stagger } from "@/components/motion/stagger";
+import { LineReveal } from "@/components/motion/line-reveal";
+import { useScrollScene } from "@/hooks/use-scroll-scene";
 
 /**
  * PRODUCTS — Bridge (MaCo-owned) and Driver's Diary (built for HeadGreen).
  * Real feature copy only, no invented "PRODUCTION LIVE" telemetry, no
  * "VERIFIED" badges, no "HeadGreen Mobility" (the real client name is
  * HeadGreen).
+ *
+ * Paper ground (Phase 4 rhythm swap, was deep): each product's media
+ * panel is a deep-ground tile SITTING on a paper page — that's a
+ * stronger material read than dark-on-dark, and reads as a release after
+ * EVIDENCE+WORK's dark passage just before it.
  */
 export function ProductStory() {
   return (
-    <section data-ground="deep" className="rule-t" aria-label="Products">
+    <section data-ground="paper" className="rule-t" aria-label="Products">
       <div className="shell py-24 md:py-32">
-        <MotionSection>
+        <ScrubReveal hold>
           <p className="label">Products</p>
-          <h2 className="display-lg mt-3 max-w-2xl" style={{ color: "var(--text)" }}>
+          <LineReveal
+            as="h2"
+            mode="scrub"
+            className="display-lg mt-3 max-w-2xl"
+            style={{ color: "var(--text)" }}
+          >
             Two platforms we build and run ourselves.
-          </h2>
-        </MotionSection>
+          </LineReveal>
+        </ScrubReveal>
 
         <div className="mt-16 space-y-20">
           {products.map((product, i) => (
-            <MotionSection key={product.slug} delay={i * 100}>
+            <ScrubReveal key={product.slug} rise="2.5rem">
               <article className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-14">
                 <div className={i % 2 === 1 ? "lg:order-2" : undefined}>
                   <ProductMedia product={product} />
@@ -55,9 +67,18 @@ export function ProductStory() {
                   <p className="mt-4" style={{ color: "var(--muted)" }}>
                     {product.positioning}
                   </p>
-                  <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-                    {product.features.map((f) => (
-                      <li key={f.title} className="border-t border-line pt-3">
+                  <Stagger
+                    as="ul"
+                    className="mt-6 grid gap-3 sm:grid-cols-2"
+                    band={0.4}
+                    rise="1rem"
+                  >
+                    {product.features.map((f, fi) => (
+                      <li
+                        key={f.title}
+                        className="stagger-item border-t border-line pt-3"
+                        style={{ "--i": fi } as CSSProperties}
+                      >
                         <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
                           {f.title}
                         </p>
@@ -66,7 +87,7 @@ export function ProductStory() {
                         </p>
                       </li>
                     ))}
-                  </ul>
+                  </Stagger>
                   <Magnetic>
                     <a
                       href={product.live_url}
@@ -79,7 +100,7 @@ export function ProductStory() {
                   </Magnetic>
                 </div>
               </article>
-            </MotionSection>
+            </ScrubReveal>
           ))}
         </div>
       </div>
@@ -90,40 +111,48 @@ export function ProductStory() {
 /**
  * Drives the light-pass sweep from this card's own transit through the
  * viewport — the "product stage" scale of the plan's one signature
- * device, distinct from EVIDENCE's expand-linked one. `--sweep` is a
- * GSAP ScrollTrigger scrub writing the custom property directly onto the
- * element in `onUpdate`, never through React state.
+ * device, distinct from EVIDENCE's expand-linked one. Range overshoots
+ * [-0.15, 1.15] like RakingSurface, for the same reason (the band fully
+ * enters and fully clears instead of parking mid-surface) — not wrapped
+ * in `<RakingSurface>` itself because SurfaceMedia already applies its
+ * own `.light-pass` class; nesting would double the sweep.
+ *
+ * `--sweep` is set on THIS wrapper div, not on SurfaceMedia's own inner
+ * element — inheritance (styles.css's `--sweep` registration) carries it
+ * down to SurfaceMedia's `.light-pass::after` regardless of the extra
+ * div between them.
+ *
+ * data-ground="deep" makes each panel a genuinely dark tile sitting on
+ * the section's paper ground (Phase 4) — a deep-on-paper plate reads as
+ * more material than dark-on-dark would.
+ *
+ * aspect is derived from the real asset dimensions, not hardcoded: Bridge
+ * is 1024x576 (16:9, has video); Driver's Diary is 900x1203 — portrait
+ * 3:4 — and the previous hardcoded aspect="4/3" cropped roughly the
+ * middle 44% of its height off with objectFit:"cover".
  */
 function ProductMedia({ product }: { product: Product }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useScrollScene((rt) => {
     const el = ref.current;
     if (!el) return;
-    let cancelled = false;
-    let trigger: { kill: () => void } | null = null;
-
-    getScrollRuntime().then((rt) => {
-      if (cancelled || !rt) return;
-      trigger = rt.ScrollTrigger.create({
-        trigger: el,
-        start: "top bottom",
-        end: "bottom top",
-        scrub: 0.3,
-        onUpdate: (self) => el.style.setProperty("--sweep", String(self.progress)),
-      });
-      rt.scheduleRefresh();
-    });
-
-    return () => {
-      cancelled = true;
-      trigger?.kill();
-    };
+    rt.gsap.fromTo(
+      el,
+      { "--sweep": -0.15 },
+      {
+        "--sweep": 1.15,
+        ease: "none",
+        scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: 0.25 },
+      },
+    );
   }, []);
 
+  const aspect = product.media ? `${product.media.width}/${product.media.height}` : "4/3";
+
   return (
-    <div ref={ref}>
-      <SurfaceMedia label={`${product.title} — ${product.kind}`} aspect="4/3">
+    <div ref={ref} data-ground="deep" className="rounded-2xl">
+      <SurfaceMedia label={`${product.title} — ${product.kind}`} aspect={aspect}>
         {product.media && <ProductVideo media={product.media} priority="low" objectFit="cover" />}
       </SurfaceMedia>
     </div>

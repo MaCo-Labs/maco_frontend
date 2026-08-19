@@ -1,29 +1,33 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { getProduct } from "@/content/maco";
 import { SurfaceMedia } from "@/components/media/surface-media";
 import { ProductVideo } from "@/components/media/product-video";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { getScrollRuntime } from "@/lib/scroll-runtime";
-import { lerp } from "@/lib/motion";
+import { useScrollScene } from "@/hooks/use-scroll-scene";
+import { lerp, smootherstep, clamp01 } from "@/lib/motion";
 
 /**
  * EVIDENCE — the homepage's one cinematic set-piece. A contained media
- * frame expands toward full viewport as you scroll: clip-path insets
- * shrink, the media inside counter-scales so it never resamples, and a
- * scrim deepens. Concept verified against React Bits' ScrollExpand
- * (MIT + Commons Clause, zero dependencies) and reimplemented here.
+ * frame rises out of the ground and opens until it dominates the room,
+ * then names itself: the only real footage on the site (a screen
+ * recording of Bridge in daily use, 1024x576) gets the page's most
+ * expensive moment.
+ *
+ * The frame stays LOCKED to the video's own 16:9 aspect throughout —
+ * computed in pixels (width/height), not a uniform inset(). A uniform
+ * inset() on a 900px-tall viewport produces a box matching the
+ * VIEWPORT's aspect ratio, not the video's; with `objectFit: "cover"`
+ * that crops real content off the sides, and the previous inset(14%)-to-
+ * inset(6%) range grew the frame only ~22% linearly (0.21px of growth
+ * per pixel scrolled) — a full 1080px of pinned scroll for a change that
+ * barely reads. Locked to 16:9, the frame here grows from a small panel
+ * to ~88vw and the upscale stays capped at 1.24x of the source (still
+ * sharp), because the growth is real width, not a shape distortion.
  *
  * Pin + scrub come from GSAP ScrollTrigger — it computes its own
  * pin-spacing, and `scrub` reads directly off Lenis-smoothed native
  * scroll. Progress is written straight to the frame's inline style in
- * `onUpdate`, never through React state — a full re-render per scroll
- * frame was the previous approach and is not free.
- *
- * The source recording is 1024x576 — deliberately NOT expanded to a
- * literal inset(0) full-bleed, which would upscale it ~1.5x on a 1440px
- * viewport and read as soft. The frame stops at inset(6%) instead (a
- * ~1.2x upscale, still sharp) and the scrim carries a little more of
- * the "fills the screen" feeling than a full-bleed frame would need.
+ * `onUpdate`, never through React state.
  */
 export function EvidenceExpand() {
   const bridge = getProduct("bridge");
@@ -31,48 +35,68 @@ export function EvidenceExpand() {
   const frameRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const scrimRef = useRef<HTMLDivElement>(null);
-  const captionRef = useRef<HTMLParagraphElement>(null);
+  const vignetteRef = useRef<HTMLDivElement>(null);
+  const captionInRef = useRef<HTMLParagraphElement>(null);
+  const captionOutRef = useRef<HTMLParagraphElement>(null);
   const reduced = useReducedMotion();
 
-  useEffect(() => {
-    if (reduced) return;
+  useScrollScene((rt) => {
     const section = sectionRef.current;
     const frame = frameRef.current;
     const media = mediaRef.current;
     const scrim = scrimRef.current;
-    const caption = captionRef.current;
+    const vignette = vignetteRef.current;
+    const captionIn = captionInRef.current;
+    const captionOut = captionOutRef.current;
     if (!section || !frame) return;
-    let cancelled = false;
-    let trigger: { kill: () => void } | null = null;
 
-    getScrollRuntime().then((rt) => {
-      if (cancelled || !rt) return;
-      trigger = rt.ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: "+=120%",
-        pin: true,
-        scrub: 0.3,
-        onUpdate: (self) => {
-          const p = self.progress;
-          const inset = lerp(14, 6, p);
-          const radius = lerp(28, 10, p);
-          const scale = lerp(1.06, 1, p);
-          frame.style.clipPath = `inset(${inset}% round ${radius}px)`;
-          frame.style.setProperty("--sweep", String(p));
-          if (media) media.style.transform = `scale(${scale})`;
-          if (scrim) scrim.style.opacity = String(lerp(0.5, 0.22, p));
-          if (caption) caption.style.opacity = String(1 - Math.min(1, p / 0.25));
-        },
-      });
-      rt.scheduleRefresh();
+    rt.ScrollTrigger.create({
+      trigger: section,
+      start: "top top",
+      end: "+=160%",
+      pin: true,
+      anticipatePin: 1,
+      scrub: 0.3,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => {
+        const p = self.progress;
+        const e = smootherstep(p);
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        // Aspect-locked: w/h always stay 16:9, so clip-path insets are
+        // never uniform (x and y differ) except by coincidence of the
+        // viewport's own ratio.
+        const wStart = Math.min(vw * 0.56, vh * 0.5 * (16 / 9));
+        const wMax = Math.min(vw * 0.88, vh * 0.94 * (16 / 9), 1280);
+        const w = lerp(wStart, wMax, e);
+        const h = w * (9 / 16);
+        const insetX = ((vw - w) / 2 / vw) * 100;
+        const insetY = ((vh - h) / 2 / vh) * 100;
+        const radius = lerp(32, 6, e);
+        frame.style.clipPath = `inset(${insetY}% ${insetX}% round ${radius}px)`;
+        frame.style.setProperty("--sweep", String(p));
+        if (media) media.style.transform = `scale(${lerp(1.1, 1, e)})`;
+        if (scrim) scrim.style.opacity = String(lerp(0.62, 0.1, e));
+        // Above ~1600px viewport width, wMax caps out (the 1024px source
+        // can only grow so far before it stops looking sharp) — hand the
+        // remaining progress to the scrim/vignette instead, so the ROOM
+        // keeps closing in even once the frame itself stops growing.
+        if (vignette) {
+          const wide = vw > 1600 ? clamp01((p - 0.72) / 0.28) : 0;
+          vignette.style.opacity = String(lerp(0, 0.45, e) + wide * 0.25);
+        }
+        // Two acts, so no stretch of the pin is dead: the entry caption
+        // leaves first, then the real description arrives under the
+        // now-open frame — never both at once, never a silent gap.
+        if (captionIn) captionIn.style.opacity = String(1 - clamp01(p / 0.18));
+        if (captionOut) {
+          const out = clamp01((p - 0.72) / 0.23);
+          captionOut.style.opacity = String(out);
+          captionOut.style.transform = `translate3d(0, ${(1 - out) * 1.5}rem, 0)`;
+        }
+      },
     });
-
-    return () => {
-      cancelled = true;
-      trigger?.kill();
-    };
-  }, [reduced]);
+  }, []);
 
   const caption = bridge
     ? `${bridge.title} — ${bridge.short_description}`
@@ -105,17 +129,29 @@ export function EvidenceExpand() {
       className="relative z-[41] h-screen overflow-hidden"
     >
       <p
-        ref={captionRef}
+        ref={captionInRef}
         className="label shell absolute left-0 right-0 top-10 z-10 text-center"
         style={{ color: "var(--muted)" }}
       >
         Bridge, in daily use
       </p>
+      {/* opacity:0 is safe here, unlike method-line's earlier bug: this
+          caption is a big enhanced restatement of text SurfaceMedia
+          already renders unconditionally (its own small `label`, always
+          visible, clip-path notwithstanding) — a blocked import loses the
+          enhancement, not the content. */}
+      <p
+        ref={captionOutRef}
+        className="lead shell absolute bottom-14 left-0 right-0 z-10 text-center"
+        style={{ color: "var(--text)", opacity: 0 }}
+      >
+        {caption}
+      </p>
 
       <div
         ref={frameRef}
         className="absolute inset-0"
-        style={{ clipPath: "inset(14% round 28px)" }}
+        style={{ clipPath: "inset(22% 32% round 32px)" }}
       >
         <div ref={mediaRef} className="absolute inset-0">
           <SurfaceMedia
@@ -133,9 +169,18 @@ export function EvidenceExpand() {
           ref={scrimRef}
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
-          style={{ background: "black", opacity: 0.5 }}
+          style={{ background: "black", opacity: 0.62 }}
         />
       </div>
+      <div
+        ref={vignetteRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: "radial-gradient(circle, transparent 40%, black 100%)",
+          opacity: 0,
+        }}
+      />
     </section>
   );
 }
