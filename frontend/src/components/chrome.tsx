@@ -6,6 +6,7 @@ import { useTheme } from "./theme";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
 import { Magnetic } from "@/components/motion/magnetic";
+import { getLiveScrollRuntime } from "@/lib/scroll-runtime";
 
 function ThemeSwitch() {
   const { theme, setTheme } = useTheme();
@@ -74,6 +75,13 @@ function MobilePillNav() {
       }
     };
     document.addEventListener("keydown", onKey);
+    // Lenis intercepts wheel/touch directly rather than relying on native
+    // overflow, so `body { overflow: hidden }` alone doesn't reliably stop
+    // it — the page can keep smooth-scrolling under an open panel. Stop
+    // Lenis explicitly, and keep the overflow lock too as the fallback for
+    // when Lenis isn't running (reduced motion, blocked dynamic import).
+    const rt = getLiveScrollRuntime();
+    rt?.lenis.stop();
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     // Focus first link
@@ -83,6 +91,7 @@ function MobilePillNav() {
     });
     return () => {
       document.removeEventListener("keydown", onKey);
+      rt?.lenis.start();
       document.body.style.overflow = prev;
     };
   }, [open]);

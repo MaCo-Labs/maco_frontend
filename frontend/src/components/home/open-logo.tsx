@@ -58,7 +58,11 @@ export function OpenLogo() {
     <section
       ref={sectionRef as never}
       data-ground="deep"
-      className="relative flex min-h-[100svh] flex-col justify-between overflow-hidden"
+      // z-[41]: harmless while position:static (default); once ScrollTrigger
+      // pins this section it becomes position:fixed, and without an explicit
+      // z-index above the header's z-40 it renders BEHIND the sticky,
+      // backdrop-blurred header.
+      className="relative z-[41] flex min-h-[100svh] flex-col justify-between overflow-hidden"
       aria-label="Introduction"
     >
       <div className="shell relative z-10 flex items-center justify-between pt-8 md:pt-10">

@@ -45,8 +45,7 @@ export function ScrollRuntimeProvider() {
       const rt = runtimeRef.current;
       if (!rt) return;
       rt.ScrollTrigger.getAll().forEach((st) => st.kill());
-      rt.lenis.destroy();
-      document.documentElement.classList.remove("lenis");
+      rt.destroy();
       runtimeRef.current = null;
     };
   }, []);

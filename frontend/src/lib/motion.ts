@@ -47,3 +47,53 @@ export const SPRING_REEL = { type: "spring", bounce: 0, duration: 0.7 } as const
 /** Matches --ease-standard / --ease-emphasis in styles.css, for use in motion's `ease` prop. */
 export const EASE_STANDARD = [0.4, 0, 0.2, 1] as const;
 export const EASE_EMPHASIS = [0.16, 1, 0.3, 1] as const;
+
+/**
+ * Motion preference resolution — the single source of truth read by BOTH
+ * `useReducedMotion()` and `getScrollRuntime()`, so they can never disagree
+ * (previously two independent `matchMedia` calls).
+ *
+ * `prefers-reduced-motion: reduce` is an OS-level, per-machine setting (e.g.
+ * Windows Settings > Accessibility > Visual effects > Animation effects) —
+ * it is NOT a statement about this one site, but browsers apply it globally.
+ * A developer or reviewer on such a machine has no way to see the site's
+ * actual motion without an explicit override, so `?motion=full|reduced` in
+ * the URL sets a persisted override that wins over the OS setting. Real
+ * reduced-motion users are never affected: the override is opt-in only.
+ */
+const MOTION_STORAGE_KEY = "maco-motion";
+export const MOTION_CHANGE_EVENT = "maco:motion-change";
+
+type StoredMotionPreference = "full" | "reduced";
+
+function readStoredMotionPreference(): StoredMotionPreference | null {
+  const v = window.localStorage.getItem(MOTION_STORAGE_KEY);
+  return v === "full" || v === "reduced" ? v : null;
+}
+
+/** Reads `?motion=` once and persists it — so the override survives the
+ *  next navigation instead of only applying to the URL that set it. */
+function applyUrlMotionOverride(): StoredMotionPreference | null {
+  const raw = new URLSearchParams(window.location.search).get("motion");
+  if (raw !== "full" && raw !== "reduced") return null;
+  window.localStorage.setItem(MOTION_STORAGE_KEY, raw);
+  return raw;
+}
+
+/** Explicitly set (or, with "system", clear) the stored override and notify
+ *  any mounted `useReducedMotion()` hooks so the change applies live. */
+export function setMotionOverride(pref: StoredMotionPreference | "system"): void {
+  if (pref === "system") window.localStorage.removeItem(MOTION_STORAGE_KEY);
+  else window.localStorage.setItem(MOTION_STORAGE_KEY, pref);
+  window.dispatchEvent(new Event(MOTION_CHANGE_EVENT));
+}
+
+/** Resolves to "reduced" or "full". Priority: `?motion=` (persisted) >
+ *  a stored override from a previous visit > the OS `prefers-reduced-motion`
+ *  setting. Client-only — callers must guard SSR themselves. */
+export function resolveMotionPreference(): StoredMotionPreference {
+  const fromUrl = applyUrlMotionOverride();
+  const stored = fromUrl ?? readStoredMotionPreference();
+  if (stored) return stored;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "reduced" : "full";
+}

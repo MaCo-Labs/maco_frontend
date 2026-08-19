@@ -108,7 +108,9 @@ export function MethodLine() {
     <section
       ref={sectionRef}
       data-ground="paper"
-      className="rule-t relative flex h-screen flex-col justify-center overflow-hidden"
+      // z-[41]: see the matching comment in open-logo.tsx — keeps the pinned
+      // step-through above the sticky header instead of behind it.
+      className="rule-t relative z-[41] flex h-screen flex-col justify-center overflow-hidden"
       aria-label="How MaCo works"
     >
       <div className="shell w-full py-16">

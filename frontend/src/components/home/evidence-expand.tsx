@@ -100,7 +100,9 @@ export function EvidenceExpand() {
       ref={sectionRef}
       data-ground="deep"
       aria-label="Bridge in motion"
-      className="relative h-screen overflow-hidden"
+      // z-[41]: see the matching comment in open-logo.tsx — keeps the pinned
+      // frame above the sticky header instead of behind it.
+      className="relative z-[41] h-screen overflow-hidden"
     >
       <p
         ref={captionRef}

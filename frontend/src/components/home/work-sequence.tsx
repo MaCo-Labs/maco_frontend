@@ -161,7 +161,12 @@ function WorkRail() {
   }, [railRef]);
 
   return (
-    <div ref={sectionRef} className="relative h-screen overflow-hidden">
+    <div
+      ref={sectionRef}
+      // z-[41]: see the matching comment in open-logo.tsx — keeps the
+      // pinned rail above the sticky header instead of behind it.
+      className="relative z-[41] h-screen overflow-hidden"
+    >
       <div ref={headerRef} className="shell absolute left-0 right-0 top-14 z-10">
         <p className="label">Work</p>
         <h2 className="display-lg mt-3 max-w-2xl" style={{ color: "var(--text)" }}>

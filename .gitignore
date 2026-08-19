@@ -32,6 +32,12 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Ad-hoc browser-verification dumps (screenshots, console/accessibility logs).
+# Verification itself belongs in commit messages / PROJECT_STATUS.md, not as
+# binary artifacts in history.
+.playwright-mcp/
+frontend/.playwright-mcp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

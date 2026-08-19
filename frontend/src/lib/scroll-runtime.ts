@@ -2,6 +2,7 @@ import type Lenis from "lenis";
 import type { gsap as GsapType } from "gsap";
 import type { ScrollTrigger as ScrollTriggerType } from "gsap/ScrollTrigger";
 import type { SplitText as SplitTextType } from "gsap/SplitText";
+import { resolveMotionPreference } from "./motion";
 
 /**
  * Single scroll substrate for the whole homepage: Lenis owns real scroll
@@ -38,24 +39,32 @@ export interface ScrollRuntime {
    * mount order irrelevant.
    */
   scheduleRefresh: () => void;
+  /**
+   * Tears down Lenis, the ticker binding, and the module-level singleton so
+   * the NEXT `getScrollRuntime()` call constructs a fresh runtime instead of
+   * handing every scene the same destroyed Lenis instance. Previously the
+   * provider called `lenis.destroy()` directly and left `runtimePromise` /
+   * `liveRuntime` populated — after any remount (a route change back through
+   * `__root.tsx`, or dev HMR) every scene got a Lenis with no listeners and
+   * smooth scroll stayed dead until a hard refresh. Call this instead of
+   * `lenis.destroy()` directly.
+   */
+  destroy: () => void;
 }
 
 let runtimePromise: Promise<ScrollRuntime | null> | null = null;
 let liveRuntime: ScrollRuntime | null = null;
 
-function prefersReducedMotion(): boolean {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
 /**
  * Returns the shared runtime, constructing it on first call. Resolves to
- * `null` on the server, under reduced motion, or if construction throws
+ * `null` on the server, under the resolved motion preference (OS setting or
+ * `?motion=` override — see `lib/motion.ts`), or if construction throws
  * (e.g. a blocked dynamic import) — every caller must treat `null` as "run
  * the static/reduced-motion fallback", never as "retry".
  */
 export function getScrollRuntime(): Promise<ScrollRuntime | null> {
   if (typeof window === "undefined") return Promise.resolve(null);
-  if (prefersReducedMotion()) return Promise.resolve(null);
+  if (resolveMotionPreference() === "reduced") return Promise.resolve(null);
   if (runtimePromise) return runtimePromise;
 
   runtimePromise = (async () => {
@@ -79,12 +88,18 @@ export function getScrollRuntime(): Promise<ScrollRuntime | null> {
         autoRaf: false,
         smoothWheel: true,
         syncTouch: false,
+        // Stock defaults (lerp 0.1, wheelMultiplier 1) read as barely
+        // smoothed — a touch heavier and a touch less eager per wheel
+        // notch is what gives Lenis an actual felt character.
+        lerp: 0.085,
+        wheelMultiplier: 0.9,
       });
 
       lenis.on("scroll", ScrollTrigger.update);
-      gsap.ticker.add((time: number) => {
+      const raf = (time: number) => {
         lenis.raf(time * 1000);
-      });
+      };
+      gsap.ticker.add(raf);
       gsap.ticker.lagSmoothing(0);
       document.documentElement.classList.add("lenis");
 
@@ -112,6 +127,13 @@ export function getScrollRuntime(): Promise<ScrollRuntime | null> {
           return () => listeners.delete(cb);
         },
         scheduleRefresh,
+        destroy() {
+          gsap.ticker.remove(raf);
+          lenis.destroy();
+          document.documentElement.classList.remove("lenis");
+          listeners.clear();
+          resetScrollRuntime();
+        },
       };
       liveRuntime = runtime;
       return runtime;
@@ -130,8 +152,9 @@ export function getLiveScrollRuntime(): ScrollRuntime | null {
   return liveRuntime;
 }
 
-/** Test/HMR-only: forces the next getScrollRuntime() call to reconstruct. Never call in app code. */
-export function __resetScrollRuntimeForTests(): void {
+/** Forces the next `getScrollRuntime()` call to reconstruct. Called by
+ *  `ScrollRuntime.destroy()`; also exported directly for test/HMR use. */
+export function resetScrollRuntime(): void {
   runtimePromise = null;
   liveRuntime = null;
 }
