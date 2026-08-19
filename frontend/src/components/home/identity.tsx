@@ -1,27 +1,38 @@
-import { useEffect, useState, type CSSProperties } from "react";
-import { motion } from "motion/react";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useRef, type CSSProperties } from "react";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
-import { SPRING_REEL } from "@/lib/motion";
+import { useScrollScene } from "@/hooks/use-scroll-scene";
 
 /**
- * IDENTITY — "One name. Many scripts." A reel, not a cross-fade: the
- * active script sits centred and prominent, its neighbours visible
- * either side, fading and shrinking toward the edges as the track
- * advances — closer to how the user actually described it than the
- * single-word cross-fade this replaces.
+ * IDENTITY — "One name. Many scripts." Scroll IS the dial: each script's
+ * position is `--i - --t`, where `--i` is the script's own fixed index
+ * (set once, inline) and `--t` is the track's current dial position,
+ * written by one pinned ScrollTrigger and inherited down to every span —
+ * pure CSS `calc()`, zero React re-render per frame, zero DOM measurement.
  *
- * Zero DOM measurement. Every item occupies an identical --slot, so a
- * transform of `x: "100%"` always means exactly one slot — this also
- * makes the layout immune to the lazy-loaded Noto fonts swapping in
- * after first paint (a measured width would be wrong until they land,
- * then jump).
+ * This replaces a `setInterval`-driven reel (motion/react springs, a
+ * WCAG 2.2.2 pause control for the auto-advance, and 13 items' worth of
+ * animated `filter: blur()`) with a genuinely scroll-linked one:
+ *  - Scroll-driven motion the user starts by scrolling isn't "automatic"
+ *    in the WCAG 2.2.2 sense, so the pause control is gone — same as
+ *    every other pinned section on the page (EVIDENCE, WORK, METHOD),
+ *    none of which have one either.
+ *  - `filter: blur()` is gone — it's an animated-blur, which the site's
+ *    motion rules disallow (transform/opacity only); depth here comes
+ *    from `scale` + `opacity` alone.
+ *  - The signed circular-distance dance (13 items wrapping 12 -> 0) that
+ *    the old timer-driven reel needed is gone with it: a SCRUBBED dial
+ *    never wraps, `--d` is plain `i - t`, so there's no seam to manage.
+ *  - Ownership becomes correct: `motion` no longer touches this section
+ *    at all — it was the one place on the page where discrete-UI-only
+ *    `motion` was driving something scroll-adjacent, which the site's own
+ *    ownership rule (Lenis: position, GSAP: scroll-linked, motion:
+ *    discrete UI) argues against.
  *
- * Position is per-item, from the SIGNED CIRCULAR distance to the
- * active index — not a single translated track. With 13 scripts a
- * translated track would visibly rewind 12 slots on the 12->0 wrap;
- * circular distance puts that seam at |d|=6, where opacity is already
- * 0 and the jump is unobservable.
+ * Reduced motion needs no special branch: `--t` (styles.css) is a
+ * registered custom property with `initial-value: 0`, so with no
+ * ScrollTrigger ever created, every span's `calc()` resolves exactly as
+ * if `--t` were 0 — English centred, neighbours dimmed either side. That
+ * IS the composed at-rest state, not a frozen frame of an animation.
  */
 const SCRIPTS: readonly { text: string; lang: string; code: string; dir?: "rtl" }[] = [
   { text: "MaCo", lang: "English", code: "en" },
@@ -40,46 +51,73 @@ const SCRIPTS: readonly { text: string; lang: string; code: string; dir?: "rtl" 
 ];
 
 const N = SCRIPTS.length;
-const HOLD_MS = 2200;
-const VISIBLE = 2; // |d| <= VISIBLE is painted; further out is invisible anyway
-
-const OPACITY: number[] = [1, 0.3, 0.12];
-const SCALE: number[] = [1, 0.62, 0.46];
-const BLUR: number[] = [0, 1.5, 3];
-
-/** Signed shortest distance around a ring of N items. Range [-6, +6] for N=13. */
-function circularDistance(i: number, active: number): number {
-  let d = i - active;
-  if (d > N / 2) d -= N;
-  if (d < -N / 2) d += N;
-  return d;
-}
 
 export function Identity() {
-  const reduced = useReducedMotion();
-  const scriptRef = useScriptFontsWhenVisible<HTMLDivElement>();
-  const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const scriptFontsRef = useScriptFontsWhenVisible<HTMLDivElement>();
 
-  useEffect(() => {
-    if (reduced || paused) return;
-    const id = window.setInterval(() => setIndex((i) => (i + 1) % N), HOLD_MS);
-    return () => window.clearInterval(id);
-  }, [reduced, paused]);
+  useScrollScene((rt) => {
+    const section = sectionRef.current;
+    const track = trackRef.current;
+    if (!section || !track) return;
 
-  // Reduced motion freezes on English — still a real composition (the
-  // sr-only list below still carries all 13 scripts), not a broken mid-cycle
-  // frame.
-  const active = reduced ? 0 : index;
+    // gsap.matchMedia over useMediaQuery: created/reverted by GSAP itself
+    // and measured together with every other trigger on the page, which
+    // is what avoids the SSR-false-then-true-in-an-effect mount-order
+    // race useMediaQuery has (the documented cause of a past bug where
+    // METHOD's pin fired before WORK's spacer existed).
+    const mm = rt.gsap.matchMedia();
+    mm.add("(min-width: 1024px)", () => {
+      const trigger = rt.ScrollTrigger.create({
+        trigger: section,
+        start: "top top",
+        end: "+=110%",
+        pin: true,
+        anticipatePin: 1,
+        scrub: 0.25,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          track.style.setProperty("--t", String(self.progress * (N - 1)));
+        },
+      });
+      return () => trigger.kill();
+    });
+    mm.add("(max-width: 1023px)", () => {
+      // Shorter pin on a shorter viewport — the desktop distance felt
+      // over-long at 844px tall (values below tuned by scrubbing live,
+      // not derived).
+      const trigger = rt.ScrollTrigger.create({
+        trigger: section,
+        start: "top top",
+        end: "+=90%",
+        pin: true,
+        anticipatePin: 1,
+        scrub: 0.25,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          track.style.setProperty("--t", String(self.progress * (N - 1)));
+        },
+      });
+      return () => trigger.kill();
+    });
+  }, []);
 
   return (
-    <section data-ground="paper" className="rule-t" aria-label="MaCo, in one name and many scripts">
+    <section
+      ref={sectionRef as never}
+      data-ground="deep"
+      className="rule-t relative z-[41] flex min-h-[100svh] flex-col items-center justify-center overflow-hidden"
+      aria-label="MaCo, in one name and many scripts"
+    >
       <div className="shell flex flex-col items-center gap-6 py-24 text-center md:py-32">
         <p className="label">One name. Many scripts.</p>
 
         <div
-          ref={scriptRef}
-          aria-hidden="true"
+          ref={(el) => {
+            trackRef.current = el;
+            scriptFontsRef.current = el;
+          }}
           className="relative w-full overflow-hidden"
           style={
             {
@@ -93,17 +131,16 @@ export function Identity() {
             } as CSSProperties
           }
         >
-          {SCRIPTS.map((s, i) => {
-            const d = circularDistance(i, active);
-            const k = Math.min(Math.abs(d), VISIBLE);
-            const far = Math.abs(d) > VISIBLE;
-            return (
-              <motion.span
-                key={s.code}
-                lang={s.code}
-                dir={s.dir}
-                className="absolute left-1/2 top-1/2 block text-center"
-                style={{
+          {SCRIPTS.map((s, i) => (
+            <span
+              key={s.code}
+              lang={s.code}
+              dir={s.dir}
+              aria-hidden="true"
+              className="identity-script absolute left-1/2 top-1/2 block text-center"
+              style={
+                {
+                  "--i": i,
                   width: "var(--slot)",
                   marginLeft: "calc(var(--slot) / -2)",
                   fontFamily: "var(--font-display)",
@@ -116,34 +153,13 @@ export function Identity() {
                   letterSpacing: "-0.01em",
                   whiteSpace: "nowrap",
                   color: "var(--text)",
-                }}
-                animate={{
-                  x: `${d * 100}%`,
-                  y: "-50%",
-                  opacity: far ? 0 : (OPACITY[k] ?? 0),
-                  scale: far ? 0.4 : (SCALE[k] ?? 0.4),
-                  filter: far ? "none" : `blur(${BLUR[k] ?? 0}px)`,
-                }}
-                transition={reduced || far ? { duration: 0 } : SPRING_REEL}
-              >
-                {s.text}
-              </motion.span>
-            );
-          })}
+                } as CSSProperties
+              }
+            >
+              {s.text}
+            </span>
+          ))}
         </div>
-
-        {!reduced && (
-          // WCAG 2.2.2 — indefinite auto-advancing motion needs a way to
-          // stop it, reachable by keyboard.
-          <button
-            type="button"
-            onClick={() => setPaused((p) => !p)}
-            className="label link-draw"
-            style={{ color: "var(--muted)" }}
-          >
-            {paused ? "Resume" : "Pause"} the script reel
-          </button>
-        )}
 
         <p className="lead max-w-md">MaCo works with clients across India and the Gulf.</p>
 

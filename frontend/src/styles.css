@@ -72,7 +72,13 @@
 @property --p {
   syntax: "<number>";
   inherits: true;
-  initial-value: 1;
+  /* Matches WorkPanel's pre-existing `var(--p, 0)` — that explicit
+     fallback becomes dead code once --p is registered (a registered,
+     inherited custom property is never "guaranteed-invalid", so its own
+     var() fallback never triggers), so this MUST agree with what the
+     already-shipped calc() authored: 0 = first panel prominent, matching
+     the rail's rest composition before any scroll. */
+  initial-value: 0;
 }
 @property --t {
   syntax: "<number>";
@@ -82,7 +88,11 @@
 @property --sweep {
   syntax: "<number>";
   inherits: true;
-  initial-value: 0.5;
+  /* Matches the pre-existing `var(--sweep, 0)` used throughout
+     evidence-expand.tsx/product-story.tsx — same reasoning as --p above.
+     0 reads as "the light hasn't reached this surface yet", a deliberate
+     rest state, not an arbitrary one. */
+  initial-value: 0;
 }
 
 :root,
@@ -545,6 +555,21 @@ html.lenis:has(:target) {
 
 @utility rule-draw-y {
   transform: scaleY(var(--r));
+}
+
+/* IDENTITY's dial — backs components/home/identity.tsx. --t is set on the
+   track and inherited (see the --t registration above); --i is each
+   script's own fixed index, set inline. --d is signed (no wrap: a
+   SCRUBBED dial never needs the circular-distance trick a timer-driven
+   one did); --ad is its absolute value via max(x,-x), not abs() (see the
+   note on rule-draw-x's sibling usage in work-sequence.tsx for why). */
+@utility identity-script {
+  --d: calc(var(--i, 0) - var(--t, 0));
+  --ad: max(var(--d), calc(-1 * var(--d)));
+  transform: translate3d(calc(var(--d) * 100%), -50%, 0)
+    scale(calc(1 - min(0.55, var(--ad) * 0.28)));
+  opacity: clamp(0, calc(1 - var(--ad) * 0.44), 1);
+  will-change: transform, opacity;
 }
 
 /* Reveal math identical in shape to MethodLine's original hand-written

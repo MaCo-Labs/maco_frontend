@@ -134,7 +134,13 @@ export function MethodLine() {
                   stepRefs.current[i] = el;
                 }}
                 className="border-b border-line py-8 pr-6 sm:border-r lg:min-h-[14rem]"
-                style={{ opacity: 0, transform: "translate3d(0, 1.5rem, 0)" }}
+                // No opacity:0 seed here — renders fully visible at rest.
+                // ScrollTrigger's onUpdate corrects this to the real
+                // scroll-derived value the moment scheduleRefresh() fires
+                // (refresh forces an update pass). Without this, a blocked
+                // dynamic import (offline, CSP, an extension) left all
+                // four steps permanently invisible — the JSX default must
+                // be the correct fallback, not a value only JS ever fixes.
               >
                 <span className="font-display text-4xl" style={{ color: "var(--muted)" }}>
                   {step.step}

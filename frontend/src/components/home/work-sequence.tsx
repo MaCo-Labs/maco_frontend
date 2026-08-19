@@ -1,19 +1,16 @@
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useRef, type CSSProperties } from "react";
 import { projects, type Project } from "@/content/maco";
 import { Link } from "@tanstack/react-router";
 import { MotionSection } from "@/components/motion-section";
 import { Magnetic } from "@/components/motion/magnetic";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { usePointerField } from "@/hooks/use-pointer-field";
-import { getScrollRuntime } from "@/lib/scroll-runtime";
+import { useScrollScene } from "@/hooks/use-scroll-scene";
 
 /**
  * WORK — the four real client projects.
  *
- * Mobile and reduced-motion: a plain vertical index list — touch-native,
- * no pinning, matches the plan's rule against a broken horizontal rail
- * on touch devices.
+ * Mobile: a plain vertical index list — touch-native, no pinning, matches
+ * the plan's rule against a broken horizontal rail on touch devices.
  *
  * Desktop (lg+): a pinned horizontal sequence — vertical scroll drives
  * horizontal progress through one full-viewport panel per project, via
@@ -23,14 +20,32 @@ import { getScrollRuntime } from "@/lib/scroll-runtime";
  * through `setState` meant a full React re-render per frame. All four
  * panels exist in the DOM the whole time, so keyboard and screen-reader
  * order is unaffected by the pin.
+ *
+ * BOTH `<WorkList>` and `<WorkRail>` are always mounted, split by CSS
+ * breakpoint (`lg:hidden` / `hidden lg:block`), not by a `useMediaQuery`
+ * state flip. That flip used to gate which one rendered AT ALL — and
+ * `useMediaQuery`'s SSR-safe default is `false`, so on first client
+ * render `<WorkRail>` didn't exist yet; it mounted a render-cycle later,
+ * once the media-query effect corrected the state. Every OTHER pinned
+ * section on the page schedules its trigger measurement via
+ * `scheduleRefresh()`, and by the time that measurement actually ran,
+ * WORK's pin-spacer (thousands of pixels) sometimes didn't exist yet —
+ * confirmed live: IDENTITY's ScrollTrigger start/end were measured
+ * ~4300px short of the document's real layout, landing INSIDE WORK's own
+ * still-forming pin range. `<WorkRail>` now mounts unconditionally and
+ * gates the PIN itself with `gsap.matchMedia()` (below) — created only
+ * once the element is actually laid out at its real desktop width, and
+ * automatically reverted if the viewport crosses the breakpoint.
  */
 export function WorkSequence() {
-  const reduced = useReducedMotion();
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
-
   return (
-    <section data-ground="paper" className="rule-t" aria-label="Selected client work">
-      {isDesktop && !reduced ? <WorkRail /> : <WorkList />}
+    <section data-ground="deep" className="rule-t" aria-label="Selected client work">
+      <div className="lg:hidden">
+        <WorkList />
+      </div>
+      <div className="hidden lg:block">
+        <WorkRail />
+      </div>
     </section>
   );
 }
@@ -114,55 +129,66 @@ function WorkRail() {
   // imperatively by usePointerField, cascade to every descendant panel.
   const railRef = usePointerField<HTMLDivElement>();
 
-  useEffect(() => {
-    const section = sectionRef.current;
-    const rail = railRef.current;
-    const header = headerRef.current;
-    if (!section || !rail) return;
-    let cancelled = false;
-    let trigger: { kill: () => void } | null = null;
+  useScrollScene(
+    (rt) => {
+      const section = sectionRef.current;
+      const rail = railRef.current;
+      const header = headerRef.current;
+      if (!section || !rail) return;
 
-    // The single source of truth for how far the rail travels — read by
-    // BOTH `end` (how long the pin lasts) and the transform below (how far
-    // the rail moves), so the two can never disagree. Previously `end` was
-    // measured in pixels against the viewport while the transform moved the
-    // rail by a fixed PERCENT of the rail's own (much wider) width — the
-    // rail reached its final position after only ~1/4 of the pinned scroll
-    // distance, leaving the remaining ~3 viewport-widths of scroll pinned
-    // on an already-finished panel.
-    const distance = () => Math.max(1, rail.scrollWidth - rail.clientWidth);
+      // The single source of truth for how far the rail travels — read by
+      // BOTH `end` (how long the pin lasts) and the transform below (how
+      // far the rail moves), so the two can never disagree. Previously
+      // `end` was measured in pixels against the viewport while the
+      // transform moved the rail by a fixed PERCENT of the rail's own
+      // (much wider) width — the rail reached its final position after
+      // only ~1/4 of the pinned scroll distance, leaving the remaining ~3
+      // viewport-widths of scroll pinned on an already-finished panel.
+      const distance = () => Math.max(1, rail.scrollWidth - rail.clientWidth);
 
-    getScrollRuntime().then((rt) => {
-      if (cancelled || !rt) return;
-      const setX = rt.gsap.quickSetter(rail, "x", "px");
-      trigger = rt.ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: () => "+=" + distance(),
-        pin: true,
-        scrub: 0.3,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          setX(-self.progress * distance());
-          if (header) header.style.opacity = String(1 - Math.min(1, self.progress / 0.08));
-          rail.style.setProperty("--p", String(self.progress));
-        },
+      // Gated by matchMedia rather than the conditional mount this
+      // replaced (see the WorkSequence doc comment) — <WorkRail> is now
+      // ALWAYS mounted, CSS-hidden below `lg`, so this only creates the
+      // pin once the element is actually laid out at its real desktop
+      // width, and gsap.matchMedia reverts/recreates it automatically on
+      // a breakpoint crossing (a window resize past 1024px), which a
+      // plain `if (isDesktop)` check made at effect-setup time would not.
+      const mm = rt.gsap.matchMedia();
+      mm.add("(min-width: 1024px)", () => {
+        const setX = rt.gsap.quickSetter(rail, "x", "px");
+        const trigger = rt.ScrollTrigger.create({
+          trigger: section,
+          start: "top top",
+          end: () => "+=" + distance(),
+          pin: true,
+          anticipatePin: 1,
+          scrub: 0.3,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            setX(-self.progress * distance());
+            if (header) header.style.opacity = String(1 - Math.min(1, self.progress / 0.08));
+            rail.style.setProperty("--p", String(self.progress));
+          },
+        });
+        return () => trigger.kill();
       });
-      // Re-measure every trigger on the page once, after this one (and any
-      // siblings created in the same pass — WORK vs. METHOD, in particular)
-      // have registered, instead of trusting whichever mounted first.
-      rt.scheduleRefresh();
-    });
-
-    return () => {
-      cancelled = true;
-      trigger?.kill();
-    };
-  }, [railRef]);
+    },
+    [railRef],
+  );
 
   return (
     <div
       ref={sectionRef}
+      // data-ground repeated here, not just on the outer <section>: once
+      // GSAP pins this div (position:fixed), it paints independently of
+      // its parent — `background` doesn't inherit in CSS, so without its
+      // own data-ground this element is background-transparent while
+      // pinned, and the z-40 header shows through it (confirmed live:
+      // elementFromPoint found this div on top as expected, but the
+      // header was still what actually painted at that pixel). EVIDENCE,
+      // METHOD and OPEN don't have this bug because their pinned element
+      // IS the data-ground element, not a child of one.
+      data-ground="deep"
       // z-[41]: see the matching comment in open-logo.tsx — keeps the
       // pinned rail above the sticky header instead of behind it.
       className="relative z-[41] h-screen overflow-hidden"
@@ -212,6 +238,12 @@ function WorkPanel({ project, index, total }: { project: Project; index: number;
   // d = (--p - center) / step, clamped per edge exactly as the old
   // per-frame JS did — reproduced in calc() so it runs on the compositor.
   const d = `((var(--p, 0) - ${center}) / ${step})`;
+  // CSS abs() shipped in Chrome 133 (Feb 2025) — on anything older,
+  // `calc(1 - abs(...))` is invalid at computed-value time and the whole
+  // --opacity declaration falls back to `initial` (1), silently
+  // reintroducing the straddling bug this expression exists to fix.
+  // max(x, -x) is the same absolute value, supported since Chrome 79.
+  const absD = `max(${d}, calc(-1 * (${d})))`;
   const opacityExpr =
     total === 1
       ? "1"
@@ -219,7 +251,7 @@ function WorkPanel({ project, index, total }: { project: Project; index: number;
         ? `clamp(0.15, calc(1 - max(0, ${d})), 1)`
         : isLast
           ? `clamp(0.15, calc(1 + min(0, ${d})), 1)`
-          : `clamp(0.15, calc(1 - abs(${d})), 1)`;
+          : `clamp(0.15, calc(1 - ${absD}), 1)`;
 
   return (
     <div
