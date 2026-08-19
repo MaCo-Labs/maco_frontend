@@ -1,5 +1,7 @@
 # Sitewide Ground Regroup, Curved Sheet & Full-Page ScrollThread Implementation Plan
 
+> **Superseded note (2026-08-19):** Task 3 (full-page ScrollThread) was implemented, reviewed clean, then explicitly reverted per direct user instruction ("ScrollThread no needed remove them") — the user didn't want the drawn-line motif at all. See `.superpowers/sdd/2026-08-19-sitewide-restructure/progress.md` for the removal commit. Tasks 1, 2, and 4 are unaffected. Task 3's section below is kept for history, not as live scope.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Regroup the homepage's 10 sections from 7 alternating light/dark runs into 5 larger chapters, add a curved-sheet transition at the 2 boundaries where it's structurally safe, and extend the `ScrollThread` line motif from 3 sections to the full page.

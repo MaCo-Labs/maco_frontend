@@ -1,8 +1,8 @@
 # Sitewide scroll/layout restructure — design spec
 
 **Date:** 2026-08-19
-**Status:** Approved by user in chat; implementation plan pending (writing-plans skill)
-**Scope:** `frontend/src/routes/index.tsx` and the 10 homepage section components it renders, plus `ScrollThread`, `GroundHandoff`, and `styles.css`'s ground-token layer.
+**Status:** Implemented (§1 ground regroup, §2 curved sheet). §3 (ScrollThread) implemented then explicitly reverted per direct user instruction the same day — the drawn-line motif wasn't wanted. §4 (Lenis) pending.
+**Scope:** `frontend/src/routes/index.tsx` and the 10 homepage section components it renders, plus `GroundHandoff` and `styles.css`'s ground-token layer. (`ScrollThread` was in scope through §3 below; no longer live — see status line.)
 
 ## Problem
 
