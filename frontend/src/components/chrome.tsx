@@ -10,11 +10,19 @@ import { getLiveScrollRuntime } from "@/lib/scroll-runtime";
 
 function ThemeSwitch() {
   const { theme, setTheme } = useTheme();
+  const btnRef = useRef<HTMLButtonElement>(null);
   return (
     <Magnetic>
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setTheme(theme === "obsidian" ? "cobalt" : "obsidian")}
+        onClick={() => {
+          const rect = btnRef.current?.getBoundingClientRect();
+          const origin = rect
+            ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+            : undefined;
+          setTheme(theme === "obsidian" ? "cobalt" : "obsidian", origin);
+        }}
         aria-label={`Switch to ${theme === "obsidian" ? "Cobalt (blue on white)" : "Obsidian (black on white)"} theme`}
         className="label group flex items-center gap-2 border border-line px-3 py-2 transition-colors hover:border-text hover:text-text"
       >

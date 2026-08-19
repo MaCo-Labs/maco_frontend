@@ -1,6 +1,7 @@
 import { useRef, type CSSProperties } from "react";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
+import { usePointerField } from "@/hooks/use-pointer-field";
 
 /**
  * IDENTITY — "One name. Many scripts." Scroll IS the dial: each script's
@@ -53,7 +54,12 @@ const SCRIPTS: readonly { text: string; lang: string; code: string; dir?: "rtl" 
 const N = SCRIPTS.length;
 
 export function Identity() {
-  const sectionRef = useRef<HTMLElement | null>(null);
+  // Pointer field on the SECTION (not the track) so --px/--py inherit down
+  // to identity-script's calc() in styles.css without competing with --t,
+  // which the pin below still writes on trackRef alone. Bails under a
+  // coarse pointer and rests at 0.5/0.5, same as everywhere else this
+  // hook is used — a touch scroll gets the dial exactly as before.
+  const sectionRef = usePointerField<HTMLElement>();
   const trackRef = useRef<HTMLDivElement | null>(null);
   const scriptFontsRef = useScriptFontsWhenVisible<HTMLDivElement>();
 

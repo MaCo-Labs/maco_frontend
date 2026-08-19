@@ -169,8 +169,20 @@ function ProductMedia({ product }: { product: Product }) {
   const aspect = product.media ? `${product.media.width}/${product.media.height}` : "4/3";
 
   return (
-    <div ref={ref} data-ground="deep" className="rounded-2xl">
-      <SurfaceMedia label={`${product.title} — ${product.kind}`} aspect={aspect}>
+    <div
+      ref={ref}
+      data-ground="deep"
+      // Hover-only lift, CSS transform + shadow — no JS, no new state.
+      // `--sweep` (the light-pass raking highlight) is already scrubbed by
+      // scroll above; this just makes the panel itself feel liftable, the
+      // same affordance a physical card would give.
+      className="rounded-2xl transition-transform duration-500 hover:-translate-y-1"
+    >
+      <SurfaceMedia
+        label={`${product.title} — ${product.kind}`}
+        aspect={aspect}
+        className="transition-shadow duration-500 hover:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)]"
+      >
         {product.media && <ProductVideo media={product.media} priority="low" objectFit="cover" />}
       </SurfaceMedia>
     </div>

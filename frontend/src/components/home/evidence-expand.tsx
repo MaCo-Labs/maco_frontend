@@ -4,6 +4,7 @@ import { SurfaceMedia } from "@/components/media/surface-media";
 import { ProductVideo } from "@/components/media/product-video";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
+import { usePointerField } from "@/hooks/use-pointer-field";
 import { lerp, smootherstep, clamp01 } from "@/lib/motion";
 
 /**
@@ -31,7 +32,11 @@ import { lerp, smootherstep, clamp01 } from "@/lib/motion";
  */
 export function EvidenceExpand() {
   const bridge = getProduct("bridge");
-  const sectionRef = useRef<HTMLDivElement>(null);
+  // Dual-purposed like work-sequence.tsx's railRef: the pin's own trigger
+  // target AND the pointer field the vignette's centre reads from —
+  // usePointerField already bails under a coarse pointer and resets to
+  // 0.5/0.5 on leave, so there is no separate touch branch to maintain.
+  const sectionRef = usePointerField<HTMLDivElement>();
   const frameRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const scrimRef = useRef<HTMLDivElement>(null);
@@ -177,7 +182,11 @@ export function EvidenceExpand() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
-          background: "radial-gradient(circle, transparent 40%, black 100%)",
+          // Centre follows --px/--py (inherited from sectionRef's pointer
+          // field) instead of sitting fixed at 50% 50% — a still frame
+          // while pinned otherwise has nothing left to respond to input.
+          background:
+            "radial-gradient(circle at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%), transparent 40%, black 100%)",
           opacity: 0,
         }}
       />

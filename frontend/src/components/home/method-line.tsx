@@ -85,9 +85,9 @@ export function MethodLine() {
                 key={step.step}
                 as="li"
                 delay={i * 90}
-                className="border-b border-line py-8 pr-6 sm:border-r lg:min-h-[14rem]"
+                className="group border-b border-line py-8 pr-6 transition-colors hover:border-text sm:border-r lg:min-h-[14rem]"
               >
-                <span className="font-display text-4xl" style={{ color: "var(--muted)" }}>
+                <span className="font-display text-4xl text-muted transition-colors group-hover:text-text">
                   {step.step}
                 </span>
                 <p className="display-md mt-4" style={{ color: "var(--text)" }}>
@@ -133,7 +133,12 @@ export function MethodLine() {
                 ref={(el) => {
                   stepRefs.current[i] = el;
                 }}
-                className="border-b border-line py-8 pr-6 sm:border-r lg:min-h-[14rem]"
+                // group + hover:border-text: each step brightens its OWN
+                // border segment on hover — the step's local stand-in for
+                // "its stretch of the spine", since the real spine above
+                // is one continuous scroll-driven bar, not four
+                // independent ones. CSS-only, no new per-frame state.
+                className="group border-b border-line py-8 pr-6 transition-colors hover:border-text sm:border-r lg:min-h-[14rem]"
                 // No opacity:0 seed here — renders fully visible at rest.
                 // ScrollTrigger's onUpdate corrects this to the real
                 // scroll-derived value the moment scheduleRefresh() fires
@@ -142,7 +147,7 @@ export function MethodLine() {
                 // four steps permanently invisible — the JSX default must
                 // be the correct fallback, not a value only JS ever fixes.
               >
-                <span className="font-display text-4xl" style={{ color: "var(--muted)" }}>
+                <span className="font-display text-4xl text-muted transition-colors group-hover:text-text">
                   {step.step}
                 </span>
                 <p className="display-md mt-4" style={{ color: "var(--text)" }}>

@@ -3,7 +3,37 @@
 Tracks the homepage creative reset. Full architecture and rationale: `HOMEPAGE_REDESIGN_PLAN.md`.
 Update this file when a phase completes; also update `AI_HANDOFF.md` and `PROJECT_STATUS.md`.
 
-Last updated: 2026-08-19 (edits made 2026-08-18; date rolled over during the session)
+Last updated: 2026-08-19
+
+---
+
+## Motion Rebuild pass (2026-08-19, plan: `act-as-an-elite-piped-scone.md`)
+
+Full detail in `AI_HANDOFF.md` ("Homepage Motion Rebuild"). Nine commits,
+`0882664`..`2469975`, each live-verified via Playwright — the first homepage
+pass verified live at every step rather than only via `tsc`/`build`.
+
+| Item | Status |
+|------|--------|
+| Reduced-motion resolver split-brain (`getScrollRuntime`/`useReducedMotion` disagreeing) fixed; `?motion=full\|reduced` override added | DONE — confirmed live this dev machine reports `reduce=true` by default |
+| Dev-HMR Lenis singleton leak (`destroy()` never cleared the module singleton) | DONE |
+| Pinned sections rendering under the sticky header (`z-40`) | DONE — `z-[41]` |
+| Mobile nav scroll-lock, router `scrollRestoration` double-ownership | DONE |
+| `MotionSection` (one-shot fade, 20+ call sites) replaced with reversible scroll-linked primitives (`ScrubReveal`/`RuleDraw`/`Stagger`/`RakingSurface`) | DONE — one remaining call site, `method-line.tsx`'s static reduced-motion branch |
+| `@property inherits` bug (`--sweep`/`--p`/`--t` registered `inherits:false`, would have frozen WORK's rail and every new `RakingSurface`) | DONE — caught before shipping further |
+| All 10 sections given real scroll-linked motion (6 previously had none: SURFACE, CAPABILITY, IDENTITY, RECORD, CLOSE, WORK's mobile fallback) | DONE |
+| EVIDENCE's clip-path aspect-locked to real 16:9 footage (was viewport-shaped, cropping real footage) | DONE |
+| PRODUCTS' aspect ratio derived from real asset dimensions (was hardcoded 4/3, cropping Driver's Diary's portrait poster) | DONE |
+| CAPABILITY — sticky scroll-driven service selection, click/arrow still wins | DONE |
+| PRODUCTS — sticky overlap stack (second card visibly covers first) | DONE |
+| IDENTITY — rewritten fully scroll-driven (`--t` custom property), removed animated `filter:blur()`, removed `motion/react` involvement | DONE |
+| WORK's mount-order race (same bug class as METHOD's earlier one, now hitting IDENTITY) fixed at root cause | DONE |
+| Ground rhythm retuned per plan Phase 4: WORK paper→deep, PRODUCTS deep→paper, IDENTITY paper→deep | DONE |
+| Cross-section recession continuity (`GroundHandoff`) | DONE |
+| Live-browser verification of every commit above | DONE — Playwright against a running dev server, not just static checks |
+| Phase 3.2 — OPEN-mark→header shared-element handoff | NOT DONE — deferred, not re-requested |
+| Phase 3.3 — single document-level `--sweep` driven off Lenis `documentElement` progress | NOT DONE — each `RakingSurface` still runs its own independent `ScrollTrigger` |
+| Full 7-width × 2-theme matrix, `forced-colors`/`prefers-contrast`, real touch device, formal performance audit | NOT DONE |
 
 ---
 
@@ -81,50 +111,77 @@ themselves. See `CONTEXT.md §11` for the full breakdown.
 | G | PRODUCTS (Bridge + Driver's Diary) | DONE, including per-card light-pass sweep (2026-08-18) |
 | H | METHOD + RECORD | DONE — claim audit clean, no invented numbers found |
 | I | CLOSE intake + contact API fix | DONE — `CloseIntake` links to `/contact` rather than duplicating a form; the real fix is in `contact.tsx` itself, verified against a live backend |
-| J | Mobile pass, all 7 widths | PARTIAL — 390px verified this pass (all movements, no overflow); 375/430/768/1024/1280 not yet re-checked against the final font/logo system |
-| K | Accessibility pass | PARTIAL — mobile nav focus trap + backdrop done; keyboard tab order + focus-visible spot-checked on desktop nav; full screen-reader walkthrough not done |
-| L | Performance pass | NOT STARTED — no LCP/CLS/long-task measurement taken; only bundle size checked (340.5 KB / 106 KB gzip for the homepage entry chunk) |
-| M | Motion audit | NOT STARTED as a dedicated pass |
-| N | Browser QA, 7 widths × 2 themes | PARTIAL — see Phase J; theme-toggle interaction and hydration verified real-click, not just DOM state |
+| J | Mobile pass, all 7 widths | PARTIAL — 390px + spot-widths verified live (2026-08-19 motion rebuild, Playwright); full 375/430/768/1024/1280 matrix still not run against the current build |
+| K | Accessibility pass | PARTIAL — mobile nav focus trap + backdrop done; keyboard tab order + focus-visible spot-checked; `?motion=reduced` matrix verified live across all 4 newly-choreographed sections; `forced-colors`/`prefers-contrast` and full screen-reader walkthrough still not done |
+| L | Performance pass | NOT STARTED — no LCP/CLS/long-task measurement taken; bundle size last checked after Brand Hero & Bug Fix (452.03 KB / 141.96 KB gzip), not re-measured after the motion rebuild (no new npm deps added) |
+| M | Motion audit | NOT STARTED as a dedicated pass — animations reviewed incidentally while building/live-verifying each commit |
+| N | Browser QA, 7 widths × 2 themes | PARTIAL — the 2026-08-19 motion rebuild live-verified every commit via Playwright (full-page scroll, reduced-motion matrix, Cobalt spot-check, sticky/pin behavior) but at spot-widths, not the full 7×2 matrix |
 
 ---
 
-## Current homepage architecture (as built, post Brand Hero & Bug Fix pass)
+## Current homepage architecture (as built, post 2026-08-19 Motion Rebuild)
 
 ```
-OPEN         deep    open-logo.tsx           hero — MaCo's brand alone: mark + animated "MaCo" wordmark
-SURFACE      paper   working-surface.tsx     promise + proof row + CTAs + Bridge video, edge-to-edge 16/9
-EVIDENCE     deep    evidence-expand.tsx     ScrollTrigger pin+scrub expand, Bridge in motion
-WORK         paper   work-sequence.tsx       4 projects — ScrollTrigger pin+scrub rail (desktop) / list (mobile)
-CAPABILITY   paper   capability-selector.tsx services selector — 2 tabs (Business Software, Digital Solutions)
-PRODUCTS     deep    product-story.tsx       Bridge + Driver's Diary
-IDENTITY     paper   identity.tsx            "One name. Many scripts." (rebuilt, not carried over)
+OPEN         deep    open-logo.tsx           hero — MaCo's brand alone: mark + animated "MaCo" wordmark, over a cursor-reactive WebGL `<BlindsField>` (2026-08-19)
+SURFACE      paper   working-surface.tsx     promise + proof row + CTAs + Bridge video, scrubbed lay-flat + sweep
+EVIDENCE     deep    evidence-expand.tsx     ScrollTrigger pin+scrub expand, aspect-locked to real 16:9 footage
+WORK         deep    work-sequence.tsx       4 projects — ScrollTrigger pin+scrub rail (desktop) / list (mobile)
+CAPABILITY   paper   capability-selector.tsx sticky scroll-driven service selection (2 tabs)
+PRODUCTS     paper   product-story.tsx       sticky overlap stack — each card a deep tile on paper
+IDENTITY     deep    identity.tsx            "One name. Many scripts." — fully scroll-driven dial
 METHOD       paper   method-line.tsx         A → B → C → D — ScrollTrigger pinned vertical step-through
-RECORD       paper   record.tsx              clients + company, deliberate rest — unchanged this pass
-CLOSE        deep    close-intake.tsx        final statement (LineReveal), links to /contact
+RECORD       paper   record.tsx              clients + company — one RakingSurface pass + settle
+CLOSE        deep    close-intake.tsx        center-out rule draw, biggest scrub reveal, final sweep
 ```
+
+Plus `ground-handoff.tsx` (`<GroundHandoff>`, renders nothing), mounted once
+after CLOSE — drives cross-section recession continuity across 4 hand-picked
+boundary pairs.
 
 Ten distinct behaviours (per the plan's own rule against repeating a device),
 one deliberate rest point at RECORD. `open-surface.tsx` and `claim.tsx` are
 deleted — their content merged into `open-logo.tsx` (brand only) and
 `working-surface.tsx` (everything else the old hero + CLAIM carried).
-No WebGL surface anywhere on the homepage as of 2026-08-18 (reverted — see
-the Brand Hero & Bug Fix section above and `CONTEXT.md §11`). Scroll mechanics
-for EVIDENCE/WORK/METHOD/PRODUCTS write straight to CSS custom
-properties/inline style from `ScrollTrigger.onUpdate`, never through React
-state — full detail in `CONTEXT.md §10`.
+WebGL was reverted homepage-wide 2026-08-18 (see the Brand Hero & Bug Fix
+section and `CONTEXT.md §11`), then reintroduced 2026-08-19 scoped to OPEN
+only (`<BlindsField>`, on `three` rather than a new dependency, live-verified
+via Playwright — see `AI_HANDOFF.md` "Hero WebGL Blinds Field" pass and
+`CONTEXT.md §4`). No other section has a WebGL surface. Ground sequence retuned
+2026-08-19 per the plan's Phase 4 rhythm (WORK paper→deep, PRODUCTS deep→paper,
+IDENTITY paper→deep) — deep/paper/deep/deep/paper/paper/deep/paper/paper/deep,
+no run longer than two. Scroll mechanics for every section write straight to
+registered `@property` CSS custom properties / inline style from
+`ScrollTrigger.onUpdate` via `useScrollScene()`, never through React state —
+full detail in `CONTEXT.md §10`.
 
 ---
 
 ## Next exact implementation order
 
-1. **Full live-browser verification of the Brand Hero & Bug Fix pass** — the two bugs and the hero rebuild were fixed by reading the code, not by re-testing live (no browser-automation tool was available this session; only `tsc`/`eslint`/`build`/SSR-curl were run). Specifically needed: confirm WORK's four panels now traverse the *entire* pinned scroll distance with no leftover blank stretch and the last panel isn't clipped; confirm METHOD appears in its own place, after WORK fully releases, with no gap after IDENTITY; confirm the hero mark + "MaCo" render legibly in both themes at the intended size; confirm `.maco-shine`'s animation is genuinely subtle, not distracting; then the rest of the original checklist — scrub EVIDENCE/PRODUCTS by wheel/trackpad/keyboard/touch, `prefers-reduced-motion` disables Lenis/scramble-free/magnet, skip link under Lenis, `forced-colors`/`prefers-contrast`, touch device (390px) has no horizontal overflow, route-change leak check (navigate away/back 5×, confirm no orphaned `ScrollTrigger`/Lenis instances).
-2. Re-run the full 375 / 430 / 768 / 1024 / 1280 width pass against the current font/logo/hero system (only 390 and 1440 were checked in the 2026-08-18 real-media pass, predating both the immersive rebuild and this pass).
-3. Cobalt theme pass at the same widths — Obsidian was the primary theme checked this round. Particularly check `.maco-shine`'s brightening-toward-white gradient reads correctly on Cobalt's blue ink.
-4. Real performance measurement: LCP, CLS, long-task profiling during scroll, on a throttled profile — budgets are defined in the plan §13 but never measured. The eager chunk is currently 141.96KB gzip (down from 148.61KB, still above the pre-rebuild 106KB).
-5. Dedicated motion audit (Phase M) — go section by section and ask whether each animation earns its place, per the plan's own gate. Now smaller scope than before: WebGL/cursor/scramble are already gone; what's left to audit is `.maco-shine`'s idle-loop timing and the WORK/METHOD scroll mechanics' feel now that the 4× bug is fixed.
-6. Full keyboard + screen-reader walkthrough beyond the nav spot-check already done.
-7. The paused `/21st-ai` sketch for `/work/$slug` remains blocked on the `21st` MCP server's OAuth authorization, unavailable in a non-interactive session — run `/mcp` interactively to unblock, if that work resumes.
+1. Full 7-width matrix (375, 390, 430, 768, 1024, 1280, 1440) × 2 themes,
+   against the current 2026-08-19 motion-rebuild build — the rebuild
+   live-verified spot-widths via Playwright but not the complete matrix.
+2. `forced-colors: active` / `prefers-contrast: more` — not checked in any
+   pass to date.
+3. Real touch-device input — every touch check so far has been DevTools
+   emulation, not a physical device.
+4. Real performance measurement: LCP, CLS, long-task profiling during scroll,
+   on a throttled profile — budgets are defined in the plan §13 but never
+   measured. Bundle size hasn't been re-measured since the Brand Hero & Bug
+   Fix pass (141.96KB gzip eager chunk); the motion rebuild added no new npm
+   dependencies, only components/CSS, so it should be close but is unverified.
+5. Dedicated motion audit (Phase M) — go section by section and ask whether
+   each animation earns its place, per the plan's own gate. Reviewed
+   incidentally while live-verifying each of the 9 motion-rebuild commits,
+   never as a standalone pass.
+6. Full keyboard + screen-reader walkthrough beyond the nav spot-check and the
+   `?motion=reduced` element-by-element check already done.
+7. Optional, deferred twice now (not re-requested): Phase 3.2's OPEN-mark→
+   header shared-element handoff; Phase 3.3's single document-level `--sweep`
+   driven off Lenis `documentElement` progress instead of per-`RakingSurface`
+   independent triggers.
+8. The paused `/21st-ai` sketch for `/work/$slug` remains blocked on the `21st` MCP server's OAuth authorization, unavailable in a non-interactive session — run `/mcp` interactively to unblock, if that work resumes.
+9. Deferred at the user's explicit choice, 2026-08-19 ("hero first"): the sitewide half of that day's hero-upgrade request — regroup homepage sections into continuous light/dark blocks instead of the current deliberate `paper`/`deep` alternation, curved "sheet" section overlays between them, and extend `ScrollThread` from WORK→CAPABILITY→PRODUCTS to the full page. A real re-theme of the homepage's visual rhythm; needs its own brainstorm/design pass before implementation, not a follow-on tweak to this one.
 
 ---
 
@@ -148,10 +205,11 @@ state — full detail in `CONTEXT.md §10`.
 - [x] Zero console errors observed across the checks run this pass
 - [x] `prefers-reduced-motion: reduce` gives a designed static composition, not a broken/frozen frame
 - [x] No Obsidian flash on a persisted Cobalt preference (pre-hydration script + `suppressHydrationWarning`)
-- [ ] Full 7-width × 2-theme QA matrix — partial (390 + 1440, mostly Obsidian, and only against the pre-immersive-rebuild build)
+- [ ] Full 7-width × 2-theme QA matrix — partial (390 + 1440 + spot-widths sampled live 2026-08-19, not the full 14-pass matrix)
 - [ ] Performance budgets (LCP < 2.0s, CLS < 0.05, no long task > 200ms) — not measured
 - [ ] Dedicated motion audit — not run as a standalone pass
 - [x] Lenis + GSAP ScrollTrigger scroll substrate live, double-smoothing bug deleted, `tsc`/`eslint`/`build` clean (Immersive Motion Rebuild, 2026-08-18)
 - [x] WORK's 4× pin/transform mismatch and METHOD's mount-order race fixed at the root cause, not tuned (Brand Hero & Bug Fix pass, 2026-08-18)
 - [x] Hero rebuilt as MaCo's brand alone (mark + animated wordmark); WebGL field/cursor ring/text scramble reverted after user verdict they read as a generic template (Brand Hero & Bug Fix pass, 2026-08-18)
-- [ ] The full pass (bug fixes + new hero + services content) verified in a real browser — not done this session, no browser-automation tool was available (see "Next exact implementation order" above)
+- [x] All 10 homepage sections carry real scroll-linked motion; reduced-motion resolver split-brain, dev-HMR Lenis leak, pin z-order, and a second mount-order race (IDENTITY vs. WORK) fixed at the root cause; CAPABILITY/PRODUCTS given sticky scroll-driven mechanics; cross-section recession continuity added (Motion Rebuild pass, 2026-08-19)
+- [x] The full pass live-verified in a real browser via Playwright — every one of 9 commits, not just `tsc`/`build` (Motion Rebuild pass, 2026-08-19)

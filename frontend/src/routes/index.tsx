@@ -2,14 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { OpenLogo } from "@/components/home/open-logo";
 import { WorkingSurface } from "@/components/home/working-surface";
 import { EvidenceExpand } from "@/components/home/evidence-expand";
-import { WorkSequence } from "@/components/home/work-sequence";
-import { CapabilitySelector } from "@/components/home/capability-selector";
+import { PortfolioGrid } from "@/components/home/portfolio-grid";
+import { ServicesConvergence } from "@/components/home/services-convergence";
 import { ProductStory } from "@/components/home/product-story";
 import { Identity } from "@/components/home/identity";
 import { MethodLine } from "@/components/home/method-line";
 import { Record } from "@/components/home/record";
 import { CloseIntake } from "@/components/home/close-intake";
 import { GroundHandoff } from "@/components/home/ground-handoff";
+import { ScrollThread } from "@/components/home/scroll-thread";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -43,14 +44,21 @@ function Home() {
       {/* EVIDENCE — cinematic scroll-expand, Bridge in motion */}
       <EvidenceExpand />
 
-      {/* WORK — four real client projects */}
-      <WorkSequence />
+      {/* WORK, CAPABILITY, PRODUCTS share one drawn thread (ScrollThread) —
+          the wrapper carries no transform of its own, so it's safe as an
+          ancestor of CAPABILITY's pin. */}
+      <div className="relative">
+        {/* WORK — four real client projects, as a two-column grid */}
+        <PortfolioGrid />
 
-      {/* CAPABILITY — services selector */}
-      <CapabilitySelector />
+        {/* CAPABILITY — services convergence */}
+        <ServicesConvergence />
 
-      {/* PRODUCTS — Bridge + Driver's Diary */}
-      <ProductStory />
+        {/* PRODUCTS — Bridge + Driver's Diary */}
+        <ProductStory />
+
+        <ScrollThread />
+      </div>
 
       {/* IDENTITY — one name, many scripts */}
       <Identity />

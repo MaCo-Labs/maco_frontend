@@ -43,7 +43,7 @@ export function Record() {
                     href={client.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="stagger-item group flex aspect-square flex-col items-center justify-center gap-3 rounded-xl border border-line p-5 transition-colors hover:border-text"
+                    className="stagger-item group flex aspect-square flex-col items-center justify-center gap-3 rounded-xl border border-line p-5 transition-all hover:-translate-y-1 hover:border-text"
                     style={{ background: "var(--surface-2)", "--i": i } as CSSProperties}
                   >
                     {client.brand ? (

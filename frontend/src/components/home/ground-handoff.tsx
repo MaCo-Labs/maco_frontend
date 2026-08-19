@@ -12,19 +12,21 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  * `position: fixed` element repositions that fixed element relative to
  * the TRANSFORMED ancestor instead of the viewport — applying this to a
  * section that HOSTS a pin would silently break it. Four of the ten
- * homepage sections host one (directly or, for WORK, on a
- * `gsap.matchMedia`-gated desktop-only descendant): EVIDENCE, WORK,
- * IDENTITY, METHOD. Only the OUTGOING section is ever transformed here
- * (the incoming section is just the ScrollTrigger's reference point, never
- * itself touched) — so a pair is safe whenever the OUTGOING side is
- * pin-free, regardless of what the incoming side hosts. PRODUCTS' own
- * cards are `position: sticky`, not `fixed` — ancestor transforms don't
- * reposition sticky elements the way they do fixed ones, so PRODUCTS is
- * safe as an outgoing section too.
+ * homepage sections host one (directly or, on a `gsap.matchMedia`-gated
+ * desktop-only descendant): EVIDENCE, CAPABILITY, IDENTITY, METHOD. WORK
+ * (the portfolio grid) is pin-free, which is what makes it safe as the
+ * OUTGOING side of the "Selected client work" -> "Capabilities" pair below
+ * even though CAPABILITY itself now hosts one. Only the OUTGOING section
+ * is ever transformed here (the incoming section is just the
+ * ScrollTrigger's reference point, never itself touched) — so a pair is
+ * safe whenever the OUTGOING side is pin-free, regardless of what the
+ * incoming side hosts. PRODUCTS' own cards are `position: sticky`, not
+ * `fixed` — ancestor transforms don't reposition sticky elements the way
+ * they do fixed ones, so PRODUCTS is safe as an outgoing section too.
  */
 const PAIRS: readonly [outgoing: string, incoming: string][] = [
   ["What MaCo does", "Bridge in motion"],
-  ["Capabilities", "Products"],
+  ["Selected client work", "Capabilities"],
   ["Products", "MaCo, in one name and many scripts"],
   ["Clients and company", "Start a project"],
 ];

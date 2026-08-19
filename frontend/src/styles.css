@@ -95,6 +95,61 @@
   initial-value: 0;
 }
 
+/* CAPABILITY's convergence — backs components/home/services-convergence.tsx.
+   --c and --d are set on the pinned stage and inherited by both cards, so
+   ONE setProperty per value per frame drives every per-card transform
+   through calc(), the same compositor-side trick WorkPanel uses for its
+   opacity. --reach is a length rather than a number so the travel is
+   expressed in the same unit the measurement produces. */
+@property --c {
+  syntax: "<number>";
+  inherits: true;
+  /* 1, not 0: the converged, locked, tilted stack IS the section's rest
+     state — what reduced motion, SSR, a blocked GSAP import and the
+     lg:hidden mobile variant all want to paint. Only the DELTA from each
+     card's own grid cell is ever animated, never its position, so this
+     needs no seeded start state in JSX. */
+  initial-value: 1;
+}
+@property --d {
+  syntax: "<number>";
+  inherits: true;
+  /* 1 = every capability row, evidence chip and CTA fully present. These
+     are real content, so their at-rest state must be legible — the same
+     contract Stagger's `var(--sr, 1)` fallback makes. */
+  initial-value: 1;
+}
+@property --reach {
+  syntax: "<length>";
+  inherits: true;
+  /* 0px is the only value for which every combination of the others is
+     safe: even if --c were somehow 0 before JS measures, the cards stay
+     on-stage instead of flying off-viewport and growing the document's
+     scrollable width (nothing in this stylesheet sets overflow-x on html
+     or body). A fail-safe, not an arbitrary zero. */
+  initial-value: 0px;
+}
+
+/* The connective thread — components/home/scroll-thread.tsx. */
+@property --thread {
+  syntax: "<number>";
+  inherits: true;
+  /* 1 = fully drawn. A progress thread with no progress source is a
+     static hairline connecting three sections — this site's own
+     rule-drawing vocabulary, not a frozen frame of an animation. */
+  initial-value: 1;
+}
+@property --thread-len {
+  syntax: "<number>";
+  inherits: false;
+  /* 0 does more work here than "full length" would: a stroke-dasharray
+     whose values are all zero is spec'd as NO dash pattern, so with no JS
+     there is not merely one very long dash, there is no dashing at all —
+     and therefore no sub-pixel dash artifact at any preserveAspectRatio
+     stretch factor. */
+  initial-value: 0;
+}
+
 :root,
 [data-theme="obsidian"] {
   /* Paper ground — white canvas, black ink. Also named with a -paper
@@ -564,7 +619,13 @@ html.lenis:has(:target) {
    one did); --ad is its absolute value via max(x,-x), not abs() (see the
    note on rule-draw-x's sibling usage in work-sequence.tsx for why). */
 @utility identity-script {
-  --d: calc(var(--i, 0) - var(--t, 0));
+  /* The pointer term nudges the dial up to +-0.15 of a step around
+     wherever scroll parked it — (--px - 0.5) ranges -0.5..0.5, so *0.3
+     caps the nudge at +-0.15. --px is unset (0.5 fallback, zero nudge)
+     under a coarse pointer or before the pointer has moved, so this is a
+     pure addition to the scroll-driven position, never a replacement
+     for it. */
+  --d: calc(var(--i, 0) - var(--t, 0) - ((var(--px, 0.5) - 0.5) * 0.3));
   --ad: max(var(--d), calc(-1 * var(--d)));
   transform: translate3d(calc(var(--d) * 100%), -50%, 0)
     scale(calc(1 - min(0.55, var(--ad) * 0.28)));
@@ -582,6 +643,53 @@ html.lenis:has(:target) {
   );
   opacity: var(--stagger-local);
   transform: translate3d(0, calc((1 - var(--stagger-local)) * var(--stagger-rise, 1.5rem)), 0);
+}
+
+/* Convergence cards — services-convergence.tsx. --side is +1 (enters from
+   the right) or -1 (from the left), set inline per card. --rest-tilt is
+   the small rotation each card keeps once locked, so the stack reads as
+   placed rather than merely aligned. Travel is a calc() off the inherited
+   --c/--reach, so the whole section costs two setProperty calls per
+   scroll frame regardless of card count. */
+@utility converge-card {
+  transform: translate3d(calc((1 - var(--c, 1)) * var(--side, 1) * var(--reach, 0px)), 0, 0)
+    rotate(calc(var(--rest-tilt, 0deg) + (1 - var(--c, 1)) * var(--side, 1) * 7deg));
+  opacity: clamp(0.25, var(--c, 1), 1);
+}
+
+/* Content inside a locked convergence card. Banded off --d exactly like
+   stagger-item is banded off --sr, so the two vocabularies compose
+   instead of competing. */
+@utility converge-detail {
+  --detail-local: clamp(0, calc((var(--d, 1) - var(--i, 0) * 0.06) / 0.4), 1);
+  opacity: var(--detail-local);
+  transform: translate3d(0, calc((1 - var(--detail-local)) * 0.75rem), 0);
+}
+
+/* Portfolio grid column drift — portfolio-grid.tsx. --col-shift is the
+   column's own travel, set inline; --p is the grid's own scroll progress
+   (already registered above, inherited). Left and right columns get
+   different shifts so the two columns pass each other at slightly
+   different speeds. Written as a multiply, not a lerp, so below `lg`
+   (where the trigger never exists and --p sits at its initial-value 0)
+   this composes to a zero translate with no separate mobile branch. */
+@utility grid-column-drift {
+  transform: translate3d(0, calc(var(--p, 0) * var(--col-shift, 0rem)), 0);
+}
+
+/* Supersedes .maco-thread for the WORK -> CAPABILITY -> PRODUCTS run
+   (scroll-thread.tsx). The dormant .maco-thread keyframe below is left
+   alone — theme-atmosphere.tsx still references it; removing it belongs
+   to a separate dead-code purge, not this feature. */
+@utility maco-scroll-thread {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.3;
+  stroke-dasharray: var(--thread-len, 0);
+  stroke-dashoffset: calc(var(--thread-len, 0) * (1 - var(--thread, 1)));
 }
 
 /* Light pass — the one signature device, reused at every scale.

@@ -1,7 +1,7 @@
 # MaCo Website — CONTEXT
 
 Complete project context for developers and AI agents.
-Last updated: 2026-08-19 (Brand Hero & Bug Fix pass, edits made 2026-08-18 — see §10/§11 for what changed)
+Last updated: 2026-08-19 (Motion Rebuild pass — all 10 homepage sections now carry real scroll-linked motion, live-verified via Playwright; see §10/§12 and `AI_HANDOFF.md` "Homepage Motion Rebuild" for what changed)
 
 ---
 
@@ -132,10 +132,24 @@ tuned — see §10/§11 below and `AI_HANDOFF.md` for the full list. **Lenis and
 GSAP stay** (smooth scroll, pins/scrubs, `SplitText` reveals) — those were kept
 and deepened, not reverted; only the four devices above are gone.
 
+### Reintroduced, third attempt — WebGL on OPEN (Hero Blinds Field pass, 2026-08-19, same day as the motion rebuild)
+
+A cursor-reactive WebGL gradient background (`<BlindsField>`,
+`components/home/blinds-field.tsx`) was added to OPEN, plus magnetic/glow
+micro-physics on the mark and a radial `clip-path` theme-switch transition.
+Requested with a spec that named React Bits' GradientBlinds via a new `ogl`
+dependency; reimplemented instead on `three` (already installed for
+`MaCoGlobe`) per the "Not installed" rule directly below, and scoped to
+OPEN only, unlike the two prior WebGL passes which touched multiple
+sections. Unlike those two, this one was live-verified via Playwright
+(canvas mounts/sizes, mouse-reactive, reduced-motion fallback, zero console
+errors) before being called done — see `AI_HANDOFF.md` for the full
+verification list and rule 8 of its "Do NOT change" section.
+
 ### Not installed (by design)
 
-- Official React Bits npm bundle (concepts are reimplemented on `motion`/GSAP, never copied)
-- `three`/R3F for the homepage — remains `/about`-only (`MaCoGlobe`); the homepage no longer has any WebGL surface to justify it
+- Official React Bits npm bundle (concepts are reimplemented on `motion`/GSAP or, for WebGL, `three` — never copied verbatim, and never on a second WebGL runtime like `ogl`)
+- R3F (`@react-three/fiber`) — both homepage (`<BlindsField>`) and `/about` (`MaCoGlobe`) use raw `three` directly, not R3F
 
 ---
 
@@ -272,25 +286,55 @@ Type scale (`display-hero` / `display-lg` / `display-md` / `lead` / `body` / `la
 
 ---
 
-## 10. The homepage (post Brand Hero & Bug Fix architecture)
+## 10. The homepage (post Motion Rebuild architecture, 2026-08-19)
 
-Ten movements, composed in `routes/index.tsx`, built under `components/home/`.
-OPEN (brand alone) and SURFACE (the old hero's promise/proof/video merged with
-the old standalone CLAIM) replace the previous two-section OPEN+CLAIM opening
-— see the "2026-08-18 — Brand Hero & Bug Fix pass" note below for why.
+Ten movements, composed in `routes/index.tsx`, built under `components/home/`,
+plus `<GroundHandoff>` (renders nothing — see below). OPEN (brand alone) and
+SURFACE (the old hero's promise/proof/video merged with the old standalone
+CLAIM) replace the previous two-section OPEN+CLAIM opening. Ground sequence
+retuned this pass per the plan's Phase 4 rhythm: deep · paper · deep deep ·
+paper paper · deep · paper paper · deep — no run longer than two.
 
 | Movement | Ground | File | Behaviour |
 |---|---|---|---|
 | OPEN | deep | `open-logo.tsx` | Hero — MaCo's brand alone: the real mark (`<Mark src="/maco-mark-hero.png">`) + the animated "MaCo" wordmark (`<SplitReveal>`, GSAP `SplitText` char-rise then a continuous 115° `.maco-shine` rake), existing eyebrows, a scroll cue fading on a `ScrollTrigger` scrub |
-| SURFACE | paper | `working-surface.tsx` | The promise, the 4-cell proof row (real array lengths), two magnetic CTAs, and Bridge in motion — the video now fills a single 16/9 panel edge-to-edge (previously a 16/9 window inset inside a taller/squarer panel) |
-| EVIDENCE | deep | `evidence-expand.tsx` | Scroll-linked clip-path expand — GSAP `ScrollTrigger` `pin`+`scrub` writing straight to inline style/CSS vars in `onUpdate` (no React state per scroll frame), Bridge in motion or `SurfaceMedia` fallback |
-| WORK | paper | `work-sequence.tsx` | 4 real projects — pinned horizontal rail (`lg+`, no reduced motion) via `WorkRail`/`WorkPanel`, GSAP `ScrollTrigger` `pin`+`scrub`; plain vertical list (`WorkList`) otherwise. Pointer-parallaxed logo watermark. Progress written to a `--p` custom property, panel crossfade computed in CSS `calc()` |
-| CAPABILITY | paper | `capability-selector.tsx` | Services selector — now 2 tabs (Business Software, Digital Solutions), see §6 |
-| PRODUCTS | deep | `product-story.tsx` | Bridge + Driver's Diary, each `SurfaceMedia` card with its own `ScrollTrigger`-scrubbed light-pass sweep (`ProductMedia`), `--sweep` written directly in `onUpdate` |
-| IDENTITY | paper | `identity.tsx` | "One name. Many scripts." — cross-fading word across 13 scripts, correct `lang` code per script, `sr-only` full listing |
+| SURFACE | paper | `working-surface.tsx` | The promise, the 4-cell proof row (staggered via one shared `ScrollTrigger`), two magnetic CTAs, and Bridge in motion — the video panel "lays flat" on scroll (composed with the existing pointer tilt), its light-pass sweep moved off the pointer onto its own scroll transit |
+| EVIDENCE | deep | `evidence-expand.tsx` | Scroll-linked clip-path expand, now aspect-locked to the video's real 16:9 (previously grew to the viewport's aspect and let `objectFit:cover` crop real footage) — GSAP `ScrollTrigger` `pin`+`scrub` writing straight to inline style/CSS vars in `onUpdate`, pin extended 120%→160% |
+| WORK | deep | `work-sequence.tsx` | 4 real projects — pinned horizontal rail (`lg+`) via `WorkRail`/`WorkPanel`, mounted unconditionally with the pin itself gated by `gsap.matchMedia()` (fixed a mount-order race that previously let `useMediaQuery`'s SSR-safe flip desync the pin from its own transform, see §10's bug note below); plain vertical list (`WorkList`) on mobile, migrated onto the same `ScrubReveal`/`Stagger` vocabulary as the rest of the page. Progress on a registered, inherited `--p` custom property |
+| CAPABILITY | paper | `capability-selector.tsx` | Services selector, 2 tabs (Business Software, Digital Solutions) — sticky on desktop, a section-spanning `ScrollTrigger` maps scroll progress to the active tab; click/arrow-key sets a flag that wins outright until the section scrolls fully past |
+| PRODUCTS | paper | `product-story.tsx` | Bridge + Driver's Diary as a sticky overlap stack — each card `position:sticky` with ascending z-index so the second visibly covers the first, each card itself a `data-ground="deep"` tile with its own `ScrollTrigger`-scrubbed light-pass sweep (`ProductMedia`); aspect ratio derived from real asset dimensions (Driver's Diary is a real 900×1203 portrait) |
+| IDENTITY | deep | `identity.tsx` | "One name. Many scripts." — fully scroll-driven dial via a registered, inherited `--t` custom property (replaces a prior `setInterval` reel); no animated `filter:blur()`, no `motion/react` involvement, correct `lang` code per script, `sr-only` full listing |
 | METHOD | paper | `method-line.tsx` | A → B → C → D — pinned vertical step-through (GSAP `ScrollTrigger`, `~150vh` pin, `scrub`), a *different* pin mechanic from WORK's horizontal rail deliberately; progress written straight to refs, not React state; reduced-motion keeps the static 4-step grid |
-| RECORD | paper | `record.tsx` | Clients + company — the plan's one deliberate rest point (no special scroll behaviour, no new motion) |
-| CLOSE | deep | `close-intake.tsx` | Final statement via `<LineReveal>`; links to `/contact` rather than duplicating a form |
+| RECORD | paper | `record.tsx` | Clients + company — the plan's one deliberate rest point: a single `RakingSurface` lights the logo grid once, tiles settle via a low-amplitude `Stagger` (not motionless, but restrained) |
+| CLOSE | deep | `close-intake.tsx` | A rule draws outward from centre (the one place on the page a rule draws from the middle), the page's biggest scrub reveal, a final light pass; links to `/contact` rather than duplicating a form |
+
+### Cross-section continuity — `GroundHandoff` (2026-08-19)
+
+`components/home/ground-handoff.tsx`, mounted once after CLOSE in
+`routes/index.tsx`, renders nothing itself. On 4 hand-picked boundary pairs,
+the outgoing section scales down/dims/lifts as the incoming section arrives,
+so the boundary reads as one section being overtaken rather than a hard cut.
+Only pairs whose outgoing side is pin-free are eligible — a `transform` on the
+ancestor of a `position:fixed` pinned element repositions it relative to that
+ancestor instead of the viewport, so EVIDENCE/WORK/IDENTITY/METHOD (each hosts
+a pin) can never be an outgoing side; PRODUCTS is safe outgoing since its
+cards are `position:sticky`, not `fixed`.
+
+### Two mount-order races found and fixed (2026-08-18 and 2026-08-19)
+
+Same bug class, found twice: `useMediaQuery("(min-width: 1024px)")` is
+SSR-safe by initialising to `false` and only flipping to `true` in an effect
+after mount, so whichever section conditionally renders its pinned variant off
+that hook mounts its pin-spacer one render late. Any `ScrollTrigger` created
+in the meantime (by a sibling section) measures against a document missing
+that spacer and fires at the wrong offset. First hit METHOD-vs-WORK
+(2026-08-18, fixed via `scheduleRefresh()` coalescing all trigger creation
+into one next-frame `ScrollTrigger.refresh()`). Recurred as IDENTITY-vs-WORK
+(2026-08-19) because WORK itself was still switching `<WorkRail>`/`<WorkList>`
+via the same `useMediaQuery` pattern — fixed by mounting both unconditionally
+(split by CSS breakpoint) and gating the pin itself with `gsap.matchMedia()`,
+which reverts automatically on a breakpoint crossing, closing the bug class
+rather than patching another instance of it.
 
 ### Two real bugs found and fixed in this pass (Brand Hero & Bug Fix, 2026-08-18)
 
@@ -327,25 +371,47 @@ Three-tier media slot, because the repo has zero product photography or video: t
 
 The plan's single signature device — one raking-light gradient (`::after`, `mix-blend-mode: overlay`) reused at multiple scales rather than a different decorative device per section. Position is read from a `--sweep` CSS custom property (0–1). Drivers: SURFACE's pointer field, EVIDENCE's scroll progress, per-PRODUCTS-card scroll progress. The hero wordmark's `.maco-shine` (below) is the same 115° angle applied at word-scale via `background-clip:text`, not a `.light-pass` instance itself.
 
-### Scroll substrate & interaction layer (current, 2026-08-18)
+### Scroll substrate & interaction layer (current, 2026-08-19)
 
 Ownership is split, not layered — see §12 for the full rule. **Lenis** owns raw
 scroll position (`src/lib/scroll-runtime.ts`, a lazy module-level singleton
 booted by `<ScrollRuntimeProvider>` in `__root.tsx`, `null` on the server or
-under reduced motion); **GSAP `ScrollTrigger`** owns every pin/scrub (EVIDENCE,
-WORK, METHOD, PRODUCTS' sweep, `<LineReveal>`, `<SplitReveal>`); `motion` v13
-keeps only discrete UI state (tabs, IDENTITY's reel, hover springs) and no
-longer touches scroll.
+under reduced motion, now with `destroy()` correctly clearing the singleton so
+a dev HMR remount doesn't hand every scene a dead Lenis instance); **GSAP
+`ScrollTrigger`** owns every pin/scrub, on every one of the 10 homepage
+sections now (previously 6 had none); `motion` v13 keeps only discrete UI
+state (hover springs) and no longer touches scroll.
 
-What's here now, after the 2026-08-18 revert (§11 has the full "why"):
+`hooks/use-scroll-scene.ts` (~30 lines) is the standard entry point for any
+scroll-linked component — wraps `gsap.context()` for auto-cleanup, added in
+place of the heavier `@gsap/react` dependency (which would pull
+`gsap`/`ScrollTrigger`/`SplitText` into the eager bundle instead of staying
+lazy chunks).
 
-- `<Magnetic>` (`components/motion/magnetic.tsx`) — reuses the previously
-  unused `rubberband()`/`SPRING_MOMENTUM` from `lib/motion.ts`; wraps CTAs
-  and interactive buttons site-wide, homepage and inner pages alike.
+Motion vocabulary (`components/motion/`), all writing to registered
+`@property` CSS custom properties whose initial-value IS the at-rest
+composition — so SSR/no-JS/reduced-motion/a blocked GSAP import all render
+correctly with no second branch per component:
+
+- `<ScrubReveal>` — reversible scroll-linked reveal (`--r`), the general
+  replacement for `MotionSection`'s one-shot fade.
+- `<RuleDraw>` — a rule drawing in from an edge (or, on CLOSE, outward from
+  centre) as its own `ScrollTrigger` progresses.
+- `<Stagger>` — scrubbed reveal across N children with per-child bands,
+  one shared `ScrollTrigger` rather than N independent ones.
+- `<RakingSurface>` — unifies `.light-pass`'s `--sweep` driver onto one
+  source (each surface's own transit through the viewport) instead of the
+  three independent sources (pointer/pin-progress/element-transit) that
+  predated this pass.
+- `<Magnetic>` (`components/motion/magnetic.tsx`) — reuses
+  `rubberband()`/`SPRING_MOMENTUM` from `lib/motion.ts`; wraps CTAs and
+  interactive buttons site-wide, homepage and inner pages alike.
 - `<LineReveal>` (`components/motion/line-reveal.tsx`) — GSAP `SplitText`
-  (`type:"lines", mask:"lines", autoSplit:true`) + a one-shot `ScrollTrigger`,
-  for section headlines site-wide. SSR ships the plain headline; `SplitText`
-  mutates after paint.
+  (`type:"lines", mask:"lines", autoSplit:true`) + a one-shot or `scrub`-mode
+  `ScrollTrigger`, for section headlines site-wide. SSR ships the plain
+  headline; `SplitText` mutates after paint. Its tween is now built inside
+  `SplitText`'s `onSplit` callback (was outside it — a re-split from a
+  font-load or resize could previously strand a heading mid-reveal).
 - `<SplitReveal>` (`components/motion/split-reveal.tsx`) — the OPEN hero's
   "MaCo" wordmark only: GSAP `SplitText` (`type:"chars", mask:"chars"`)
   stagger-rises the characters on mount, then reverts to plain text and adds
@@ -353,6 +419,11 @@ What's here now, after the 2026-08-18 revert (§11 has the full "why"):
   `background-position`, at 115°, the same angle `.light-pass` uses
   everywhere else, so the hero ties into MaCo's one signature device instead
   of importing an unrelated shimmer.
+
+`MotionSection` has exactly one remaining call site on the homepage
+(`method-line.tsx`'s reduced-motion static branch, inert by construction) —
+every other homepage call site migrated to the vocabulary above during the
+2026-08-19 motion rebuild.
 
 **Removed the same day, after live-browser verification** (were never
 verified in a browser before this pass — see `AI_HANDOFF.md`): the raw-WebGL2
@@ -395,9 +466,9 @@ Official catalogue: [https://reactbits.dev/](https://reactbits.dev/)
 
 ### Rejected
 
-- `ogl`-dependent components (`CircularGallery`, `FlyingPosters`) — removed from `package.json` entirely (zero imports).
+- `ogl`-dependent components (`CircularGallery`, `FlyingPosters`, and — 2026-08-19 — GradientBlinds) — never installed; where the technique is worth keeping, it's reimplemented on `three` (already a dependency) instead, e.g. `<BlindsField>` below.
 - DotGrid, Particles, Aurora, LetterGlitch, FaultyTerminal, all background-effect components — this is precisely the decorative language the reset removed.
-- `three`/R3F for the homepage — no longer applicable at all; the homepage has no WebGL surface after the 2026-08-18 revert (below). Stays `/about`-only (`MaCoGlobe`).
+- R3F (`@react-three/fiber`) — both `three` consumers (`<BlindsField>` on the homepage, `MaCoGlobe` on `/about`) use raw `three` directly.
 
 ### Adopted, then reverted the same day — WebGL field, cursor ring, text scramble (2026-08-18)
 
@@ -414,6 +485,18 @@ justify keeping a device; it still has to earn its place on the actual page.
 Lenis and GSAP `ScrollTrigger`/`SplitText` were kept — those were judged to
 still be working (the pins/scrubs/reveals), unlike the four decorative
 devices layered on top of them.
+
+### Adopted, third attempt — `<BlindsField>` on OPEN (2026-08-19, same day as the motion rebuild)
+
+Unlike the 2026-08-18 revert above, this one shipped as `three`-backed (not
+"0KB dependency cost" hand-written WebGL2 — the prior devices' zero-cost
+framing didn't save them anyway, see the verdict above), scoped to one
+section only, and live-verified via Playwright before being called done.
+See the dedicated note under §4 and `AI_HANDOFF.md` for the full record.
+The rule this section's verdict established — a device has to earn its
+place on the actual page, dependency cost or not — still applies; this is
+a different device on a different section, not a re-litigation of the
+2026-08-18 verdict.
 
 ### Adopted after reconsideration — GSAP + Lenis (Immersive Motion Rebuild, 2026-08-18)
 
@@ -437,9 +520,14 @@ unaffected). The homepage's *eager* entry chunk is **141.96 KB gzip**
 (452.03 KB raw) — down from the immersive-rebuild peak of 148.61 KB now that
 `FieldCanvas`/`DistortSurface`/`CursorRing`/`Scramble` and their shader
 strings are gone, but still above the pre-rebuild 106 KB, since Lenis/GSAP
-glue code and the new hero/working-surface components remain. `MaCoGlobe`
-(1.78 MB / 500.70 KB gzip) stays `/about`-only and does not load on the
-homepage.
+glue code and the new hero/working-surface components remain.
+
+**2026-08-19 addendum:** `<BlindsField>` (§4, §10) adds no new eager weight
+either — the homepage entry chunk is still 141.93 KB gzip — but `three`
+itself (561 KB / 141 KB gzip, previously `/about`-only via `MaCoGlobe`) is
+now also fetched, as its own dynamic chunk, on the homepage's first paint
+of OPEN. Not free; accepted as the cost of reusing an installed WebGL
+runtime instead of adding `ogl` as a second one.
 
 ### `components/ui/` (46 shadcn files)
 
@@ -460,13 +548,21 @@ House style (from `apple-design` guidance, adopted as the project's motion rules
 | 2D pointer tracking (`<Magnetic>`, `usePointerField` tilt/watermarks) | Two **independent** critically-damped springs, one per axis — never a single spring on a 2D distance (apple-design rule) |
 
 **Ownership is a hard split, not a layering**: Lenis owns scroll position, GSAP
-`ScrollTrigger` owns everything scroll-linked, `motion` v13 owns only discrete
-UI state (tabs, IDENTITY's reel, hover springs) and never touches scroll. See
-§10's "Scroll substrate & interaction layer" for the concrete file list —
-there is no WebGL layer in the current build (removed 2026-08-18, see §11).
-Rules unchanged: animate `transform`/`opacity` only; no animated
-`filter: blur()`; every animation starts from its live presentation value,
-never a jump to target; nothing purely decorative.
+`ScrollTrigger` (via `useScrollScene()`, §10) owns everything scroll-linked —
+now all 10 homepage sections, not the 4 that had pins before 2026-08-19 —
+`motion` v13 owns only discrete UI state (hover springs; IDENTITY's reel was
+moved OFF `motion`/`setInterval` onto a scroll-driven `--t` custom property
+this pass) and never touches scroll. See §10's "Scroll substrate & interaction
+layer" for the concrete file list — there is no WebGL layer in the current
+build (removed 2026-08-18, see §11). One motion-preference resolver now
+governs both `getScrollRuntime()` and `useReducedMotion()`
+(`resolveMotionPreference()` in `lib/motion.ts`, layering a
+`?motion=full|reduced` override, persisted to `localStorage`, over
+`prefers-reduced-motion`) — previously these ran two independent `matchMedia`
+calls that could disagree. Rules unchanged: animate `transform`/`opacity`
+only; no animated `filter: blur()` (a real violation — IDENTITY's old reel had
+one — found and removed this pass); every animation starts from its live
+presentation value, never a jump to target; nothing purely decorative.
 
 ---
 
