@@ -3,7 +3,7 @@ import { site } from "@/content/maco";
 import { Mark } from "@/components/mark";
 import { SplitReveal } from "@/components/motion/split-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
-import { BlindsField } from "./blinds-field";
+import { PrismField } from "./prism-field";
 import { getScrollRuntime } from "@/lib/scroll-runtime";
 import { usePointerField } from "@/hooks/use-pointer-field";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
@@ -19,19 +19,20 @@ const GLOW_COLOR: Record<"obsidian" | "cobalt", string> = {
  * (`public/maco-mark-hero.png`, downsampled from `public/white-logo.png`
  * — see `scripts/shrink-hero-mark.cjs`, 637KB -> 61.6KB, alpha channel
  * only, nothing else is ever read) plus the animated "MaCo" wordmark
- * (`<SplitReveal>`), over a cursor-reactive WebGL gradient-blinds field
- * (`<BlindsField>`, `three`-based — see that file's doc comment for why
- * it isn't React Bits' `ogl`-based GradientBlinds verbatim).
+ * (`<SplitReveal>`), over a cursor-reactive WebGL "Prism" field
+ * (`<PrismField>`, `three`-based — see that file's doc comment for why
+ * it's a translation of React Bits' `ogl`-based Prism, not the verbatim
+ * source).
  *
- * Layering, bottom to top: `<BlindsField>` (z-0) -> a fixed vignette for
+ * Layering, bottom to top: `<PrismField>` (z-0) -> a fixed vignette for
  * text legibility (z-[1]) -> the three original content rows (z-10,
  * `pointer-events-none` so pointer input reaches the field underneath;
  * the mark's `<Magnetic>` wrapper opts back into `pointer-events-auto`
  * for its own hover).
  *
  * `usePointerField` now lives on the `<section>` itself (previously just
- * the centre row) so one field covers the whole viewport: `<BlindsField>`
- * reads it for the shader's mouse uniform, the ambient-glow halo below
+ * the centre row) so one field covers the whole viewport: `<PrismField>`
+ * reads it for the shader's tilt uniform, the ambient-glow halo below
  * reads it via the same inherited `--px`/`--py`, and the mark's existing
  * parallax transform is unchanged (still reads `var(--px)`, just now
  * driven by the full section instead of the narrower centre band).
@@ -112,7 +113,7 @@ export function OpenLogo() {
       aria-label="Introduction"
     >
       <div className="absolute inset-0 z-0">
-        <BlindsField />
+        <PrismField />
       </div>
       <div
         aria-hidden="true"

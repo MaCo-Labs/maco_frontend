@@ -121,6 +121,17 @@
      frame instead of each defaulting independently. */
   initial-value: 0;
 }
+@property --header-solid {
+  syntax: "<number>";
+  inherits: false;
+  /* 1 = today's always-solid header. Reduced motion, SSR and a blocked
+     GSAP import must never risk an unreadable transparent header with no
+     scroll-driven correction available — solid is the only safe default,
+     same reasoning `--c` below uses for CAPABILITY's locked stack. The
+     scroll scrub (chrome.tsx) runs 1 -> 0 as OPEN enters, then back to 1
+     as it scrolls past. */
+  initial-value: 1;
+}
 
 /* CAPABILITY's convergence — backs components/home/services-convergence.tsx.
    --c and --d are set on the pinned stage and inherited by both cards, so
@@ -401,6 +412,30 @@ html.lenis:has(:target) {
 
 @utility rule-b {
   border-bottom: 1px solid var(--line);
+}
+
+/* Header scroll-reactivity — chrome.tsx's <Header>. --header-solid (0..1,
+   @property above) is written by ONE ScrollTrigger scrubbing OPEN's own
+   transit, so the header reads transparent over the WebGL Prism field at
+   the very top of the page and solidifies as OPEN scrolls past — same
+   "one custom property, one scrollTrigger, CSS does the interpolation"
+   device every other scroll-linked piece of this site already uses,
+   never a React re-render per scroll frame. border-bottom is scrubbed
+   too (via the same --header-solid) since a visible rule-b under a fully
+   transparent header would read as a stray line floating over the hero. */
+@utility header-scroll {
+  background: color-mix(
+    in oklab,
+    var(--bg) calc(var(--header-solid, 1) * 88%),
+    transparent
+  );
+  border-bottom-color: color-mix(
+    in oklab,
+    var(--line) calc(var(--header-solid, 1) * 100%),
+    transparent
+  );
+  backdrop-filter: blur(calc(var(--header-solid, 1) * 12px));
+  -webkit-backdrop-filter: blur(calc(var(--header-solid, 1) * 12px));
 }
 
 /* Label — replaces every monospace technical tag on the site. Runs the

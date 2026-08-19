@@ -7,6 +7,7 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
 import { Magnetic } from "@/components/motion/magnetic";
 import { getLiveScrollRuntime } from "@/lib/scroll-runtime";
+import { useScrollScene } from "@/hooks/use-scroll-scene";
 
 function ThemeSwitch() {
   const { theme, setTheme } = useTheme();
@@ -212,15 +213,44 @@ function MobilePillNav() {
   );
 }
 
+/**
+ * Transparent-over-the-hero, solid-once-scrolled-past header. Driven by
+ * one ScrollTrigger scrubbing OPEN's own transit (never React state tied
+ * to a scroll listener) — see `--header-solid`'s registration and the
+ * `.header-scroll` utility in styles.css for the property/CSS half of
+ * this device. Selects OPEN the same way `ground-handoff.tsx` selects
+ * every cross-section pair: an exact `aria-label` match, not a ref prop
+ * threaded down from the route — `<Header>` mounts in `__root.tsx`, above
+ * and independent of the homepage's own section tree.
+ */
 export function Header() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const headerRef = useRef<HTMLElement>(null);
+
+  useScrollScene((rt) => {
+    const header = headerRef.current;
+    const hero = document.querySelector<HTMLElement>('[aria-label="Introduction"]');
+    if (!header || !hero) return;
+    rt.gsap.fromTo(
+      header,
+      { "--header-solid": 0 },
+      {
+        "--header-solid": 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: hero,
+          start: "top top",
+          end: "bottom top",
+          scrub: 0.3,
+          invalidateOnRefresh: true,
+        },
+      },
+    );
+  }, []);
 
   return (
     <>
-      <header
-        className="sticky top-0 z-40 rule-b backdrop-blur-md"
-        style={{ background: "color-mix(in oklab, var(--bg) 88%, transparent)" }}
-      >
+      <header ref={headerRef} className="header-scroll sticky top-0 z-40 rule-b">
         <div className="shell flex h-20 items-center justify-between gap-6 md:h-24">
           <Link to="/" className="transition-opacity hover:opacity-70" aria-label="MaCo — home">
             <Wordmark />
