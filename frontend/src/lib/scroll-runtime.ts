@@ -90,8 +90,12 @@ export function getScrollRuntime(): Promise<ScrollRuntime | null> {
         syncTouch: false,
         // Stock defaults (lerp 0.1, wheelMultiplier 1) read as barely
         // smoothed — a touch heavier and a touch less eager per wheel
-        // notch is what gives Lenis an actual felt character.
-        lerp: 0.085,
+        // notch is what gives Lenis an actual felt character. Lowered
+        // again (0.085 -> 0.07) for the sitewide restructure: with the
+        // ground regroup's larger chapters, a noticeably heavier glide
+        // reads as more premium/continuous than the previous value,
+        // which felt closer to instant catch-up than real momentum.
+        lerp: 0.07,
         wheelMultiplier: 0.9,
       });
 
