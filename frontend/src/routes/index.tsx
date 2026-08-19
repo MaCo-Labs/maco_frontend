@@ -9,6 +9,7 @@ import { Identity } from "@/components/home/identity";
 import { MethodLine } from "@/components/home/method-line";
 import { Record } from "@/components/home/record";
 import { CloseIntake } from "@/components/home/close-intake";
+import { GroundHandoff } from "@/components/home/ground-handoff";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -62,6 +63,9 @@ function Home() {
 
       {/* CLOSE — intake + final statement */}
       <CloseIntake />
+
+      {/* Cross-section continuity — renders nothing itself */}
+      <GroundHandoff />
     </>
   );
 }
