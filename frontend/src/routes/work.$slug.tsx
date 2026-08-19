@@ -1,5 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getProject, getService, projects, type Project } from "@/content/maco";
+import { LineReveal } from "@/components/motion/line-reveal";
+import { Magnetic } from "@/components/motion/magnetic";
+import { MotionSection } from "@/components/motion-section";
 
 export const Route = createFileRoute("/work/$slug")({
   loader: ({ params }) => {
@@ -48,7 +51,9 @@ function WorkDetail() {
               ← All work
             </Link>
           </div>
-          <h1 className="display-xl mt-8 -ml-[0.04em]">{p.title}</h1>
+          <LineReveal as="h1" className="display-hero mt-8 -ml-[0.04em]">
+            {p.title}
+          </LineReveal>
           <dl
             className="mt-12 grid gap-px sm:grid-cols-2 lg:grid-cols-4"
             style={{ background: "var(--line)" }}
@@ -76,14 +81,14 @@ function WorkDetail() {
       </section>
 
       {blocks.map(([title, body], i) => (
-        <section key={title} className="rule-b">
+        <MotionSection key={title} as="section" delay={i * 70} className="rule-b">
           <div className="shell grid gap-6 py-12 lg:grid-cols-12 lg:gap-10 lg:py-16">
             <p className="label lg:col-span-3">
               {String(i + 1).padStart(2, "0")} — {title}
             </p>
             <p className="max-w-2xl text-lg leading-snug text-muted lg:col-span-8">{body}</p>
           </div>
-        </section>
+        </MotionSection>
       ))}
 
       <section className="rule-b">
@@ -101,14 +106,16 @@ function WorkDetail() {
                 );
               })}
             </div>
-            <a
-              href={p.external_url}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="btn-solid mt-8"
-            >
-              Visit {p.title} ↗
-            </a>
+            <Magnetic className="mt-8 inline-block">
+              <a
+                href={p.external_url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="btn-solid"
+              >
+                Visit {p.title} ↗
+              </a>
+            </Magnetic>
           </div>
         </div>
       </section>

@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { site, services } from "@/content/maco";
+import { LineReveal } from "@/components/motion/line-reveal";
+import { Magnetic } from "@/components/motion/magnetic";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -32,25 +34,56 @@ function ContactPage() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form).entries());
     const api = import.meta.env["VITE_API_BASE_URL"];
 
     setState("sending");
     setError("");
 
-    // Posts to the Django endpoint (POST /api/v1/contact/) when configured.
     if (!api) {
-      setState("sent");
+      setState("error");
+      setError("Contact isn't wired up in this environment — email us directly instead.");
       return;
     }
+
+    const fd = new FormData(form);
+    const str = (key: string) => (fd.get(key) as string | null)?.trim() ?? "";
+
+    // service_interest is a SlugRelatedField server-side — omit it entirely
+    // when nothing was chosen rather than sending "", which the API would
+    // reject as an unknown slug.
+    const serviceInterest = str("service_interest");
+    const payload: Record<string, unknown> = {
+      name: str("name"),
+      email: str("email"),
+      company: str("company"),
+      phone: str("phone"),
+      budget_range: str("budget_range"),
+      message: str("message"),
+      // FormData reports a checked checkbox as "on", not a boolean — the API
+      // needs a real boolean.
+      consent: fd.get("consent") === "on",
+      source: "website",
+      // Honeypot — real visitors never see or fill this field.
+      website: str("website"),
+    };
+    if (serviceInterest) payload["service_interest"] = serviceInterest;
 
     try {
       const res = await fetch(`${api}/api/v1/contact/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, source: "website" }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        const detail =
+          body && typeof body === "object"
+            ? Object.values(body as Record<string, unknown>)
+                .flat()
+                .join(" ")
+            : "";
+        throw new Error(detail || `Request failed (${res.status})`);
+      }
       form.reset();
       setState("sent");
     } catch (err) {
@@ -68,7 +101,9 @@ function ContactPage() {
         <div className="shell grid gap-8 py-16 lg:grid-cols-12 lg:py-24">
           <p className="label lg:col-span-3">Index / Contact</p>
           <div className="lg:col-span-9">
-            <h1 className="display-lg max-w-3xl">Tell us what has to work.</h1>
+            <LineReveal as="h1" className="display-lg max-w-3xl">
+              Tell us what has to work.
+            </LineReveal>
             <p className="mt-8 max-w-xl text-muted">
               The useful brief is three lines: what breaks today, what it must do instead, and when.
               Everything else we can figure out together.
@@ -96,7 +131,11 @@ function ContactPage() {
             </p>
           </div>
 
-          <form onSubmit={onSubmit} className="lg:col-span-7 lg:col-start-6" noValidate={false}>
+          <form
+            onSubmit={onSubmit}
+            className="relative lg:col-span-7 lg:col-start-6"
+            noValidate={false}
+          >
             <div className="grid gap-8 sm:grid-cols-2">
               <label className="block">
                 <span className="label">Name *</span>
@@ -193,26 +232,41 @@ function ContactPage() {
               </span>
             </label>
 
-            <div className="mt-10 flex flex-wrap items-center gap-5">
-              <button
-                type="submit"
-                disabled={state === "sending"}
-                className="btn-solid disabled:opacity-50"
-              >
-                {state === "sending" ? "Sending…" : "Send enquiry"}
-                <span aria-hidden="true">→</span>
-              </button>
+            {/* Honeypot — hidden from sighted users and screen readers; bots that
+                autofill every field trip it, and the API marks that submission spam. */}
+            <div
+              aria-hidden="true"
+              className="absolute left-[-9999px] top-auto h-0 w-0 overflow-hidden"
+            >
+              <label>
+                Leave this field empty
+                <input type="text" name="website" tabIndex={-1} autoComplete="off" />
+              </label>
+            </div>
 
-              <p
-                aria-live="polite"
-                className="font-mono text-[0.6875rem] uppercase tracking-[0.18em]"
-              >
+            <div className="mt-10 flex flex-wrap items-center gap-5">
+              <Magnetic>
+                <button
+                  type="submit"
+                  disabled={state === "sending"}
+                  className="btn-solid disabled:opacity-50"
+                >
+                  {state === "sending" ? "Sending…" : "Send enquiry"}
+                  <span aria-hidden="true">→</span>
+                </button>
+              </Magnetic>
+
+              <p aria-live="polite" className="label">
                 {state === "sent" && (
                   <span style={{ color: "var(--accent)" }}>
                     Received — we'll reply to your email.
                   </span>
                 )}
-                {state === "error" && <span className="text-muted">Couldn't send: {error}</span>}
+                {state === "error" && (
+                  <span className="text-muted">
+                    Couldn't send: {error}. Email {site.contact_email} instead.
+                  </span>
+                )}
               </p>
             </div>
           </form>

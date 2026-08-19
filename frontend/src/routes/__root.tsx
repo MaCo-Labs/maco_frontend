@@ -12,12 +12,14 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { ThemeProvider } from "@/components/theme";
 import { Header, Footer } from "@/components/chrome";
+import { ScrollRuntimeProvider } from "@/components/scroll-runtime-provider";
+import { skipToMain } from "@/lib/skip-to-main";
 
 function NotFoundComponent() {
   return (
     <div className="shell flex min-h-[70vh] flex-col justify-center py-24">
       <p className="label">Error / 404</p>
-      <h1 className="display-xl mt-6">404</h1>
+      <h1 className="display-hero mt-6">404</h1>
       <p className="mt-6 max-w-md text-muted">
         This route is not part of the MaCo system. It may have moved, or it never existed.
       </p>
@@ -86,7 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..150,400..700&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@500..800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Unbounded:wght@200..900&family=Jost:ital,wght@0,100..900;1,100..900&family=Agdasima:wght@400;700&family=Michroma&family=Tenor+Sans&family=Krona+One&display=swap",
       },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
     ],
@@ -99,9 +101,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="obsidian">
+    <html lang="en" data-theme="obsidian" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* Runs before paint — reads the stored theme so Cobalt users never
+            see an Obsidian flash before hydration corrects it. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("maco-theme");if(t==="obsidian"||t==="cobalt"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`,
+          }}
+        />
         {/* Runs before hydration — kills hijacking Workbox SWs from other localhost:5173 apps */}
         <script
           dangerouslySetInnerHTML={{
@@ -128,8 +137,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
+        <ScrollRuntimeProvider />
         <a
           href="#main"
+          onClick={skipToMain}
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-surface focus:px-4 focus:py-2"
         >
           Skip to content

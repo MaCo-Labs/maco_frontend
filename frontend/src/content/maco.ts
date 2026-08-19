@@ -6,6 +6,29 @@
 
 export type Status = "published" | "draft";
 
+/**
+ * A real brand asset (client/product logo). Optional everywhere it's
+ * used — a missing `brand` field means the caller falls back to text,
+ * never to a placeholder image. `width`/`height` are the file's actual
+ * pixel dimensions so layout never shifts (CLS) while the image loads.
+ */
+export interface Brand {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+}
+
+/** A real product media asset — video pair + poster, or a still image.
+ *  width/height are the poster's actual intrinsic pixels (CLS-free layout). */
+export interface Media {
+  poster: string;
+  alt: string;
+  width: number;
+  height: number;
+  video?: { webm: string; mp4: string };
+}
+
 export interface Service {
   slug: string;
   index: string;
@@ -34,6 +57,8 @@ export interface Project {
   services: string[];
   seo_title: string;
   seo_description: string;
+  /** The client's real logo, e.g. for the WORK rail. Optional — falls back to text. */
+  brand?: Brand;
 }
 
 export interface Product {
@@ -48,6 +73,10 @@ export interface Product {
   solution: string;
   target_users: string;
   features: { title: string; description: string }[];
+  /** The product's real logo. Optional — falls back to text. */
+  brand?: Brand;
+  /** Real product footage/screenshot. Optional — falls back to the designed SurfaceMedia panel. */
+  media?: Media;
   technologies: string[];
   live_url: string;
   seo_title: string;
@@ -72,142 +101,84 @@ export const site = {
   ],
 } as const;
 
+/**
+ * Two services, 2026-08-18 — collapsed from the previous five at the
+ * owner's direction (the real shape of what MaCo sells). Each
+ * `capabilities` entry reuses the retired services' real descriptions
+ * wherever one substantively overlaps (Task Management <- the old App
+ * Development's role/reporting copy; Custom Software <- Software
+ * Support's codebase/dependency copy; Websites <- Web Development's
+ * site-architecture/front-end copy; Social Media Management <- Social
+ * Media Managing's copy, verbatim) rather than inventing new claims.
+ * CRM, E-commerce and Branding & Design have no exact retired
+ * predecessor; their descriptions are written in the same restrained,
+ * procedural voice as the rest of the copy — no metrics, no superlatives,
+ * nothing that isn't a plain statement of what the capability covers.
+ */
 export const services: Service[] = [
   {
-    slug: "web-development",
+    slug: "business-software",
     index: "01",
-    title: "Web Development",
+    title: "Business Software",
     short_description:
-      "Marketing sites and web platforms built to be edited, measured and maintained after launch.",
+      "Task management, CRM and custom software for the operational systems a team runs on.",
     description:
-      "We design and engineer websites end to end: information architecture, front-end implementation, content administration and deployment. Every build ships with an admin a non-technical team can actually use.",
+      "We build and maintain the software a business actually runs its operations on: task and workflow tools, customer relationship systems, and custom software for anything neither of those covers. Authentication, roles, records, scheduling and reporting — the unglamorous parts that decide whether a system survives contact with a real workforce — plus the ongoing maintenance to keep it patched, documented and moving forward in small, reviewable increments rather than a risky annual rewrite.",
     capabilities: [
       {
-        title: "Site architecture",
+        title: "Task Management",
         description:
-          "Routing, content modelling and SEO structure decided before a pixel is drawn.",
+          "Installable, offline-tolerant tools covering scheduling, records and reporting, with administrators, operators and field users treated as distinct products.",
       },
       {
-        title: "Front-end engineering",
-        description: "React and modern CSS, built for performance budgets rather than demo reels.",
+        title: "CRM",
+        description:
+          "Customer and pipeline records built around how a specific team actually works, not a generic template.",
       },
       {
-        title: "Content administration",
-        description: "Django-based admin so copy, media and case studies change without a deploy.",
+        title: "Custom Software",
+        description:
+          "Bespoke systems for what falls outside task management and CRM — audited, documented and kept on a deliberate release cadence once live.",
+      },
+    ],
+    evidence: ["drivers-diary", "bridge", "headgreen", "soorath-autos"],
+    seo_title: "Business Software — MaCo",
+    seo_description:
+      "MaCo builds business software: task management, CRM and custom operational systems, plus the ongoing support to keep them running.",
+  },
+  {
+    slug: "digital-solutions",
+    index: "02",
+    title: "Digital Solutions",
+    short_description: "Websites, e-commerce, branding and design, and social media management.",
+    description:
+      "We design and engineer the systems a business shows the outside world: marketing sites and e-commerce platforms built to be edited, measured and maintained after launch; brand and design work; and the social channel management that keeps the same voice consistent across the site, the product and the feed.",
+    capabilities: [
+      {
+        title: "Websites",
+        description:
+          "Routing, content modelling and SEO structure decided before a pixel is drawn, shipped with a Django-based admin a non-technical team can actually use.",
+      },
+      {
+        title: "E-commerce",
+        description:
+          "Storefronts and checkout built on the same content-administration foundation as every other MaCo site.",
+      },
+      {
+        title: "Branding and Design",
+        description:
+          "Visual identity and design systems derived for the brand, not pulled from a stock template.",
+      },
+      {
+        title: "Social Media Management",
+        description:
+          "Content planning tied to launches and campaign moments, on-brand asset production, and plain reach and engagement reporting without vanity framing.",
       },
     ],
     evidence: ["ananta-nethralaya", "al-afzah", "soorath-autos", "headgreen"],
-    seo_title: "Web Development — MaCo",
+    seo_title: "Digital Solutions — MaCo",
     seo_description:
-      "MaCo builds websites and web platforms with content administration, performance budgets and long-term maintenance in mind.",
-  },
-  {
-    slug: "app-development",
-    index: "02",
-    title: "App Development",
-    short_description:
-      "Installable applications and operational platforms for teams that work away from a desk.",
-    description:
-      "We build progressive web applications and desktop-capable platforms covering authentication, roles, records, scheduling and reporting — the unglamorous parts that decide whether an app survives contact with a real workforce.",
-    capabilities: [
-      {
-        title: "PWA delivery",
-        description: "Installable, offline-tolerant applications on a single codebase.",
-      },
-      {
-        title: "Role and permission design",
-        description: "Administrators, operators and field users treated as distinct products.",
-      },
-      {
-        title: "Reporting layers",
-        description: "Exports and dashboards derived from the same records the team already keeps.",
-      },
-    ],
-    evidence: ["drivers-diary", "bridge"],
-    seo_title: "App Development — MaCo",
-    seo_description:
-      "Progressive web apps and operational platforms from MaCo: roles, records, scheduling and reporting for real workforces.",
-  },
-  {
-    slug: "technical-support",
-    index: "03",
-    title: "Technical Support",
-    short_description:
-      "Hands-on support for infrastructure, hosting, domains, mail and the day-to-day IT surface.",
-    description:
-      "Ongoing technical support covering hosting and deployment environments, DNS and mail configuration, backups, monitoring and incident response for the systems we build or inherit.",
-    capabilities: [
-      {
-        title: "Infrastructure & hosting",
-        description: "Environments, domains, certificates and deployment pipelines.",
-      },
-      {
-        title: "Monitoring & backups",
-        description: "Alerting and recovery paths agreed before they are needed.",
-      },
-      {
-        title: "Incident response",
-        description: "A named route to a human when something is down.",
-      },
-    ],
-    evidence: ["headgreen", "soorath-autos"],
-    seo_title: "Technical Support — MaCo",
-    seo_description:
-      "MaCo provides technical support for hosting, DNS, mail, backups, monitoring and incident response.",
-  },
-  {
-    slug: "software-support",
-    index: "04",
-    title: "Software Support",
-    short_description:
-      "Maintenance, fixes and continuous improvement for software already in production.",
-    description:
-      "Software rarely fails on launch day; it degrades. We take ownership of existing codebases — ours or somebody else's — and keep them patched, documented and moving forward in small, reviewable increments.",
-    capabilities: [
-      {
-        title: "Codebase adoption",
-        description: "Audit, document and stabilise inherited software.",
-      },
-      {
-        title: "Release cadence",
-        description: "Small scheduled releases instead of risky annual rewrites.",
-      },
-      {
-        title: "Dependency hygiene",
-        description: "Runtime, library and security updates tracked deliberately.",
-      },
-    ],
-    evidence: ["drivers-diary", "bridge"],
-    seo_title: "Software Support — MaCo",
-    seo_description:
-      "Maintenance and continuous improvement for production software: audits, patching, documentation and scheduled releases.",
-  },
-  {
-    slug: "social-media-managing",
-    index: "05",
-    title: "Social Media Managing",
-    short_description:
-      "Channel management for companies whose product story needs to stay consistent in public.",
-    description:
-      "Planning, production and scheduling of social content that matches the same brand system as the website — one voice across the site, the product and the feed.",
-    capabilities: [
-      {
-        title: "Content planning",
-        description: "Calendars tied to launches, hiring and campaign moments.",
-      },
-      {
-        title: "Asset production",
-        description: "Templates derived from the brand system, not from a stock pack.",
-      },
-      {
-        title: "Reporting",
-        description: "Plain reach and engagement reporting without vanity framing.",
-      },
-    ],
-    evidence: ["soorath-autos", "headgreen"],
-    seo_title: "Social Media Managing — MaCo",
-    seo_description:
-      "MaCo manages social channels with content planning, on-brand asset production and honest reporting.",
+      "MaCo delivers digital solutions: websites, e-commerce, branding and design, and social media management.",
   },
 ];
 
@@ -228,9 +199,10 @@ export const projects: Project[] = [
       "The clinic's services and contact details are presented in one authoritative, maintainable place.",
     external_url: "https://www.anantanethralaya.org/",
     technologies: ["Web", "CMS", "Responsive"],
-    services: ["web-development"],
+    services: ["digital-solutions"],
     seo_title: "Ananta Nethralaya — Client work by MaCo",
     seo_description: "MaCo built the website for Ananta Nethralaya, an eye clinic.",
+    brand: { src: "/media/brand/ananta.webp", alt: "Ananta Nethralaya", width: 640, height: 639 },
   },
   {
     slug: "al-afzah",
@@ -247,10 +219,16 @@ export const projects: Project[] = [
     results: "Group capability and project record are presented in a single corporate destination.",
     external_url: "https://www.al-afzahgroup.com/",
     technologies: ["Web", "CMS", "Multi-section IA"],
-    services: ["web-development"],
+    services: ["digital-solutions"],
     seo_title: "Al Afzah Group — Client work by MaCo",
     seo_description:
       "MaCo built the corporate website for Al Afzah Group WLL, a Qatar-based construction company.",
+    brand: {
+      src: "/media/brand/al-afzah.webp",
+      alt: "Al Afzah Group WLL",
+      width: 500,
+      height: 500,
+    },
   },
   {
     slug: "soorath-autos",
@@ -268,9 +246,10 @@ export const projects: Project[] = [
       "Showroom stock and enquiries live on a site the dealership updates without developer involvement.",
     external_url: "https://www.soorathautos.in/",
     technologies: ["Web", "Inventory content", "Enquiry capture"],
-    services: ["web-development", "social-media-managing"],
+    services: ["digital-solutions"],
     seo_title: "Soorath Autos — Client work by MaCo",
     seo_description: "MaCo built the website for Soorath Autos, a pre-owned car showroom.",
+    brand: { src: "/media/brand/soorath.webp", alt: "Soorath Autos", width: 500, height: 500 },
   },
   {
     slug: "headgreen",
@@ -288,10 +267,11 @@ export const projects: Project[] = [
       "HeadGreen's public site and its internal operations platform, Driver's Diary, are maintained by the same team.",
     external_url: "https://www.headgreen.in/",
     technologies: ["Web", "Corporate enquiry", "EV fleet"],
-    services: ["web-development", "technical-support"],
+    services: ["digital-solutions", "business-software"],
     seo_title: "HeadGreen — Client work by MaCo",
     seo_description:
       "MaCo built the website for HeadGreen, a corporate EV fleet cab service in Kochi, Kerala.",
+    brand: { src: "/media/brand/headgreen.webp", alt: "HeadGreen", width: 500, height: 826 },
   },
 ];
 
@@ -335,6 +315,12 @@ export const products: Product[] = [
     seo_title: "Driver's Diary — Fleet operations platform by MaCo",
     seo_description:
       "Driver's Diary is a PWA built by MaCo for HeadGreen: attendance, rides, payroll, documentation and reporting.",
+    media: {
+      poster: "/media/brand/drivers-diary.webp",
+      alt: "Driver's Diary — a fleet operations record, visualised as HeadGreen's mark on the map it operates across",
+      width: 900,
+      height: 1203,
+    },
   },
   {
     slug: "bridge",
@@ -375,23 +361,50 @@ export const products: Product[] = [
     seo_title: "Bridge — Project and task platform by MaCo",
     seo_description:
       "Bridge is MaCo's SaaS/PWA and desktop platform for project implementation, task assignment, administration and analysis.",
+    brand: { src: "/media/brand/bridge.webp", alt: "Bridge", width: 640, height: 640 },
+    media: {
+      poster: "/media/bridge/poster.jpg",
+      alt: "Bridge — dashboard, calendar and task board, recorded in daily use",
+      width: 1024,
+      height: 576,
+      video: { webm: "/media/bridge/capture.webm", mp4: "/media/bridge/capture.mp4" },
+    },
   },
 ];
 
-export const clients = [
+export interface Client {
+  name: string;
+  slug: string;
+  industry: string;
+  website: string;
+  work: string[];
+  /** The client's real logo. Optional — falls back to text. */
+  brand?: Brand;
+}
+
+export const clients: Client[] = [
   {
     name: "Ananta Nethralaya",
     slug: "ananta-nethralaya",
     industry: "Healthcare",
     website: "https://www.anantanethralaya.org/",
     work: ["ananta-nethralaya"],
+    brand: { src: "/media/brand/ananta.webp", alt: "Ananta Nethralaya", width: 640, height: 639 },
   },
   {
     name: "Al Afzah Group WLL",
-    slug: "al-afzah-group",
+    // Was "al-afzah-group" — didn't match the project slug "al-afzah"
+    // anywhere else in the content model. Fixed per the redesign audit.
+    slug: "al-afzah",
     industry: "Construction",
     website: "https://www.al-afzahgroup.com/",
     work: ["al-afzah"],
+    brand: {
+      src: "/media/brand/al-afzah.webp",
+      alt: "Al Afzah Group WLL",
+      width: 500,
+      height: 500,
+    },
   },
   {
     name: "Soorath Autos",
@@ -399,6 +412,7 @@ export const clients = [
     industry: "Automotive retail",
     website: "https://www.soorathautos.in/",
     work: ["soorath-autos"],
+    brand: { src: "/media/brand/soorath.webp", alt: "Soorath Autos", width: 500, height: 500 },
   },
   {
     name: "HeadGreen",
@@ -406,6 +420,7 @@ export const clients = [
     industry: "EV mobility",
     website: "https://www.headgreen.in/",
     work: ["headgreen"],
+    brand: { src: "/media/brand/headgreen.webp", alt: "HeadGreen", width: 500, height: 826 },
   },
 ];
 

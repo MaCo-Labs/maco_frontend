@@ -2,10 +2,14 @@
 @source "../src";
 
 /* ============================================================
-   MaCo design system — "The MaCo System"
-   Light-canvas theme system: both themes share a white foundation.
-   Obsidian = white canvas + black ink system.
-   Cobalt   = white canvas + MaCo blue ink system.
+   MaCo design system — "Material & Record"
+   Two grounds, one token set, both themes.
+
+     data-ground="paper"   editorial page  — the resting state
+     data-ground="deep"    the material    — weight, evidence, close
+
+   Obsidian = architectural monochrome. Cobalt = the same
+   composition with blue as the material, not a tint.
    No raw hex in components. Tokens only.
    ============================================================ */
 
@@ -22,7 +26,7 @@
 
   --font-display: var(--maco-font-display);
   --font-body: var(--maco-font-body);
-  --font-mono: var(--maco-font-technical);
+  --font-mono: var(--maco-font-label);
 
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
@@ -30,7 +34,11 @@
 
 :root,
 [data-theme="obsidian"] {
-  /* White canvas + black system */
+  /* Paper ground — white canvas, black ink. Also named with a -paper
+     suffix (mirroring the -inverted convention below) so
+     [data-ground="paper"] has a real source to reset to — see the
+     ground-remap block. Without this, a paper section nested inside a
+     deep one has no rule to switch it back. */
   --bg: oklch(0.992 0 0);
   --surface: oklch(0.975 0 0);
   --surface-2: oklch(0.945 0.004 250);
@@ -42,35 +50,41 @@
   --accent-ink: oklch(0.992 0 0);
   --focus: oklch(0.38 0 0);
 
-  /* Inverted signature surfaces — Obsidian */
-  --surface-inverted: oklch(0.11 0 0);
-  --surface-inverted-2: oklch(0.16 0 0);
+  --bg-paper: oklch(0.992 0 0);
+  --surface-paper: oklch(0.975 0 0);
+  --surface-2-paper: oklch(0.945 0.004 250);
+  --text-paper: oklch(0.145 0 0);
+  --muted-paper: oklch(0.48 0.008 250);
+  --line-paper: oklch(0.145 0 0 / 10%);
+  --line-strong-paper: oklch(0.145 0 0 / 88%);
+  --accent-paper: oklch(0.145 0 0);
+  --accent-ink-paper: oklch(0.992 0 0);
+
+  /* Deep ground — the material */
+  --surface-inverted: oklch(0.13 0 0);
+  --surface-inverted-2: oklch(0.18 0 0);
   --text-inverted: oklch(0.98 0 0);
   --muted-inverted: oklch(0.62 0.008 250);
   --line-inverted: oklch(0.98 0 0 / 14%);
+  --line-inverted-strong: oklch(0.98 0 0 / 40%);
   --accent-inverted: oklch(0.98 0 0);
-  --accent-inverted-ink: oklch(0.11 0 0);
+  --accent-inverted-ink: oklch(0.13 0 0);
 
-  /* Obsidian typography — architectural, monochrome, editorial */
-  --maco-font-display: "Bricolage Grotesque", "Syne", "Arial Narrow", sans-serif;
-  --font-display: var(--maco-font-display);
-  --font-display-alt: "Syne", "Bricolage Grotesque", sans-serif;
-  --maco-font-body: "Instrument Sans", system-ui, sans-serif;
-  --font-body: var(--maco-font-body);
-  --font-ui: "Instrument Sans", system-ui, sans-serif;
-  --maco-font-technical: "IBM Plex Sans", "JetBrains Mono", ui-monospace, sans-serif;
-  --font-technical: var(--maco-font-technical);
-  --font-accent: "Anybody", "Bricolage Grotesque", sans-serif;
+  /* Typography — Obsidian mode: bold architectural geometry.
+     Each theme runs its own type family, not a recolor of one. */
+  --maco-font-display: "Unbounded", "Arial Black", sans-serif;
+  --maco-font-body: "Jost", system-ui, sans-serif;
+  --maco-font-label: "Agdasima", system-ui, sans-serif;
   --font-script-fallback:
     "Noto Sans Malayalam", "Noto Sans Devanagari", "Noto Sans Tamil", "Noto Sans Telugu",
     "Noto Sans Kannada", "Noto Sans Bengali", "Noto Sans Gujarati", "Noto Sans Gurmukhi",
     "Noto Sans Oriya", "Noto Naskh Arabic", "Noto Sans Hebrew", "Noto Sans Armenian",
     "Noto Sans Georgian", "Noto Sans Thai", "Noto Sans JP", "Noto Sans KR", "Noto Sans SC",
-    "Noto Sans", "Bricolage Grotesque", sans-serif;
+    "Noto Sans", "Instrument Sans", sans-serif;
 }
 
 [data-theme="cobalt"] {
-  /* White canvas + MaCo blue system */
+  /* Paper ground — white canvas, MaCo blue ink */
   --bg: oklch(0.993 0.004 264);
   --surface: oklch(0.978 0.012 264);
   --surface-2: oklch(0.955 0.022 264);
@@ -82,121 +96,70 @@
   --accent-ink: oklch(0.993 0.004 264);
   --focus: oklch(0.52 0.14 250);
 
-  /* Inverted signature surfaces — Cobalt */
-  --surface-inverted: oklch(0.38 0.155 264);
-  --surface-inverted-2: oklch(0.44 0.145 264);
+  --bg-paper: oklch(0.993 0.004 264);
+  --surface-paper: oklch(0.978 0.012 264);
+  --surface-2-paper: oklch(0.955 0.022 264);
+  --text-paper: oklch(0.42 0.155 264);
+  --muted-paper: oklch(0.56 0.055 264);
+  --line-paper: oklch(0.42 0.155 264 / 12%);
+  --line-strong-paper: oklch(0.42 0.155 264 / 82%);
+  --accent-paper: oklch(0.46 0.165 264);
+  --accent-ink-paper: oklch(0.993 0.004 264);
+
+  /* Deep ground — blue as material, not a tint */
+  --surface-inverted: oklch(0.34 0.15 264);
+  --surface-inverted-2: oklch(0.4 0.145 264);
   --text-inverted: oklch(0.98 0.01 264);
   --muted-inverted: oklch(0.82 0.04 264);
   --line-inverted: oklch(0.98 0.01 264 / 18%);
+  --line-inverted-strong: oklch(0.98 0.01 264 / 45%);
   --accent-inverted: oklch(0.98 0.01 264);
-  --accent-inverted-ink: oklch(0.38 0.155 264);
+  --accent-inverted-ink: oklch(0.34 0.15 264);
 
-  /* Cobalt typography — kinetic, modern, expressive */
-  --maco-font-display: "Anybody", "Bricolage Grotesque", sans-serif;
-  --font-display: var(--maco-font-display);
-  --font-display-alt: "Bricolage Grotesque", "Anybody", sans-serif;
-  --maco-font-body: "Instrument Sans", system-ui, sans-serif;
-  --font-body: var(--maco-font-body);
-  --font-ui: "Instrument Sans", system-ui, sans-serif;
-  --maco-font-technical: "IBM Plex Sans", "JetBrains Mono", ui-monospace, sans-serif;
-  --font-technical: var(--maco-font-technical);
-  --font-accent: "Syne", "Anybody", sans-serif;
+  /* Typography — Cobalt mode: a different set entirely, not a recolor. */
+  --maco-font-display: "Michroma", "Arial Black", sans-serif;
+  --maco-font-body: "Tenor Sans", system-ui, sans-serif;
+  --maco-font-label: "Krona One", system-ui, sans-serif;
   --font-script-fallback:
     "Noto Sans Malayalam", "Noto Sans Devanagari", "Noto Sans Tamil", "Noto Sans Telugu",
     "Noto Sans Kannada", "Noto Sans Bengali", "Noto Sans Gujarati", "Noto Sans Gurmukhi",
     "Noto Sans Oriya", "Noto Naskh Arabic", "Noto Sans Hebrew", "Noto Sans Armenian",
     "Noto Sans Georgian", "Noto Sans Thai", "Noto Sans JP", "Noto Sans KR", "Noto Sans SC",
-    "Noto Sans", "Anybody", sans-serif;
+    "Noto Sans", "Tenor Sans", sans-serif;
 }
 
-/* Hero canvas — a single dark architectural stage; site light canvas unchanged */
-.hero-canvas {
-  --hero-bg: oklch(0.035 0 0);
-  --hero-bg-elevated: oklch(0.062 0 0);
-  --hero-text: oklch(0.985 0 0);
-  --hero-muted: oklch(0.58 0.005 250);
-  --hero-line: oklch(0.985 0 0 / 14%);
-  --hero-accent: oklch(0.985 0 0);
-  --hero-accent-ink: oklch(0.04 0 0);
-  --hero-glow: oklch(0.985 0 0);
-  --hero-glow-soft: oklch(0.74 0 0);
-  background-color: var(--hero-bg);
-  color: var(--hero-text);
+/* Ground remap — sections opt in with data-ground. Same token names,
+   so bg-bg / text-text / bg-accent etc. just work on either ground.
+   "paper" is an explicit reset, not an absence of rules — without it, a
+   paper section nested inside a deep one (or a deep section that is an
+   ancestor for unrelated layout reasons) would silently inherit deep
+   tokens, since custom properties cascade. */
+[data-ground="paper"] {
+  --bg: var(--bg-paper);
+  --surface: var(--surface-paper);
+  --surface-2: var(--surface-2-paper);
+  --text: var(--text-paper);
+  --muted: var(--muted-paper);
+  --line: var(--line-paper);
+  --line-strong: var(--line-strong-paper);
+  --accent: var(--accent-paper);
+  --accent-ink: var(--accent-ink-paper);
+  background: var(--bg);
+  color: var(--text);
 }
 
-[data-theme="cobalt"] .hero-canvas {
-  --hero-bg: oklch(0.24 0.135 264);
-  --hero-bg-elevated: oklch(0.3 0.14 264);
-  --hero-text: oklch(0.99 0.008 264);
-  --hero-muted: oklch(0.8 0.04 264);
-  --hero-line: oklch(0.99 0.008 264 / 18%);
-  --hero-accent: oklch(0.99 0.008 264);
-  --hero-accent-ink: oklch(0.24 0.135 264);
-  --hero-glow: oklch(0.94 0.05 264);
-  --hero-glow-soft: oklch(0.82 0.07 264);
-  background-color: var(--hero-bg);
-  color: var(--hero-text);
-}
-
-.hero-canvas .btn-solid {
-  background: var(--hero-accent);
-  color: var(--hero-accent-ink);
-}
-
-.hero-canvas .btn-line {
-  border-color: color-mix(in oklab, var(--hero-text) 35%, transparent);
-  color: var(--hero-text);
-}
-
-.hero-canvas .btn-line:hover {
-  background: color-mix(in oklab, var(--hero-text) 8%, transparent);
-  border-color: var(--hero-text);
-}
-
-/* Hero CTAs */
-.hero-canvas .hero-cta {
-  transition:
-    transform 0.45s var(--ease-emphasis),
-    background-color 0.35s var(--ease-standard),
-    border-color 0.35s var(--ease-standard),
-    opacity 0.3s;
-}
-
-.hero-canvas .hero-cta:hover {
-  transform: translate3d(0, -2px, 0);
-}
-
-.hero-canvas .hero-cta:hover .hero-cta-arrow {
-  transform: translate3d(0.25rem, 0, 0);
-}
-
-/* Hero scroll indicator */
-.hero-scroll-indicator {
-  opacity: 0.72;
-}
-
-.hero-scroll-line {
-  display: block;
-  width: 1px;
-  height: 2.5rem;
-  background: color-mix(in oklab, var(--hero-text) 35%, transparent);
-  transform-origin: top center;
-}
-
-.hero-scroll-line--active {
-  animation: hero-scroll-pulse 2.4s var(--ease-emphasis) infinite;
-}
-
-@keyframes hero-scroll-pulse {
-  0%,
-  100% {
-    transform: scaleY(0.55);
-    opacity: 0.35;
-  }
-  50% {
-    transform: scaleY(1);
-    opacity: 0.85;
-  }
+[data-ground="deep"] {
+  --bg: var(--surface-inverted);
+  --surface: var(--surface-inverted-2);
+  --surface-2: color-mix(in oklab, var(--surface-inverted) 88%, var(--text-inverted));
+  --text: var(--text-inverted);
+  --muted: var(--muted-inverted);
+  --line: var(--line-inverted);
+  --line-strong: var(--line-inverted-strong);
+  --accent: var(--accent-inverted);
+  --accent-ink: var(--accent-inverted-ink);
+  background: var(--bg);
+  color: var(--text);
 }
 
 @layer base {
@@ -206,7 +169,6 @@
 
   html {
     -webkit-text-size-adjust: 100%;
-    scroll-behavior: smooth;
   }
 
   body {
@@ -232,13 +194,39 @@
 
   h1,
   h2,
-  h3 {
+  h3,
+  .font-display {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 0.94;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 0.98;
     text-wrap: balance;
   }
+}
+
+/* Anchor-link smooth scroll only — never fights a pinned/sticky section.
+   Superseded once Lenis boots (adds .lenis to <html>): Lenis owns easing
+   for every scroll, native smooth-scroll would just fight it on top. */
+html:has(:target) {
+  scroll-behavior: smooth;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+html.lenis:has(:target) {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
 }
 
 /* ---------- structural utilities ---------- */
@@ -261,49 +249,58 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* Label — replaces every monospace technical tag on the site. Runs the
+   theme's label face (Agdasima / Krona One) instead of a terminal mono. */
 @utility label {
-  font-family: var(--font-mono);
+  font-family: var(--maco-font-label);
+  font-weight: 400;
   font-size: 0.6875rem;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
-@utility display-xl {
+/* ---------- type scale — editorial serif display, sans body ---------- */
+
+@utility display-hero {
   font-family: var(--font-display);
-  font-weight: 700;
-  line-height: 0.84;
-  letter-spacing: -0.045em;
-  font-size: clamp(3.5rem, 15vw, 13rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  font-size: clamp(2.5rem, 7.5vw, 6.75rem);
 }
 
 @utility display-lg {
   font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 0.9;
-  letter-spacing: -0.035em;
-  font-size: clamp(2.4rem, 6.5vw, 5rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.008em;
+  font-size: clamp(1.9rem, 4.6vw, 3.6rem);
 }
 
 @utility display-md {
   font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 0.95;
-  letter-spacing: -0.03em;
-  font-size: clamp(1.75rem, 3.4vw, 2.75rem);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.005em;
+  font-size: clamp(1.35rem, 2.6vw, 2rem);
 }
 
-/* grid paper texture, logo-derived */
+@utility lead {
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  font-size: clamp(1.125rem, 1.6vw, 1.5rem);
+  color: var(--muted);
+}
+
+/* grid paper texture — kept for /products routes only */
 @utility grid-field {
   background-image:
     linear-gradient(to right, var(--line) 1px, transparent 1px),
     linear-gradient(to bottom, var(--line) 1px, transparent 1px);
   background-size: 5.5rem 5.5rem;
-}
-
-@utility hair-x {
-  background-image: linear-gradient(to right, var(--line) 1px, transparent 1px);
-  background-size: 25% 100%;
 }
 
 /* underline that draws on hover */
@@ -329,7 +326,7 @@
   }
 }
 
-/* index-row: the repeating editorial list row used for work/services */
+/* index-row: the repeating editorial list row (work/services index pages) */
 @utility index-row {
   position: relative;
   display: block;
@@ -354,117 +351,6 @@
   }
 }
 
-/* Inverted section — local theme override for signature + footer */
-.section-inverted {
-  --bg: var(--surface-inverted);
-  --surface: var(--surface-inverted-2);
-  --surface-2: color-mix(in oklab, var(--surface-inverted) 88%, var(--text-inverted));
-  --text: var(--text-inverted);
-  --muted: var(--muted-inverted);
-  --line: var(--line-inverted);
-  --line-strong: color-mix(in oklab, var(--text-inverted) 72%, transparent);
-  --accent: var(--accent-inverted);
-  --accent-ink: var(--accent-inverted-ink);
-  background: var(--surface-inverted);
-  color: var(--text-inverted);
-}
-
-.section-inverted .btn-solid {
-  background: var(--accent-inverted);
-  color: var(--accent-inverted-ink);
-}
-
-.section-inverted .btn-line {
-  border-color: var(--line-inverted);
-  color: var(--text-inverted);
-}
-
-.section-inverted .btn-line:hover {
-  background: color-mix(in oklab, var(--text-inverted) 8%, transparent);
-  border-color: var(--text-inverted);
-}
-
-/* Vercel-inspired triangle glow behind MaCo mark */
-.maco-mark-glow {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  place-items: center;
-}
-
-.maco-mark-glow::before {
-  content: "";
-  position: absolute;
-  width: min(100%, 18rem);
-  aspect-ratio: 1;
-  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-  background: conic-gradient(
-    from 200deg at 50% 60%,
-    transparent 0deg,
-    color-mix(in oklab, var(--text-inverted) 18%, transparent) 40deg,
-    color-mix(in oklab, var(--accent-inverted) 28%, transparent) 120deg,
-    transparent 220deg
-  );
-  filter: blur(28px);
-  opacity: 0.55;
-  transform: translateY(8%) scale(1.05);
-  pointer-events: none;
-  z-index: 0;
-  transition: opacity 0.6s var(--ease-emphasis);
-}
-
-.maco-mark-glow::after {
-  content: "";
-  position: absolute;
-  width: min(85%, 14rem);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 50% 55%,
-    color-mix(in oklab, var(--text-inverted) 22%, transparent),
-    transparent 68%
-  );
-  filter: blur(18px);
-  opacity: 0.35;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.maco-mark-glow img {
-  position: relative;
-  z-index: 1;
-  width: min(100%, 10rem);
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 0 24px color-mix(in oklab, var(--text-inverted) 35%, transparent));
-  transition: transform 0.7s var(--ease-emphasis);
-}
-
-/* Service pillar chips in signature section */
-.maco-pillar {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  padding: 0.65rem 1rem;
-  border: 1px solid var(--line-inverted);
-  color: var(--muted-inverted);
-  transition:
-    color 0.35s var(--ease-standard),
-    border-color 0.35s var(--ease-standard),
-    transform 0.45s var(--ease-emphasis),
-    background-color 0.35s var(--ease-standard);
-}
-
-.maco-pillar:hover,
-.maco-pillar:focus-visible {
-  color: var(--text-inverted);
-  border-color: color-mix(in oklab, var(--text-inverted) 45%, transparent);
-  background: color-mix(in oklab, var(--text-inverted) 6%, transparent);
-  transform: translate3d(0, -2px, 0);
-}
-
-/* Active editorial row — work / services */
 .index-row-active::before {
   transform: scaleY(1);
   transform-origin: top;
@@ -491,37 +377,26 @@
   transform: translate3d(-0.25rem, 0, 0);
 }
 
-/* Process step progression */
-.maco-process-step {
-  transition:
-    background-color 0.45s var(--ease-standard),
-    transform 0.45s var(--ease-emphasis);
-}
-
-.maco-process-step:hover,
-.maco-process-step:focus-within {
-  transform: translate3d(0, -3px, 0);
-}
-
-.maco-process-step.is-active {
-  background: var(--surface) !important;
-}
-
 @utility btn-solid {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
   background: var(--accent);
   color: var(--accent-ink);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-family: var(--maco-font-label);
+  font-variation-settings: "wdth" 75;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
   padding: 1rem 1.6rem;
   transition:
     transform 0.4s var(--ease-emphasis),
     opacity 0.3s,
     background-color 0.35s var(--ease-standard);
+  &:active {
+    transform: scale(0.97);
+    transition: transform 0.1s var(--ease-standard);
+  }
   &:hover {
     transform: translate3d(0, -2px, 0);
     opacity: 0.92;
@@ -534,21 +409,26 @@
   gap: 0.75rem;
   border: 1px solid var(--line-strong, var(--line));
   color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-family: var(--maco-font-label);
+  font-variation-settings: "wdth" 75;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
   padding: 1rem 1.6rem;
   transition:
     border-color 0.35s,
     background-color 0.35s;
+  &:active {
+    transform: scale(0.97);
+    transition: transform 0.1s var(--ease-standard);
+  }
   &:hover {
     background: var(--surface);
     border-color: var(--text);
   }
 }
 
-/* ---------- motion ---------- */
+/* ---------- motion primitives ---------- */
 
 @keyframes maco-rise {
   from {
@@ -561,37 +441,144 @@
   }
 }
 
-@keyframes maco-clip {
-  from {
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-@keyframes maco-scan {
-  from {
-    transform: translateY(-100%);
-  }
-  to {
-    transform: translateY(900%);
-  }
-}
-
 @utility reveal {
-  animation: maco-rise 0.9s var(--ease-emphasis) both;
+  animation: maco-rise 0.7s var(--ease-emphasis) both;
 }
 
-@utility reveal-clip {
-  animation: maco-clip 1.1s var(--ease-emphasis) both;
+/* Light pass — the one signature device, reused at every scale.
+   A single raking light travelling across a surface. Position is
+   driven by --sweep (0..1) from scroll or motion values — transform
+   + opacity only, no blur, no stacked blend layers. */
+@utility light-pass {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
 }
 
-@utility scanline {
-  animation: maco-scan 7s linear infinite;
+.light-pass::after {
+  content: "";
+  position: absolute;
+  inset: -20% -40%;
+  background: linear-gradient(
+    115deg,
+    transparent 42%,
+    color-mix(in oklab, var(--text) 16%, transparent) 49%,
+    color-mix(in oklab, var(--text) 6%, transparent) 52%,
+    transparent 60%
+  );
+  transform: translate3d(calc((var(--sweep, 0) - 0.5) * 140%), 0, 0);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  will-change: transform;
 }
 
-/* Theme atmospheres — subtle depth on white canvas (no full-screen glow) */
+@media (prefers-reduced-motion: reduce) {
+  .light-pass::after {
+    display: none;
+  }
+}
+
+/* A light-pass wrapping real video/screenshot content (not an empty
+   gradient panel) gets a lighter touch — full-strength overlay washes
+   out midtones on a bright product UI. */
+[data-media] ~ .light-pass::after,
+.light-pass:has([data-media])::after {
+  opacity: 0.45;
+}
+
+/* Shiny Text — the hero wordmark's idle state, applied by <SplitReveal>
+   once its entrance settles. Same 115deg as .light-pass above: this is
+   the signature device at word-scale, not a separate imported effect.
+   color-mix toward white reads as a brightening glint on ANY --text
+   (near-white on deep ground barely has headroom and gets a subtle
+   sheen; near-black on paper ground gets a much more visible one) —
+   deliberately relative to --text rather than a fixed color, so it
+   re-themes with Obsidian/Cobalt for free. */
+@utility maco-shine {
+  background-image: linear-gradient(
+    115deg,
+    color-mix(in oklab, var(--text) 55%, transparent) 32%,
+    var(--text) 47%,
+    color-mix(in oklab, var(--text) 45%, white 55%) 50%,
+    var(--text) 53%,
+    color-mix(in oklab, var(--text) 55%, transparent) 68%
+  );
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: maco-shine-sweep 3.6s linear infinite;
+}
+
+@keyframes maco-shine-sweep {
+  from {
+    background-position: 220% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maco-shine {
+    animation: none;
+    background-image: none;
+    color: var(--text);
+  }
+}
+
+/* currentColor mask marks (the logo, client brand glyphs) — Windows
+   High Contrast forces `background-color` to Canvas, which makes a
+   currentColor-filled mask disappear entirely. CanvasText survives
+   forcing and still resolves to real ink. Print needs the equivalent
+   nudge or some browsers drop background-color entirely. */
+@media (forced-colors: active) {
+  .maco-mark {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}
+
+@media print {
+  .maco-mark {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* Inverted section — retained for the Footer only; new homepage
+   sections use data-ground="deep" instead. */
+.section-inverted {
+  --bg: var(--surface-inverted);
+  --surface: var(--surface-inverted-2);
+  --surface-2: color-mix(in oklab, var(--surface-inverted) 88%, var(--text-inverted));
+  --text: var(--text-inverted);
+  --muted: var(--muted-inverted);
+  --line: var(--line-inverted);
+  --line-strong: var(--line-inverted-strong);
+  --accent: var(--accent-inverted);
+  --accent-ink: var(--accent-inverted-ink);
+  background: var(--surface-inverted);
+  color: var(--text-inverted);
+}
+
+.section-inverted .btn-solid {
+  background: var(--accent-inverted);
+  color: var(--accent-inverted-ink);
+}
+
+.section-inverted .btn-line {
+  border-color: var(--line-inverted);
+  color: var(--text-inverted);
+}
+
+.section-inverted .btn-line:hover {
+  background: color-mix(in oklab, var(--text-inverted) 8%, transparent);
+  border-color: var(--text-inverted);
+}
+
+/* Theme atmospheres — retained, used by the (currently unmounted)
+   ThemeAtmosphere component. Out of scope for this reset. */
 .maco-aurora {
   position: absolute;
   inset: -20%;
@@ -650,7 +637,7 @@
   }
 }
 
-/* Hero globe — transparent shell on white canvas */
+/* Globe shell — retained, used by /about */
 .maco-globe-shell {
   position: relative;
   width: 100%;
@@ -708,355 +695,8 @@
   }
 }
 
-/* Multilingual center — fixed footprint, centered in the script field */
-.maco-center-identity {
-  width: min(100%, 28rem);
-  margin-inline: auto;
-}
-
-/* Hero copy always visible without JS */
-.hero-in {
-  opacity: 1;
-  visibility: visible;
-}
-
 /* ============================================================
-   HERO — THE MONUMENT
-   One centered stage. The exact MaCo mark rendered as a single
-   sculptural object standing in empty darkness, founded on a
-   hairline datum. No grid, no beams, no glow pile — the mark
-   is the identity, elevated by restraint.
-   ============================================================ */
-
-/* Editorial chrome row — MA.CO / category */
-.hero-top {
-  animation: hero-chrome-in 0.8s var(--ease-emphasis) 0.05s both;
-}
-
-@keyframes hero-chrome-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, -6px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-.hero-wordmark {
-  font-family: var(--font-display);
-  font-size: clamp(0.95rem, 1.6vw, 1.15rem);
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  color: var(--hero-text);
-  white-space: nowrap;
-}
-
-.hero-top-muted {
-  font-size: clamp(0.64rem, 1vw, 0.72rem);
-  color: var(--hero-muted);
-  white-space: nowrap;
-}
-
-/* Central formation stage */
-.hero-formation {
-  min-height: 0;
-}
-
-/* ============================================================
-   THE MONUMENT
-   figure.hero-monument
-     .hero-monument-room     — restrained architectural backdrop
-     .hero-monument-figure   — the mark itself (1672×941)
-       .hero-monument-core       — white mark, resolves out of obscurity
-       .hero-monument-material   — light/shade locked to the silhouette
-       .hero-monument-sweep      — one diagonal light pass (signature)
-     .hero-monument-datum    — hairline foundation it is founded on
-     .hero-monument-plinth   — faint contact pool grounding it
-   ============================================================ */
-.hero-monument {
-  position: relative;
-  isolation: isolate;
-  width: min(86vw, 24rem);
-  max-width: 100%;
-  margin-inline: auto;
-}
-
-@media (min-width: 640px) {
-  .hero-monument {
-    width: min(76vw, 30rem);
-  }
-}
-
-@media (min-width: 1024px) {
-  .hero-monument {
-    width: min(70vw, 36rem);
-  }
-}
-
-@media (min-width: 1440px) {
-  .hero-monument {
-    width: min(64vw, 40rem);
-  }
-}
-
-/* Restrained room — a quiet envelope, not a radiant glow field */
-.hero-monument-room {
-  position: absolute;
-  inset: -8% -2%;
-  border-radius: var(--radius-2xl, 1.5rem);
-  background:
-    radial-gradient(
-      ellipse 120% 92% at 50% 12%,
-      color-mix(in oklab, var(--hero-bg-elevated) 60%, transparent),
-      transparent 68%
-    ),
-    linear-gradient(
-      180deg,
-      transparent 0%,
-      color-mix(in oklab, var(--hero-bg-elevated) 28%, transparent) 60%,
-      transparent 100%
-    );
-  opacity: 0.85;
-  animation: hero-material 1.6s var(--ease-standard) 0.1s both;
-}
-
-/* The figure — holds the real white logo, subtle pointer parallax */
-.hero-monument-figure {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1672 / 941;
-  line-height: 0;
-  transform: translate3d(calc(var(--monument-px, 0) * 7px), calc(var(--monument-py, 0) * 5px), 0);
-  transition: transform 0.7s var(--ease-standard);
-}
-
-/* Core mark — the exact logo, resolving from obscurity */
-.hero-monument-core {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  opacity: 0.15;
-  filter: blur(6px);
-  animation: hero-mark 1.9s var(--ease-emphasis) 0.25s both;
-  transform: translate3d(0, 6px, 0);
-}
-
-@keyframes hero-mark {
-  0% {
-    opacity: 0.08;
-    filter: blur(8px);
-    transform: translate3d(0, 10px, 0);
-  }
-  100% {
-    opacity: 1;
-    filter: blur(0);
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-/* Material — a whisper of light and shade locked to the mark */
-.hero-monument-material {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    172deg,
-    color-mix(in oklab, var(--hero-bg-elevated) 42%, transparent) 0%,
-    transparent 26%,
-    transparent 70%,
-    color-mix(in oklab, var(--hero-bg) 34%, transparent) 104%
-  );
-  -webkit-mask-image: url("/white-logo.png");
-  mask-image: url("/white-logo.png");
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-position: center center;
-  mask-position: center center;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  opacity: 0;
-  animation: hero-material 1.2s var(--ease-standard) 0.9s both;
-  mix-blend-mode: screen;
-}
-
-@keyframes hero-material {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.5;
-  }
-}
-
-/* Signature light pass — one diagonal sweep across the mark */
-.hero-monument-sweep {
-  position: absolute;
-  inset: -10% -22%;
-  background: linear-gradient(
-    108deg,
-    transparent 0%,
-    transparent 40%,
-    color-mix(in oklab, var(--hero-glow) 26%, transparent) 49%,
-    color-mix(in oklab, var(--hero-glow-soft) 12%, transparent) 53%,
-    transparent 62%,
-    transparent 100%
-  );
-  -webkit-mask-image: url("/white-logo.png");
-  mask-image: url("/white-logo.png");
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-position: center center;
-  mask-position: center center;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  opacity: 0;
-  mix-blend-mode: screen;
-  animation: hero-sweep 1.7s var(--ease-standard) 0.4s both;
-}
-
-@keyframes hero-sweep {
-  0% {
-    opacity: 0;
-    transform: translate3d(-46%, -8%, 0);
-  }
-  22% {
-    opacity: 0.4;
-  }
-  48% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-  70% {
-    opacity: 0.35;
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(46%, 12%, 0);
-  }
-}
-
-/* Datum — the hairline it stands on, drawing out from center */
-.hero-monument-datum {
-  position: absolute;
-  inset-inline: 16%;
-  bottom: 4%;
-  height: 1px;
-  background: color-mix(in oklab, var(--hero-line) 66%, transparent);
-  transform-origin: center;
-  transform: scaleX(0);
-  animation: hero-datum 0.9s var(--ease-emphasis) 1.4s both;
-}
-
-@keyframes hero-datum {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-/* Plinth — a faint pool of light grounding the object */
-.hero-monument-plinth {
-  position: absolute;
-  inset-inline: 2%;
-  bottom: -2.5%;
-  height: 14%;
-  background: radial-gradient(
-    ellipse 50% 100% at 50% 100%,
-    color-mix(in oklab, var(--hero-glow-soft) 34%, transparent) 0%,
-    transparent 78%
-  );
-  filter: blur(6px);
-  opacity: 0;
-  animation: hero-material 1.4s var(--ease-standard) 2.1s both;
-  pointer-events: none;
-}
-
-/* ============================================================
-   EDITORIAL CAPTION — supports, never competes
-   ============================================================ */
-.hero-copy {
-  max-width: 46rem;
-  margin-inline: auto;
-  text-align: center;
-  padding-top: clamp(2rem, 5vh, 3.25rem);
-}
-
-.hero-lead {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.04;
-  font-size: clamp(1.5rem, 4.2vw, 3rem);
-  color: var(--hero-text);
-  animation: hero-copy-in 1s var(--ease-emphasis) 1.6s both;
-}
-
-.hero-statement {
-  margin-top: 0.9rem;
-  font-size: clamp(0.95rem, 1.6vw, 1.1rem);
-  line-height: 1.6;
-  color: var(--hero-muted);
-  animation: hero-copy-in 1s var(--ease-emphasis) 1.8s both;
-}
-
-.hero-cta-row {
-  margin-top: clamp(1.75rem, 4vh, 2.5rem);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: center;
-  animation: hero-copy-in 1s var(--ease-emphasis) 2s both;
-}
-
-@keyframes hero-copy-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 6px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-/* Scroll recede — the scene lifts and a touch condenses.
-   Hero layers animate independently; MA/CO + CTA stay strong
-   and never fade toward zero. */
-.hero-canvas .shell {
-  will-change: transform, opacity;
-}
-
-.hero-canvas .hero-monument {
-  transform: translate3d(0, calc(var(--hero-recede, 0) * -1rem), 0);
-  transition: transform 0.85s var(--ease-emphasis);
-}
-
-.hero-canvas .hero-formation {
-  opacity: calc(1 - var(--hero-recede, 0) * 0.08);
-  transition: opacity 0.85s var(--ease-emphasis);
-}
-
-.hero-canvas .hero-copy {
-  opacity: calc(1 - var(--hero-recede, 0) * 0.2);
-  transition: opacity 0.85s var(--ease-emphasis);
-}
-
-.hero-canvas .hero-top {
-  transform: translate3d(0, calc(var(--hero-recede, 0) * -0.75rem), 0);
-}
-
-/* Foot fade — soft horizon hand-off into the next light section */
-.hero-foot-fade {
-  opacity: 1;
-}
-
-/* ============================================================
-   REDUCED MOTION — resolved state, no film
+   REDUCED MOTION — deliberate static compositions, not frozen film
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -1064,217 +704,14 @@
   }
 
   .reveal,
-  .reveal-clip,
-  .scanline,
   .maco-aurora,
   .maco-thread {
     animation: none !important;
   }
-
-  .maco-mark-glow::before,
-  .maco-mark-glow::after {
-    animation: none !important;
-    opacity: 0.35;
-  }
-
-  .maco-mark-glow img,
-  .maco-process-step,
-  .maco-pillar {
-    transition: none !important;
-    transform: none !important;
-  }
-
-  .hero-top,
-  .hero-monument-room,
-  .hero-monument-figure,
-  .hero-monument-core,
-  .hero-monument-material,
-  .hero-monument-sweep,
-  .hero-monument-datum,
-  .hero-monument-plinth,
-  .hero-lead,
-  .hero-statement,
-  .hero-cta-row {
-    animation: none !important;
-  }
-
-  .hero-monument-core,
-  .hero-monument-material,
-  .hero-monument-plinth {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-
-  .hero-monument-sweep {
-    opacity: 0;
-    transform: none;
-  }
-
-  .hero-monument-datum {
-    transform: scaleX(1);
-  }
-
-  .hero-top,
-  .hero-lead,
-  .hero-statement,
-  .hero-cta-row {
-    opacity: 1;
-    transform: none;
-  }
 }
 
-/* ============================================================
-   THE CINEMA — selected work (pinned horizontal rail)
-   ============================================================ */
-.work-strip {
-  border-top: 1px solid var(--line);
-}
-
-.work-strip-track {
-  min-width: 100%;
-}
-
-.work-slide {
-  overflow: hidden;
-}
-
-/* ============================================================
-   THE METHOD — process (pinned A→B→C→D)
-   ============================================================ */
-.process-sticky {
-  border-top: 1px solid var(--line);
-}
-
-.process-ghost {
-  opacity: 0.5;
-}
-
-.process-current {
-  animation: process-step-in 0.55s var(--ease-emphasis) both;
-}
-
-@keyframes process-step-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 0.6rem, 0);
-    filter: blur(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-    filter: blur(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .process-current {
-    animation: none;
-  }
-}
-
-/* ============================================================
-   SPOTLIGHT CARD — restrained pointer illumination (original)
-   ============================================================ */
-.spotlight-card-glow {
-  background: radial-gradient(
-    240px circle at var(--spot-x, 50%) var(--spot-y, 50%),
-    color-mix(in oklab, var(--accent) 10%, transparent) 0%,
-    transparent 68%
-  );
-  opacity: var(--spot-opacity, 0);
-  transition: opacity 0.4s var(--ease-standard);
-}
-
-.spotlight-card .spotlight-card-glow {
-  mix-blend-mode: normal;
-}
-
-@media (hover: none), (prefers-reduced-motion: reduce) {
-  .spotlight-card-glow {
-    opacity: 0 !important;
-  }
-}
-
-/* CTA magnet — gentle pull on the closing statement */
-.cta-magnet {
-  transform: translate3d(0, 0, 0);
-}
-
-/* Clients ticker */
-.clients-ticker-track {
-  width: max-content;
-}
-
-/* ============================================================
-   CRAWL ANIMATIONS — full-bleed editorial marquees
-   ============================================================ */
-
-@keyframes maco-crawl-ltr {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-@keyframes maco-crawl-rtl {
-  from {
-    transform: translateX(-50%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-/* ============================================================
-   SCROLL-REVEAL UTILITIES
-   ============================================================ */
-
-.sr-reveal {
-  opacity: 0;
-  transform: translateY(2rem);
-  transition: opacity 0.75s var(--ease-emphasis), transform 0.75s var(--ease-emphasis);
-}
-
-.sr-reveal.is-visible {
-  opacity: 1;
-  transform: none;
-}
-
-/* ============================================================
-   KINETIC SECTION BACKGROUNDS — atmospheric depth without noise
-   ============================================================ */
-
-/* Dark inverted sections — shared inverted token override */
-.maco-dark-section {
-  --bg-local: var(--surface-inverted);
-  background: var(--surface-inverted);
-  color: var(--text-inverted);
-}
-
-/* Large number / counter display */
-.display-counter {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: clamp(4rem, 10vw, 9rem);
-  line-height: 1;
-  letter-spacing: -0.045em;
-}
-
-/* Ticker separator ornament */
-.ticker-sep {
-  display: inline-block;
-  margin: 0 1.5rem;
-  opacity: 0.3;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  @keyframes maco-crawl-ltr {
-    from, to { transform: none; }
-  }
-  @keyframes maco-crawl-rtl {
-    from, to { transform: none; }
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --backdrop-blur: none;
   }
 }

@@ -1,33 +1,58 @@
+import type { CSSProperties } from "react";
+import { site } from "@/content/maco";
+
 /**
- * MaCo mark — logo-derived geometry.
- * Two stacked rails (M) with a cut block (C). Reacts to hover and theme.
+ * MaCo mark — the real lockup glyph (public/logo-mark.png), applied as a
+ * CSS mask so it inherits `currentColor`. One source asset, correct in
+ * both themes and on any ground, instead of a separate light/dark export.
  */
 
-export function Mark({ size = 28, className = "" }: { size?: number; className?: string }) {
+export function Mark({
+  size = 28,
+  className = "",
+  src = "/logo-mark.png",
+  style,
+}: {
+  size?: number;
+  className?: string;
+  /** Defaults to the small square lockup used everywhere in chrome.
+   *  The hero passes `/maco-mark-hero.png` — same monogram, a wider
+   *  source crop, downsampled from `public/white-logo.png` (see
+   *  `scripts/shrink-hero-mark.cjs`). Both are alpha-only masks, so
+   *  either recolors correctly with `currentColor` on any ground. */
+  src?: string;
+  style?: CSSProperties;
+} = {}) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
+    <span
       aria-hidden="true"
-      className={className}
-    >
-      <rect x="1" y="1" width="30" height="30" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M7 24V9l4.5 7L16 9v15" stroke="currentColor" strokeWidth="2.2" />
-      <path d="M25 11a5.5 5.5 0 0 0 0 11" stroke="currentColor" strokeWidth="2.2" />
-    </svg>
+      className={`maco-mark inline-block shrink-0 ${className}`}
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: "currentColor",
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        ...style,
+      }}
+    />
   );
 }
 
-export function Wordmark({ className = "" }: { className?: string }) {
+export function Wordmark({ size = 36, className = "" }: { size?: number; className?: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-2.5 font-display text-lg font-semibold tracking-[-0.04em] md:text-xl ${className}`}
+      className={`inline-flex items-center gap-2.5 font-display text-xl font-semibold tracking-[-0.04em] md:text-2xl ${className}`}
       style={{ color: "var(--text)" }}
-      aria-label="MaCo — Solutions. Technology. Growth."
+      aria-label={`MaCo — ${site.tagline}`}
     >
-      <Mark size={28} className="shrink-0" />
+      <Mark size={size} className="shrink-0" />
       <span>MaCo</span>
     </span>
   );

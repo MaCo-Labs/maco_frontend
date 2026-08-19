@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Hero } from "@/components/hero";
-import { CapabilityStatement } from "@/components/sections/capability-statement";
-import { SignatureSystemSection } from "@/components/signature-system-section";
-import { WorkStrip } from "@/components/sections/work-strip";
-import { ProductsSection } from "@/components/sections/products-section";
-import { MultilingualIdentity } from "@/components/multilingual-identity";
-import { ServiceVocabulary } from "@/components/sections/service-vocabulary";
-import { ClientsTicker } from "@/components/sections/clients-ticker";
-import { ProcessSticky } from "@/components/sections/process-sticky";
-import { CTABanner } from "@/components/sections/cta-banner";
+import { OpenLogo } from "@/components/home/open-logo";
+import { WorkingSurface } from "@/components/home/working-surface";
+import { EvidenceExpand } from "@/components/home/evidence-expand";
+import { WorkSequence } from "@/components/home/work-sequence";
+import { CapabilitySelector } from "@/components/home/capability-selector";
+import { ProductStory } from "@/components/home/product-story";
+import { Identity } from "@/components/home/identity";
+import { MethodLine } from "@/components/home/method-line";
+import { Record } from "@/components/home/record";
+import { CloseIntake } from "@/components/home/close-intake";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,35 +33,35 @@ export const Route = createFileRoute("/")({
 function Home() {
   return (
     <>
-      {/* 00 — Hero: The Monument */}
-      <Hero />
+      {/* OPEN — the brand alone: mark + "MaCo" */}
+      <OpenLogo />
 
-      {/* 01 — Capability Statement */}
-      <CapabilityStatement />
+      {/* SURFACE — the promise, the proof row, Bridge in motion (merges the old hero + CLAIM) */}
+      <WorkingSurface />
 
-      {/* 02 — Signature System with Living SystemField */}
-      <SignatureSystemSection />
+      {/* EVIDENCE — cinematic scroll-expand, Bridge in motion */}
+      <EvidenceExpand />
 
-      {/* 03 — Selected Work Cinema Rail */}
-      <WorkStrip />
+      {/* WORK — four real client projects */}
+      <WorkSequence />
 
-      {/* 04 — Products & Platforms (Bridge Flagship & Driver's Diary) */}
-      <ProductsSection />
+      {/* CAPABILITY — services selector */}
+      <CapabilitySelector />
 
-      {/* 05 — Multilingual Identity Hive */}
-      <MultilingualIdentity />
+      {/* PRODUCTS — Bridge + Driver's Diary */}
+      <ProductStory />
 
-      {/* 06 — Services Capability Vocabulary Console */}
-      <ServiceVocabulary />
+      {/* IDENTITY — one name, many scripts */}
+      <Identity />
 
-      {/* 07 — Client Partnerships Marquee */}
-      <ClientsTicker />
+      {/* METHOD — A→B→C→D, launch is not the finish line */}
+      <MethodLine />
 
-      {/* 08 — Delivery Methodology (A→B→C→D) */}
-      <ProcessSticky />
+      {/* RECORD — clients + company, deliberate rest */}
+      <Record />
 
-      {/* 09 — Final Closing Statement & CTA */}
-      <CTABanner />
+      {/* CLOSE — intake + final statement */}
+      <CloseIntake />
     </>
   );
 }

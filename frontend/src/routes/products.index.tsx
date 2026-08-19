@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { products } from "@/content/maco";
+import { LineReveal } from "@/components/motion/line-reveal";
+import { Magnetic } from "@/components/motion/magnetic";
+import { MotionSection } from "@/components/motion-section";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
@@ -28,10 +31,10 @@ function ProductsIndex() {
         <div className="shell grid gap-8 py-16 lg:grid-cols-12 lg:py-24">
           <p className="label lg:col-span-3">Index / Products</p>
           <div className="lg:col-span-9">
-            <h1 className="display-lg max-w-3xl">
+            <LineReveal as="h1" className="display-lg max-w-3xl">
               Software we own,{" "}
               <span style={{ color: "var(--muted)" }}>run and keep improving.</span>
-            </h1>
+            </LineReveal>
             <p className="mt-8 max-w-xl text-muted">
               A product is not a client project. These are platforms with roadmaps, releases and
               users who depend on them during a working day.
@@ -41,7 +44,11 @@ function ProductsIndex() {
       </section>
 
       {products.map((pr, i) => (
-        <section key={pr.slug} className={i % 2 === 0 ? "rule-b" : "rule-b grid-field"}>
+        <MotionSection
+          key={pr.slug}
+          as="section"
+          className={i % 2 === 0 ? "rule-b" : "rule-b grid-field"}
+        >
           <div className="shell grid gap-10 py-16 lg:grid-cols-12 lg:py-24">
             <div className="lg:col-span-5">
               <p className="label">
@@ -55,17 +62,21 @@ function ProductsIndex() {
               <p className="mt-6 max-w-md text-lg leading-snug">{pr.short_description}</p>
               <p className="mt-4 max-w-md text-sm text-muted">{pr.positioning}</p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link to="/products/$slug" params={{ slug: pr.slug }} className="btn-solid">
-                  Product overview
-                </Link>
-                <a
-                  href={pr.live_url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="btn-line"
-                >
-                  Open live ↗
-                </a>
+                <Magnetic>
+                  <Link to="/products/$slug" params={{ slug: pr.slug }} className="btn-solid">
+                    Product overview
+                  </Link>
+                </Magnetic>
+                <Magnetic>
+                  <a
+                    href={pr.live_url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="btn-line"
+                  >
+                    Open live ↗
+                  </a>
+                </Magnetic>
               </div>
             </div>
 
@@ -83,7 +94,7 @@ function ProductsIndex() {
               </div>
             </div>
           </div>
-        </section>
+        </MotionSection>
       ))}
     </>
   );

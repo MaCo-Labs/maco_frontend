@@ -2,6 +2,8 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getProduct, products, type Product } from "@/content/maco";
 import { MaCoSystemField } from "@/components/system-field";
 import { MotionSection } from "@/components/motion-section";
+import { LineReveal } from "@/components/motion/line-reveal";
+import { Magnetic } from "@/components/motion/magnetic";
 
 export const Route = createFileRoute("/products/$slug")({
   loader: ({ params }) => {
@@ -55,15 +57,21 @@ function ProductDetail() {
             </Link>
           </div>
           {isBridge && <p className="mt-6 max-w-xl text-sm text-muted">{p.positioning}</p>}
-          <h1 className="display-xl mt-8 -ml-[0.04em]">{p.title}</h1>
+          <LineReveal as="h1" className="display-hero mt-8 -ml-[0.04em]">
+            {p.title}
+          </LineReveal>
           <p className="mt-8 max-w-2xl text-lg leading-snug">{p.short_description}</p>
           <div className="mt-10 flex flex-wrap gap-3">
-            <a href={p.live_url} target="_blank" rel="noreferrer noopener" className="btn-solid">
-              Open {p.title} ↗
-            </a>
-            <Link to="/contact" className="btn-line">
-              Request a walkthrough
-            </Link>
+            <Magnetic>
+              <a href={p.live_url} target="_blank" rel="noreferrer noopener" className="btn-solid">
+                Open {p.title} ↗
+              </a>
+            </Magnetic>
+            <Magnetic>
+              <Link to="/contact" className="btn-line">
+                Request a walkthrough
+              </Link>
+            </Magnetic>
           </div>
         </div>
       </section>
@@ -145,17 +153,21 @@ function ProductDetail() {
                 It is not a board with memory left to the team.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a
-                  href={p.live_url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="btn-solid"
-                >
-                  Open Bridge ↗
-                </a>
-                <Link to="/contact" className="btn-line">
-                  Talk to us about Bridge
-                </Link>
+                <Magnetic>
+                  <a
+                    href={p.live_url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="btn-solid"
+                  >
+                    Open Bridge ↗
+                  </a>
+                </Magnetic>
+                <Magnetic>
+                  <Link to="/contact" className="btn-line">
+                    Talk to us about Bridge
+                  </Link>
+                </Magnetic>
               </div>
             </div>
           </div>

@@ -7,7 +7,7 @@ type Props = {
   style?: CSSProperties;
   /** Delay in ms after enter */
   delay?: number;
-  as?: "div" | "section" | "article";
+  as?: "div" | "section" | "article" | "li";
 };
 
 /**

@@ -1,5 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getService, getProject, getProduct, services, type Service } from "@/content/maco";
+import { LineReveal } from "@/components/motion/line-reveal";
+import { Magnetic } from "@/components/motion/magnetic";
+import { MotionSection } from "@/components/motion-section";
 
 export const Route = createFileRoute("/services/$slug")({
   loader: ({ params }) => {
@@ -47,7 +50,9 @@ function ServiceDetail() {
             </Link>
           </div>
           <div className="lg:col-span-9">
-            <h1 className="display-lg">{service.title}</h1>
+            <LineReveal as="h1" className="display-lg">
+              {service.title}
+            </LineReveal>
             <p className="mt-8 max-w-2xl text-lg leading-snug">{service.description}</p>
           </div>
         </div>
@@ -58,11 +63,15 @@ function ServiceDetail() {
           <p className="label lg:col-span-3">Capabilities</p>
           <div className="lg:col-span-9">
             {service.capabilities.map((c, i) => (
-              <div key={c.title} className="rule-t grid gap-2 py-6 md:grid-cols-12 md:gap-6">
+              <MotionSection
+                key={c.title}
+                delay={i * 70}
+                className="rule-t grid gap-2 py-6 md:grid-cols-12 md:gap-6"
+              >
                 <span className="label md:col-span-1">{String(i + 1).padStart(2, "0")}</span>
                 <h2 className="font-display text-xl tracking-[-0.03em] md:col-span-4">{c.title}</h2>
                 <p className="max-w-xl text-sm text-muted md:col-span-7">{c.description}</p>
-              </div>
+              </MotionSection>
             ))}
             <div className="rule-t" />
           </div>
@@ -131,9 +140,11 @@ function ServiceDetail() {
               {next.title}
             </Link>
           </div>
-          <Link to="/contact" className="btn-solid self-start sm:self-auto">
-            Enquire about {service.title.toLowerCase()}
-          </Link>
+          <Magnetic className="self-start sm:self-auto">
+            <Link to="/contact" className="btn-solid">
+              Enquire about {service.title.toLowerCase()}
+            </Link>
+          </Magnetic>
         </div>
       </section>
     </>

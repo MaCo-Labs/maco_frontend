@@ -2,6 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { site, process, services } from "@/content/maco";
 import { SystemField } from "@/components/mark";
 import { GlobeSection } from "@/components/globe-section";
+import { LineReveal } from "@/components/motion/line-reveal";
+import { Magnetic } from "@/components/motion/magnetic";
+import { MotionSection } from "@/components/motion-section";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -30,10 +33,10 @@ function AboutPage() {
         <div className="shell grid gap-10 py-16 lg:grid-cols-12 lg:py-24">
           <div className="lg:col-span-8">
             <p className="label">Index / About</p>
-            <h1 className="display-lg mt-6 max-w-3xl">
+            <LineReveal as="h1" className="display-lg mt-6 max-w-3xl">
               A software company that stays{" "}
               <span style={{ color: "var(--muted)" }}>after the launch post.</span>
-            </h1>
+            </LineReveal>
             <p className="mt-8 max-w-2xl text-lg leading-snug">{site.statement}</p>
             <p className="mt-5 max-w-2xl text-muted">
               We work across two sides of the same discipline: websites and platforms for clients,
@@ -55,14 +58,19 @@ function AboutPage() {
             className="grid gap-px lg:col-span-9 sm:grid-cols-2"
             style={{ background: "var(--line)" }}
           >
-            {process.map((p) => (
-              <div key={p.step} className="p-8" style={{ background: "var(--bg)" }}>
+            {process.map((p, i) => (
+              <MotionSection
+                key={p.step}
+                delay={i * 80}
+                className="p-8"
+                style={{ background: "var(--bg)" }}
+              >
                 <span className="font-display text-4xl" style={{ color: "var(--accent)" }}>
                   {p.step}
                 </span>
                 <h2 className="mt-5 font-display text-xl">{p.title}</h2>
                 <p className="mt-3 text-sm text-muted">{p.body}</p>
-              </div>
+              </MotionSection>
             ))}
           </div>
         </div>
@@ -79,10 +87,10 @@ function AboutPage() {
               "Small releases beat annual rewrites.",
               "Accessibility and reduced motion are requirements, not polish.",
             ].map((line, i) => (
-              <li key={line} className="rule-t flex gap-6 py-5">
+              <MotionSection key={line} as="li" delay={i * 60} className="rule-t flex gap-6 py-5">
                 <span className="label pt-1">{String(i + 1).padStart(2, "0")}</span>
                 <span className="max-w-2xl text-lg leading-snug">{line}</span>
-              </li>
+              </MotionSection>
             ))}
             <li className="rule-t" />
           </ul>
@@ -97,9 +105,11 @@ function AboutPage() {
             <p className="mt-6 max-w-xl text-muted">
               Working with clients in India and the Gulf across {services.length} service lines.
             </p>
-            <Link to="/contact" className="btn-solid mt-8">
-              Contact MaCo <span aria-hidden="true">→</span>
-            </Link>
+            <Magnetic className="mt-8 inline-block">
+              <Link to="/contact" className="btn-solid">
+                Contact MaCo <span aria-hidden="true">→</span>
+              </Link>
+            </Magnetic>
           </div>
           <div className="lg:col-span-7">
             <GlobeSection

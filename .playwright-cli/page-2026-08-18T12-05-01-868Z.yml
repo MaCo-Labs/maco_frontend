@@ -1,0 +1,315 @@
+- generic [active] [ref=f4e1]:
+  - link "Skip to content" [ref=f4e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f4e3]:
+    - generic [ref=f4e4]:
+      - link "MaCo — home" [ref=f4e5] [cursor=pointer]:
+        - /url: /
+        - generic "MaCo — Software and IT solutions for products that need to work." [ref=f4e6]: MaCo
+      - navigation "Primary" [ref=f4e9]:
+        - link "Services" [ref=f4e10] [cursor=pointer]:
+          - /url: /services
+        - link "Work" [ref=f4e11] [cursor=pointer]:
+          - /url: /work
+        - link "Products" [ref=f4e12] [cursor=pointer]:
+          - /url: /products
+        - link "Clients" [ref=f4e13] [cursor=pointer]:
+          - /url: /clients
+        - link "About" [ref=f4e14] [cursor=pointer]:
+          - /url: /about
+        - link "Contact" [ref=f4e15] [cursor=pointer]:
+          - /url: /contact
+      - generic [ref=f4e16]:
+        - button "Switch to Cobalt (blue on white) theme" [ref=f4e17]: Obsidian
+        - link "Start a project" [ref=f4e19] [cursor=pointer]:
+          - /url: /contact
+  - main [ref=f4e20]:
+    - region "Introduction" [ref=f4e21]:
+      - generic [ref=f4e22]:
+        - generic [ref=f4e23]:
+          - generic [ref=f4e24]: MaCo
+          - generic [ref=f4e25]: Kochi, Kerala, India
+        - generic [ref=f4e26]:
+          - generic [ref=f4e27]:
+            - heading "Software that has work to do." [level=1] [ref=f4e28]: Software thathas work to do.
+            - paragraph [ref=f4e29]: MaCo builds and maintains software that carries real operational weight — client platforms, internal tooling and the systems people log into every working day.
+            - generic [ref=f4e30]:
+              - link "Start a project" [ref=f4e31] [cursor=pointer]:
+                - /url: /contact
+                - text: Start a project
+                - generic [ref=f4e32]: →
+              - link "See the work" [ref=f4e33] [cursor=pointer]:
+                - /url: /work
+          - generic [ref=f4e34]: Bridge — MaCo's own product, in daily use
+        - paragraph [ref=f4e37]: Software / IT solutions
+    - region "What MaCo does" [ref=f4e38]:
+      - generic [ref=f4e39]:
+        - paragraph [ref=f4e41]: MaCo builds and maintains software that carries real operational weight — the systems people log into every working day.
+        - generic [ref=f4e43]:
+          - generic [ref=f4e44]:
+            - term [ref=f4e45]: Services
+            - definition [ref=f4e46]: "5"
+          - generic [ref=f4e47]:
+            - term [ref=f4e48]: Client work
+            - definition [ref=f4e49]: "4"
+          - generic [ref=f4e50]:
+            - term [ref=f4e51]: Products
+            - definition [ref=f4e52]: "2"
+          - generic [ref=f4e53]:
+            - term [ref=f4e54]: Based in
+            - definition [ref=f4e55]: Kochi
+    - region "Bridge in motion" [ref=f4e56]:
+      - generic [ref=f4e57]:
+        - paragraph [ref=f4e58]: Bridge, in daily use
+        - generic [ref=f4e59]: Bridge — Task and project implementation, administration, users, project analysis and task assignment.
+    - region "Selected client work" [ref=f4e63]:
+      - generic [ref=f4e64]:
+        - generic [ref=f4e65]:
+          - paragraph [ref=f4e66]: Work
+          - heading "Four clients. Real software, in production." [level=2] [ref=f4e67]
+        - generic [ref=f4e68]:
+          - article [ref=f4e70]:
+            - generic [ref=f4e71]:
+              - generic [ref=f4e72]:
+                - generic [ref=f4e73]: "01"
+                - heading "Ananta Nethralaya" [level=3] [ref=f4e74]
+              - paragraph [ref=f4e75]:
+                - text: Website for an eye clinic.
+                - generic [ref=f4e76]: Healthcare — Ophthalmology
+              - link "Visit site" [ref=f4e77] [cursor=pointer]:
+                - /url: https://www.anantanethralaya.org/
+                - text: Visit site
+                - generic [ref=f4e78]: ↗
+          - article [ref=f4e80]:
+            - generic [ref=f4e81]:
+              - generic [ref=f4e82]:
+                - generic [ref=f4e83]: "02"
+                - heading "Al Afzah" [level=3] [ref=f4e84]
+              - paragraph [ref=f4e85]:
+                - text: Website for a Qatar-based construction company.
+                - generic [ref=f4e86]: Construction — Qatar
+              - link "Visit site" [ref=f4e87] [cursor=pointer]:
+                - /url: https://www.al-afzahgroup.com/
+                - text: Visit site
+                - generic [ref=f4e88]: ↗
+          - article [ref=f4e90]:
+            - generic [ref=f4e91]:
+              - generic [ref=f4e92]:
+                - generic [ref=f4e93]: "03"
+                - heading "Soorath Autos" [level=3] [ref=f4e94]
+              - paragraph [ref=f4e95]:
+                - text: Website for a pre-owned car showroom.
+                - generic [ref=f4e96]: Automotive retail
+              - link "Visit site" [ref=f4e97] [cursor=pointer]:
+                - /url: https://www.soorathautos.in/
+                - text: Visit site
+                - generic [ref=f4e98]: ↗
+          - article [ref=f4e100]:
+            - generic [ref=f4e101]:
+              - generic [ref=f4e102]:
+                - generic [ref=f4e103]: "04"
+                - heading "HeadGreen" [level=3] [ref=f4e104]
+              - paragraph [ref=f4e105]:
+                - text: Website for a corporate EV fleet cab service based in Kochi, Kerala.
+                - generic [ref=f4e106]: Corporate EV mobility — Kochi
+              - link "Visit site" [ref=f4e107] [cursor=pointer]:
+                - /url: https://www.headgreen.in/
+                - text: Visit site
+                - generic [ref=f4e108]: ↗
+        - link "All work" [ref=f4e110] [cursor=pointer]:
+          - /url: /work
+          - text: All work
+          - generic [ref=f4e111]: →
+    - region "Capabilities" [ref=f4e112]:
+      - generic [ref=f4e113]:
+        - paragraph [ref=f4e115]: Capability
+        - generic [ref=f4e116]:
+          - tablist "Services" [ref=f4e117]:
+            - tab "01Web Development" [selected] [ref=f4e118]
+            - tab "02App Development" [ref=f4e119]
+            - tab "03Technical Support" [ref=f4e120]
+            - tab "04Software Support" [ref=f4e121]
+            - tab "05Social Media Managing" [ref=f4e122]
+          - tabpanel "01Web Development" [ref=f4e123]:
+            - paragraph [ref=f4e124]: Marketing sites and web platforms built to be edited, measured and maintained after launch.
+            - paragraph [ref=f4e125]: "We design and engineer websites end to end: information architecture, front-end implementation, content administration and deployment. Every build ships with an admin a non-technical team can actually use."
+            - list [ref=f4e126]:
+              - listitem [ref=f4e127]:
+                - paragraph [ref=f4e128]: Site architecture
+                - paragraph [ref=f4e129]: Routing, content modelling and SEO structure decided before a pixel is drawn.
+              - listitem [ref=f4e130]:
+                - paragraph [ref=f4e131]: Front-end engineering
+                - paragraph [ref=f4e132]: React and modern CSS, built for performance budgets rather than demo reels.
+              - listitem [ref=f4e133]:
+                - paragraph [ref=f4e134]: Content administration
+                - paragraph [ref=f4e135]: Django-based admin so copy, media and case studies change without a deploy.
+            - link "More on Web Development" [ref=f4e136] [cursor=pointer]:
+              - /url: /services/web-development
+              - text: More on Web Development
+              - generic [ref=f4e137]: →
+    - region "Products" [ref=f4e138]:
+      - generic [ref=f4e139]:
+        - generic [ref=f4e140]:
+          - paragraph [ref=f4e141]: Products
+          - heading "Two platforms we build and run ourselves." [level=2] [ref=f4e142]
+        - generic [ref=f4e143]:
+          - article [ref=f4e145]:
+            - generic [ref=f4e146]: Driver's Diary — Operational PWA
+            - generic [ref=f4e150]:
+              - paragraph [ref=f4e151]: Built for HeadGreen
+              - heading "Driver's Diary" [level=3] [ref=f4e152]
+              - paragraph [ref=f4e153]: Management, attendance, rides, payroll, documentation and reporting for HeadGreen operations.
+              - paragraph [ref=f4e154]: Built for HeadGreen. A single operational record for a fleet that runs whether or not the office is open.
+              - list [ref=f4e155]:
+                - listitem [ref=f4e156]:
+                  - paragraph [ref=f4e157]: Attendance
+                  - paragraph [ref=f4e158]: Daily driver attendance captured at the point it happens.
+                - listitem [ref=f4e159]:
+                  - paragraph [ref=f4e160]: Rides
+                  - paragraph [ref=f4e161]: Ride records tied to drivers, vehicles and corporate accounts.
+                - listitem [ref=f4e162]:
+                  - paragraph [ref=f4e163]: Payroll inputs
+                  - paragraph [ref=f4e164]: Payroll derived from recorded attendance and ride data.
+                - listitem [ref=f4e165]:
+                  - paragraph [ref=f4e166]: Documentation
+                  - paragraph [ref=f4e167]: Driver and vehicle documents tracked with expiry visibility.
+                - listitem [ref=f4e168]:
+                  - paragraph [ref=f4e169]: Reporting
+                  - paragraph [ref=f4e170]: Operational reporting built on the live record.
+              - link "Open Driver's Diary" [ref=f4e171] [cursor=pointer]:
+                - /url: https://prod.d25ny7hdw64pgk.amplifyapp.com/
+                - text: Open Driver's Diary
+                - generic [ref=f4e172]: ↗
+          - article [ref=f4e174]:
+            - generic [ref=f4e175]: Bridge — SaaS / PWA + desktop
+            - generic [ref=f4e179]:
+              - paragraph [ref=f4e180]: MaCo owned
+              - heading "Bridge" [level=3] [ref=f4e181]
+              - paragraph [ref=f4e182]: Task and project implementation, administration, users, project analysis and task assignment.
+              - paragraph [ref=f4e183]: MaCo's own product. Bridge is aimed at the task and project management category, built from the delivery problems we hit on client work.
+              - list [ref=f4e184]:
+                - listitem [ref=f4e185]:
+                  - paragraph [ref=f4e186]: Project implementation
+                  - paragraph [ref=f4e187]: Projects carried from definition through delivery in one place.
+                - listitem [ref=f4e188]:
+                  - paragraph [ref=f4e189]: Task assignment
+                  - paragraph [ref=f4e190]: Explicit ownership of every task rather than an unassigned column.
+                - listitem [ref=f4e191]:
+                  - paragraph [ref=f4e192]: Administration
+                  - paragraph [ref=f4e193]: Organisation, workspace and permission administration.
+                - listitem [ref=f4e194]:
+                  - paragraph [ref=f4e195]: Users
+                  - paragraph [ref=f4e196]: User management with role-aware access.
+                - listitem [ref=f4e197]:
+                  - paragraph [ref=f4e198]: Project analysis
+                  - paragraph [ref=f4e199]: Progress and workload analysis from live project data.
+              - link "Open Bridge" [ref=f4e200] [cursor=pointer]:
+                - /url: https://prod.ddklo8cltmn7o.amplifyapp.com/
+                - text: Open Bridge
+                - generic [ref=f4e201]: ↗
+    - region "MaCo, in one name and many scripts" [ref=f4e202]:
+      - generic [ref=f4e203]:
+        - paragraph [ref=f4e204]: One name. Many scripts.
+        - generic [ref=f4e205]: MaCo
+        - paragraph [ref=f4e207]: MaCo works with clients across India and the Gulf.
+        - paragraph [ref=f4e208]: "MaCo, written in 13 scripts: MaCo (English), മാകോ (Malayalam), மாகோ (Tamil), మాకో (Telugu), ಮಾಕೋ (Kannada), माको (Hindi), માકો (Gujarati), ਮਾਕੋ (Punjabi), মাকো (Bengali), ମାକୋ (Odia), ماكو (Arabic), ماکو (Persian), מאקו (Hebrew)."
+    - region "How MaCo works" [ref=f4e209]:
+      - generic [ref=f4e210]:
+        - generic [ref=f4e211]:
+          - paragraph [ref=f4e212]: Method
+          - heading "Launch is not the finish line." [level=2] [ref=f4e213]
+        - list [ref=f4e215]:
+          - listitem [ref=f4e216]:
+            - text: A
+            - paragraph [ref=f4e217]: Scope
+            - paragraph [ref=f4e218]: We agree what the software must do, what it must not do, and how we will know it worked.
+          - listitem [ref=f4e219]:
+            - text: B
+            - paragraph [ref=f4e220]: Model
+            - paragraph [ref=f4e221]: Data and roles are modelled before interfaces. The schema decides how long the product lives.
+          - listitem [ref=f4e222]:
+            - text: C
+            - paragraph [ref=f4e223]: Build
+            - paragraph [ref=f4e224]: Small reviewable increments, deployed early, on the same infrastructure as production.
+          - listitem [ref=f4e225]:
+            - text: D
+            - paragraph [ref=f4e226]: Hand over
+            - paragraph [ref=f4e227]: An admin your team can operate, documentation, and a named support route.
+    - region "Clients and company" [ref=f4e228]:
+      - generic [ref=f4e229]:
+        - generic [ref=f4e230]:
+          - paragraph [ref=f4e231]: Clients
+          - list [ref=f4e232]:
+            - listitem [ref=f4e233]:
+              - link "Ananta Nethralaya" [ref=f4e234] [cursor=pointer]:
+                - /url: https://www.anantanethralaya.org/
+              - generic [ref=f4e235]: Healthcare
+            - listitem [ref=f4e236]:
+              - link "Al Afzah Group WLL" [ref=f4e237] [cursor=pointer]:
+                - /url: https://www.al-afzahgroup.com/
+              - generic [ref=f4e238]: Construction
+            - listitem [ref=f4e239]:
+              - link "Soorath Autos" [ref=f4e240] [cursor=pointer]:
+                - /url: https://www.soorathautos.in/
+              - generic [ref=f4e241]: Automotive retail
+            - listitem [ref=f4e242]:
+              - link "HeadGreen" [ref=f4e243] [cursor=pointer]:
+                - /url: https://www.headgreen.in/
+              - generic [ref=f4e244]: EV mobility
+        - generic [ref=f4e245]:
+          - paragraph [ref=f4e246]: About
+          - paragraph [ref=f4e247]: MaCo builds and maintains software that carries real operational weight — client platforms, internal tooling and the systems people log into every working day.
+          - paragraph [ref=f4e248]: Software / IT solutions, based in Kochi, Kerala, India. Working with clients across India and the Gulf.
+    - region "Start a project" [ref=f4e249]:
+      - generic [ref=f4e251]:
+        - paragraph [ref=f4e252]: Contact
+        - heading "Good software earns its place." [level=2] [ref=f4e253]
+        - paragraph [ref=f4e254]: Tell us what has to work. We reply from hello@maco.dev.
+        - generic [ref=f4e255]:
+          - link "Start a project" [ref=f4e256] [cursor=pointer]:
+            - /url: /contact
+            - text: Start a project
+            - generic [ref=f4e257]: →
+          - link "hello@maco.dev" [ref=f4e258] [cursor=pointer]:
+            - /url: mailto:hello@maco.dev
+  - contentinfo [ref=f4e259]:
+    - generic [ref=f4e260]:
+      - generic [ref=f4e261]:
+        - generic [ref=f4e262]:
+          - paragraph [ref=f4e263]: Tell us what has to work.
+          - link "Start a project" [ref=f4e264] [cursor=pointer]:
+            - /url: /contact
+            - text: Start a project
+            - generic [ref=f4e265]: →
+        - generic [ref=f4e266]:
+          - paragraph [ref=f4e267]: Index
+          - list [ref=f4e268]:
+            - listitem [ref=f4e269]:
+              - link "Services" [ref=f4e270] [cursor=pointer]:
+                - /url: /services
+            - listitem [ref=f4e271]:
+              - link "Work" [ref=f4e272] [cursor=pointer]:
+                - /url: /work
+            - listitem [ref=f4e273]:
+              - link "Products" [ref=f4e274] [cursor=pointer]:
+                - /url: /products
+            - listitem [ref=f4e275]:
+              - link "Clients" [ref=f4e276] [cursor=pointer]:
+                - /url: /clients
+            - listitem [ref=f4e277]:
+              - link "About" [ref=f4e278] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=f4e279]:
+              - link "Contact" [ref=f4e280] [cursor=pointer]:
+                - /url: /contact
+        - generic [ref=f4e281]:
+          - paragraph [ref=f4e282]: Contact
+          - list [ref=f4e283]:
+            - listitem [ref=f4e284]:
+              - link "hello@maco.dev" [ref=f4e285] [cursor=pointer]:
+                - /url: mailto:hello@maco.dev
+            - listitem [ref=f4e286]: Kochi, Kerala, India
+      - generic [ref=f4e287]:
+        - generic [ref=f4e288]: © 2026 MaCo — Software / IT solutions
+        - generic [ref=f4e289]: MaCo · മാകോ · माको · ماكو · Мако · マコ · 마코
+        - generic [ref=f4e290]: Obsidian / Cobalt

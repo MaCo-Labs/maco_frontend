@@ -1,20 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { services } from "@/content/maco";
+import { LineReveal } from "@/components/motion/line-reveal";
+import { MotionSection } from "@/components/motion-section";
 
 export const Route = createFileRoute("/services/")({
   head: () => ({
     meta: [
-      { title: "Services — Web, app, technical & software support | MaCo" },
+      { title: "Services — Business software & digital solutions | MaCo" },
       {
         name: "description",
         content:
-          "MaCo's five launch services: web development, app development, technical support, software support and social media managing.",
+          "MaCo's two services: business software (task management, CRM, custom software) and digital solutions (websites, e-commerce, branding and design, social media management).",
       },
       { property: "og:title", content: "Services — MaCo" },
       {
         property: "og:description",
-        content:
-          "Five confirmed services, each backed by delivered client work and owned products.",
+        content: "Two services, each backed by delivered client work and owned products.",
       },
     ],
   }),
@@ -28,18 +29,18 @@ function ServicesIndex() {
         <div className="shell grid gap-8 py-16 lg:grid-cols-12 lg:py-24">
           <p className="label lg:col-span-3">Index / Services</p>
           <div className="lg:col-span-9">
-            <h1 className="display-lg max-w-3xl">
+            <LineReveal as="h1" className="display-lg max-w-3xl">
               What we sell,{" "}
               <span style={{ color: "var(--muted)" }}>and the evidence behind each one.</span>
-            </h1>
+            </LineReveal>
           </div>
         </div>
       </section>
 
       <section>
         <div className="shell py-10 lg:py-16">
-          {services.map((s) => (
-            <article key={s.slug} className="index-row group">
+          {services.map((s, i) => (
+            <MotionSection key={s.slug} as="article" delay={i * 80} className="index-row group">
               <Link to="/services/$slug" params={{ slug: s.slug }} className="block py-10">
                 <div className="relative z-10 grid gap-4 transition-[padding] duration-500 group-hover:px-4 lg:grid-cols-12 lg:gap-8">
                   <span className="label lg:col-span-1">{s.index}</span>
@@ -50,7 +51,7 @@ function ServicesIndex() {
                   </span>
                 </div>
               </Link>
-            </article>
+            </MotionSection>
           ))}
           <div className="rule-t" />
         </div>

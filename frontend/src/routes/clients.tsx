@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { clients, getProject } from "@/content/maco";
+import { LineReveal } from "@/components/motion/line-reveal";
+import { MotionSection } from "@/components/motion-section";
 
 export const Route = createFileRoute("/clients")({
   head: () => ({
@@ -27,7 +29,9 @@ function ClientsPage() {
         <div className="shell grid gap-8 py-16 lg:grid-cols-12 lg:py-24">
           <p className="label lg:col-span-3">Index / Clients</p>
           <div className="lg:col-span-9">
-            <h1 className="display-lg max-w-3xl">Who we build for.</h1>
+            <LineReveal as="h1" className="display-lg max-w-3xl">
+              Who we build for.
+            </LineReveal>
             <p className="mt-8 max-w-xl text-muted">
               No borrowed logos, no unnamed "global brands". Each organisation below is attached to
               work that is live and publicly verifiable.
@@ -39,7 +43,12 @@ function ClientsPage() {
       <section>
         <div className="shell py-10 lg:py-16">
           {clients.map((c, i) => (
-            <article key={c.slug} className="rule-t grid gap-6 py-10 lg:grid-cols-12 lg:gap-10">
+            <MotionSection
+              key={c.slug}
+              as="article"
+              delay={i * 70}
+              className="rule-t grid gap-6 py-10 lg:grid-cols-12 lg:gap-10"
+            >
               <span className="label lg:col-span-1">{String(i + 1).padStart(2, "0")}</span>
               <div className="lg:col-span-5">
                 <h2 className="display-md">{c.name}</h2>
@@ -70,7 +79,7 @@ function ClientsPage() {
                   {c.website.replace("https://", "").replace(/\/$/, "")} ↗
                 </a>
               </div>
-            </article>
+            </MotionSection>
           ))}
           <div className="rule-t" />
         </div>

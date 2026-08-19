@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { projects } from "@/content/maco";
+import { LineReveal } from "@/components/motion/line-reveal";
+import { Magnetic } from "@/components/motion/magnetic";
+import { MotionSection } from "@/components/motion-section";
 
 export const Route = createFileRoute("/work/")({
   head: () => ({
@@ -28,9 +31,9 @@ function WorkIndex() {
         <div className="shell grid gap-8 py-16 lg:grid-cols-12 lg:py-24">
           <p className="label lg:col-span-3">Index / Client work</p>
           <div className="lg:col-span-9">
-            <h1 className="display-lg max-w-3xl">
+            <LineReveal as="h1" className="display-lg max-w-3xl">
               Four clients. <span style={{ color: "var(--muted)" }}>Four different problems.</span>
-            </h1>
+            </LineReveal>
             <p className="mt-8 max-w-xl text-muted">
               Client work is kept separate from MaCo-owned products. Everything below was delivered
               for an organisation outside MaCo and is live in public.
@@ -42,8 +45,10 @@ function WorkIndex() {
       <section>
         <div className="shell py-10 lg:py-16">
           {projects.map((p, i) => (
-            <article
+            <MotionSection
               key={p.slug}
+              as="article"
+              delay={i * 70}
               className="rule-t grid gap-6 py-12 lg:grid-cols-12 lg:gap-10 lg:py-16"
             >
               <div className="lg:col-span-4">
@@ -71,20 +76,24 @@ function WorkIndex() {
                   ))}
                 </ul>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link to="/work/$slug" params={{ slug: p.slug }} className="btn-line">
-                    Case study
-                  </Link>
-                  <a
-                    href={p.external_url}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="btn-line"
-                  >
-                    Visit site ↗
-                  </a>
+                  <Magnetic>
+                    <Link to="/work/$slug" params={{ slug: p.slug }} className="btn-line">
+                      Case study
+                    </Link>
+                  </Magnetic>
+                  <Magnetic>
+                    <a
+                      href={p.external_url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="btn-line"
+                    >
+                      Visit site ↗
+                    </a>
+                  </Magnetic>
                 </div>
               </div>
-            </article>
+            </MotionSection>
           ))}
           <div className="rule-t" />
         </div>
