@@ -59,16 +59,25 @@ if (!existsSync(src)) {
 run(
   [
     "-y",
-    "-ss", IN,
-    "-t", DURATION,
-    "-i", src,
+    "-ss",
+    IN,
+    "-t",
+    DURATION,
+    "-i",
+    src,
     "-an",
-    "-vf", "scale=1024:-2,format=yuv420p",
-    "-c:v", "libvpx-vp9",
-    "-crf", "36",
-    "-b:v", "0",
-    "-deadline", "good",
-    "-cpu-used", "2",
+    "-vf",
+    "scale=1024:-2,format=yuv420p",
+    "-c:v",
+    "libvpx-vp9",
+    "-crf",
+    "36",
+    "-b:v",
+    "0",
+    "-deadline",
+    "good",
+    "-cpu-used",
+    "2",
     path.join(outVideo, "capture.webm"),
   ],
   "bridge/capture.webm (VP9)",
@@ -77,16 +86,25 @@ run(
 run(
   [
     "-y",
-    "-ss", IN,
-    "-t", DURATION,
-    "-i", src,
+    "-ss",
+    IN,
+    "-t",
+    DURATION,
+    "-i",
+    src,
     "-an",
-    "-vf", "scale=1024:-2,format=yuv420p",
-    "-c:v", "libx264",
-    "-preset", "slow",
-    "-crf", "24",
-    "-profile:v", "high",
-    "-movflags", "+faststart",
+    "-vf",
+    "scale=1024:-2,format=yuv420p",
+    "-c:v",
+    "libx264",
+    "-preset",
+    "slow",
+    "-crf",
+    "24",
+    "-profile:v",
+    "high",
+    "-movflags",
+    "+faststart",
     path.join(outVideo, "capture.mp4"),
   ],
   "bridge/capture.mp4 (H.264, Safari fallback)",
@@ -96,15 +114,48 @@ run(
 // mid-drag) — matches the video's first visible frame so there's no
 // poster->video jump cut.
 run(
-  ["-y", "-ss", String(Number(IN) + 1), "-i", src, "-frames:v", "1", "-vf", "scale=1024:-2", path.join(outVideo, "poster.jpg")],
+  [
+    "-y",
+    "-ss",
+    String(Number(IN) + 1),
+    "-i",
+    src,
+    "-frames:v",
+    "1",
+    "-vf",
+    "scale=1024:-2",
+    path.join(outVideo, "poster.jpg"),
+  ],
   "bridge/poster.jpg",
 );
 run(
-  ["-y", "-i", path.join(outVideo, "poster.jpg"), "-c:v", "libaom-av1", "-crf", "32", "-b:v", "0", "-still-picture", "1", path.join(outVideo, "poster.avif")],
+  [
+    "-y",
+    "-i",
+    path.join(outVideo, "poster.jpg"),
+    "-c:v",
+    "libaom-av1",
+    "-crf",
+    "32",
+    "-b:v",
+    "0",
+    "-still-picture",
+    "1",
+    path.join(outVideo, "poster.avif"),
+  ],
   "bridge/poster.avif",
 );
 run(
-  ["-y", "-i", path.join(outVideo, "poster.jpg"), "-c:v", "libwebp", "-quality", "82", path.join(outVideo, "poster.webp")],
+  [
+    "-y",
+    "-i",
+    path.join(outVideo, "poster.jpg"),
+    "-c:v",
+    "libwebp",
+    "-quality",
+    "82",
+    path.join(outVideo, "poster.webp"),
+  ],
   "bridge/poster.webp",
 );
 
@@ -142,7 +193,10 @@ for (const job of brandJobs) {
     vf = `scale=${job.w}:-1`;
   }
 
-  run(["-y", "-i", inPath, "-vf", vf, "-c:v", "libwebp", "-lossless", "0", "-q:v", "90", outPath], `brand/${job.out}`);
+  run(
+    ["-y", "-i", inPath, "-vf", vf, "-c:v", "libwebp", "-lossless", "0", "-q:v", "90", outPath],
+    `brand/${job.out}`,
+  );
 }
 
 // ---------------------------------------------------------------------

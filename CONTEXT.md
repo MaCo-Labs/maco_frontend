@@ -1,7 +1,7 @@
 # MaCo Website — CONTEXT
 
 Complete project context for developers and AI agents.
-Last updated: 2026-08-19 (Motion Rebuild pass — all 10 homepage sections now carry real scroll-linked motion, live-verified via Playwright; see §10/§12 and `AI_HANDOFF.md` "Homepage Motion Rebuild" for what changed)
+Last updated: 2026-08-21 (post-cleanup pass — dead code and unused deps removed, docs resynced to actual code; see §11 for what changed)
 
 ---
 
@@ -11,26 +11,24 @@ Last updated: 2026-08-19 (Motion Rebuild pass — all 10 homepage sections now c
 
 This repository is the **company website** (marketing + editorial surface) with:
 
-- A **React / TanStack Start** frontend
-- A **Django REST + Admin** backend / CMS
+- A **React 19 / TanStack Start** frontend
+- A **Django REST + Admin** backend / CMS (content is read from `content/maco.ts` on the frontend, not fetched live — see §8)
 - Two brand themes: **Obsidian** and **Cobalt**
 
 The site must feel: premium, technical, distinctive, confident, humble, editorial, modern, memorable — while still reading as a real software company.
 
 It must **not** feel like: generic AI SaaS, React Bits demo, Lovable template, Framer template, or WebGL showcase.
 
-The homepage went through a full creative reset in August 2026 (`HOMEPAGE_REDESIGN_PLAN.md`) — that document is the authoritative source for the current visual system and architecture. This file gives current-state facts; where the two disagree, verify against the actual repo.
-
 ---
 
 ## 2. Non-negotiable principles
 
-1. **Make MaCo look like MaCo** — React Bits (and any reference library) is a technique source, not the identity; take concepts, reimplement on the installed `motion` stack, don't copy files.
+1. **Make MaCo look like MaCo** — React Bits (and any reference library) is a technique source, not the identity; take concepts, reimplement on the installed stack, don't copy files.
 2. **Do not invent** projects, products, clients, testimonials, metrics, awards, or claims. Every number/name on the page must trace to `content/maco.ts`.
-3. **Keep `SystemField`** — retired from the homepage in the reset, but still imported by `/about` and `/products/$slug`. Don't delete the file.
-4. **Two themes must be genuinely different**, not a recolor — currently enforced via a full separate font set per theme (§9), not just accent-color swaps.
+3. **Keep `SystemField`** (`components/system-field.tsx`) — retired from the homepage, but still imported by `/products/$slug`. Don't delete the file.
+4. **Two themes must be genuinely different**, not a recolor — enforced via a full separate font set per theme (§9), not just accent-color swaps.
 5. **Prefer restraint** — motion should serve reveal, hierarchy, continuity, feedback, or storytelling. Nothing purely decorative.
-6. **Performance matters** — avoid unthrottled scroll/pointer listeners driving React state; prefer `motion` `MotionValue`s and direct CSS-variable writes.
+6. **Performance matters** — avoid unthrottled scroll/pointer listeners driving React state; prefer CSS custom-property writes and `gsap.quickSetter`.
 7. **Accessibility** — honor `prefers-reduced-motion`; every cinematic moment needs a designed static fallback, not just a disabled animation.
 
 ---
@@ -39,117 +37,94 @@ The homepage went through a full creative reset in August 2026 (`HOMEPAGE_REDESI
 
 ```
 maco-website-v2/
-├── AI_HANDOFF.md                # Agent handoff (live status)
-├── CONTEXT.md                   # This file
-├── PROJECT_STATUS.md
-├── ROADMAP.md
-├── HOMEPAGE_REDESIGN_PLAN.md    # Authoritative plan for the current homepage
-├── DOCS.md
-├── README.md
-├── AGENTS.md                    # Lovable-connected note (history safety)
-├── frontend/                    # React app
+├── CONTEXT.md                   # This file — authoritative current-state reference
+├── PROJECT_STATUS.md            # Done / not-done matrix
+├── ROADMAP.md                   # What's left, in order
+├── AI_HANDOFF.md                # Live status for the next AI session
+├── HOMEPAGE_REDESIGN_PLAN.md    # Historical: the Aug 2026 plan that produced the current homepage
+├── DOCS.md                      # Index of these docs
+├── README.md                    # Setup instructions
+├── AGENTS.md                    # AI agent operating instructions
+├── docs/superpowers/            # Historical implementation plans/specs (dated, self-marked superseded/done)
+├── frontend/                    # React app (TanStack Start)
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── home/             # the 10 homepage movements (see §10)
-│   │   │   ├── media/             # SurfaceMedia, ProductVideo — media slots
-│   │   │   ├── motion/             # Magnetic, LineReveal, SplitReveal (see §10)
-│   │   │   ├── chrome.tsx         # header, footer, mobile pill nav
+│   │   │   ├── home/              # the 11 homepage sections (see §10)
+│   │   │   ├── media/              # SurfaceMedia, ProductVideo — media slots
+│   │   │   ├── motion/              # ScrubReveal, Stagger, RuleDraw, Magnetic, LineReveal, SplitReveal, RakingSurface
+│   │   │   ├── hero/MaCoGlobe.tsx   # react-globe.gl globe, /about only, lazy-loaded
+│   │   │   ├── chrome.tsx           # header (fixed), footer, mobile pill nav
 │   │   │   ├── scroll-runtime-provider.tsx  # Lenis/GSAP lifecycle owner (see §10)
-│   │   │   ├── mark.tsx           # real logo mark (CSS mask + currentColor), `src` prop for the hero variant
-│   │   │   ├── system-field.tsx   # kept for /about, /products/$slug only
-│   │   │   ├── theme.tsx          # ThemeProvider / useTheme
-│   │   │   └── ui/                # shadcn primitives (46 files, dead — see §11)
+│   │   │   ├── mark.tsx             # real logo mark (CSS mask + currentColor)
+│   │   │   ├── system-field.tsx     # kept for /products/$slug only (§2 rule 3)
+│   │   │   ├── globe-section.tsx    # lazy wrapper around MaCoGlobe, /about only
+│   │   │   ├── motion-section.tsx   # legacy one-shot fade, used by inner routes
+│   │   │   └── theme.tsx            # ThemeProvider / useTheme, radial clip-path theme wipe
 │   │   ├── content/maco.ts        # sole content source of truth
-│   │   ├── hooks/
-│   │   ├── lib/motion.ts          # shared springs (motion-only; scroll is Lenis/ScrollTrigger, see §10)
-│   │   ├── lib/scroll-runtime.ts  # Lenis + GSAP singleton (see §10)
-│   │   ├── routes/                # file-based TanStack routes
-│   │   ├── styles.css             # design tokens + utilities
-│   │   ├── router.tsx / server.ts / start.ts
-│   ├── public/                    # logo-mark.png, maco-mark-hero.png, favicon, geo data
-│   ├── scripts/shrink-hero-mark.cjs  # one-off: white-logo.png -> maco-mark-hero.png (637KB -> 61.6KB)
+│   │   ├── hooks/                 # use-scroll-scene, use-reduced-motion, use-pointer-field, use-media-query, use-script-fonts
+│   │   ├── lib/                   # motion.ts (springs/easing), scroll-runtime.ts (Lenis+GSAP singleton), error handling, skip-to-main
+│   │   ├── routes/                # file-based TanStack routes (see routes/README.md)
+│   │   ├── styles.css             # design tokens + utilities, single CSS file
+│   │   └── router.tsx / server.ts / start.ts
+│   ├── public/                    # logo-mark.png, maco-mark-hero.png, favicon, geo data, media/
+│   ├── scripts/build-media.mjs    # npm run media — regenerates public/media/ from raw source
 │   ├── package.json
 │   └── vite.config.ts
-└── backend/                     # Django
-    ├── maco/                     # settings, urls, wsgi
-    ├── content/                  # models, API, admin, seed_content
+└── backend/                      # Django
+    ├── maco/                      # settings, urls, wsgi
+    ├── content/                   # models, API, admin, seed_content
     ├── manage.py
     ├── requirements.txt
     ├── .env.example
-    └── venv/                     # local virtualenv (gitignored)
+    └── venv/                      # local virtualenv (gitignored)
 ```
 
 ---
 
 ## 4. Tech stack
 
-### Frontend
+### Frontend (`frontend/package.json` — pruned 2026-08-21, see §11)
 
 | Piece | Choice |
 |-------|--------|
-| Runtime | React 19 |
-| Framework | TanStack Start + TanStack Router |
-| Bundler | Vite 8 |
-| Language | TypeScript (strict) |
-| Styling | Tailwind CSS v4 (`@theme inline` + CSS variables) |
-| UI primitives | Radix / shadcn-style under `components/ui` (mostly dead — §11) |
-| Data (client) | TanStack Query (wired in root) |
-| Motion / scroll | Ownership split (§12): **Lenis** (scroll substrate) + **GSAP** `ScrollTrigger`/`SplitText` (pinned/scrubbed scenes, line reveals, the hero wordmark's split-and-shine) + `motion` v13 (`motion/react`) for discrete UI state only (tabs, IDENTITY reel, hover springs) — `motion` no longer touches scroll |
-| Path alias | `@/*` → `src/*` |
+| Runtime | React 19.2 + React DOM 19.2 |
+| Framework | TanStack Start 1.168 + TanStack Router 1.170, file-based routing |
+| Server entry | `src/server.ts`, wired via `tanstackStart({ server: { entry: "./src/server.ts" } })` in `vite.config.ts` |
+| SSR host | Nitro (devDependency) |
+| Bundler | Vite 8.2 + `@vitejs/plugin-react` |
+| Language | TypeScript 5.8, strict, `@/*` → `src/*` (Vite's built-in `resolve.tsconfigPaths`, not the `vite-tsconfig-paths` package) |
+| Styling | Tailwind CSS v4 — CSS-first, no `tailwind.config.*`; all tokens/utilities live in the single `src/styles.css` via `@theme inline` / `@utility` / registered `@property` |
+| Data (client) | TanStack Query (wired in root; no live queries — content is static from `content/maco.ts`) |
+| Scroll substrate | **Lenis** — sole owner of scroll position (`src/lib/scroll-runtime.ts`, lazy singleton) |
+| Scroll animation | **GSAP** `ScrollTrigger` + `SplitText`, entry point `hooks/use-scroll-scene.ts` |
+| Discrete UI motion | **`motion` v13** (`motion/react`) — hover springs, `AnimatePresence` only, never scroll |
+| 3D / WebGL | **`three`** (raw, no React-Three-Fiber) — `react-globe.gl` (`/about` only, lazy). OPEN's hero no longer uses WebGL (see §10) |
+| Fonts | One combined Google Fonts CSS2 request in `__root.tsx`: Unbounded, Jost, Agdasima, Michroma, Tenor Sans, Krona One (split per theme, §9) — plus a lazy per-script font loader (`hooks/use-script-fonts.ts`) for multilingual glyphs |
+| Media pipeline | `scripts/build-media.mjs` (`npm run media`), `ffmpeg-static` |
+| Lint/format | ESLint 9 flat config + `typescript-eslint` + `eslint-plugin-react-hooks` + Prettier via `eslint-plugin-prettier` |
+| Package manager | **`bun`** is canonical (`bunfig.toml`, `bun.lock` is the only lockfile tracked). `npm`/`bun` scripts are interchangeable for `dev`/`build`/`lint`. |
+| Tests | **None.** No test runner, no test files. `bun run build` + `bun run lint` are the only gates. |
+| Deployment config | **None in the repo.** No CI workflow, no `vercel.json`/`netlify.toml`/`amplify.yml`/`Dockerfile`. Deploy target is not yet decided. |
 
-### Backend
+### Backend (`backend/`)
 
 | Piece | Choice |
 |-------|--------|
 | Framework | Django 5.1 |
-| API | Django REST Framework |
+| API | Django REST Framework, base path `/api/v1/` |
 | CORS | django-cors-headers |
 | DB | PostgreSQL via `DATABASE_URL` |
 | CMS | Django Admin |
 | Seed | `python manage.py seed_content` |
 
-### Installed 2026-08-18 — Immersive Motion Rebuild, by explicit user decision
-
-This reverses an earlier version of this section, which read "Not installed (by
-design unless needed later): GSAP, Lenis..." That held for the homepage reset;
-it stopped holding when the user chose the full immersive rebuild over a
-lighter, dependency-free alternative I recommended instead. Both are free for
-commercial use — GSAP 3.15 (ScrollTrigger + SplitText included, no Club GSAP
-paywall) and Lenis 1.3 (MIT).
-
-- `gsap`, `lenis` — see §11 for the measured bundle cost, §12 for the ownership split with `motion`.
-
-### Reverted the same day — WebGL, cursor ring, text scramble (Brand Hero & Bug Fix pass, 2026-08-18)
-
-The immersive rebuild above also shipped a raw-WebGL2 cursor-reactive hero
-field, a hover-distortion shader on PRODUCTS/EVIDENCE imagery, a
-blend-difference cursor-ring companion, and text-scramble hovers. Once actually
-driven in a browser, the user's verdict was that this combination read as a
-generic agency template (`evirexsoft.com`-like), not as MaCo. All four were
-deleted outright (`components/webgl/*`, `components/cursor-ring.tsx`,
-`components/motion/scramble.tsx`, plus every call site) rather than
-tuned — see §10/§11 below and `AI_HANDOFF.md` for the full list. **Lenis and
-GSAP stay** (smooth scroll, pins/scrubs, `SplitText` reveals) — those were kept
-and deepened, not reverted; only the four devices above are gone.
-
-### Reintroduced, third attempt — WebGL on OPEN (Hero Blinds Field pass, 2026-08-19, same day as the motion rebuild)
-
-A cursor-reactive WebGL gradient background (`<BlindsField>`,
-`components/home/blinds-field.tsx`) was added to OPEN, plus magnetic/glow
-micro-physics on the mark and a radial `clip-path` theme-switch transition.
-Requested with a spec that named React Bits' GradientBlinds via a new `ogl`
-dependency; reimplemented instead on `three` (already installed for
-`MaCoGlobe`) per the "Not installed" rule directly below, and scoped to
-OPEN only, unlike the two prior WebGL passes which touched multiple
-sections. Unlike those two, this one was live-verified via Playwright
-(canvas mounts/sizes, mouse-reactive, reduced-motion fallback, zero console
-errors) before being called done — see `AI_HANDOFF.md` for the full
-verification list and rule 8 of its "Do NOT change" section.
+Frontend and backend are only linked through the contact form (`VITE_API_BASE_URL` → `POST /api/v1/contact/`). All other content is compiled into the frontend bundle from `content/maco.ts`, not fetched from the API.
 
 ### Not installed (by design)
 
-- Official React Bits npm bundle (concepts are reimplemented on `motion`/GSAP or, for WebGL, `three` — never copied verbatim, and never on a second WebGL runtime like `ogl`)
-- R3F (`@react-three/fiber`) — both homepage (`<BlindsField>`) and `/about` (`MaCoGlobe`) use raw `three` directly, not R3F
+- Official React Bits npm bundle — concepts reimplemented on `motion`/GSAP/`three`, never copied verbatim
+- `ogl` — the WebGL hero uses raw `three` (already a dependency for the globe) instead
+- React-Three-Fiber — both `three` consumers use the raw API directly
+- `zod`, `react-hook-form`, any Radix/shadcn primitive — removed 2026-08-21, see §11
 
 ---
 
@@ -170,38 +145,28 @@ Tone: factual, simple, confident. Avoid "passionate team revolutionizing digital
 
 ## 6. Confirmed content catalog
 
-Source: `frontend/src/content/maco.ts` (mirrors the DRF schema).
+Source: `frontend/src/content/maco.ts` (mirrors the DRF schema). This is the only place copy facts may come from — see §2 rule 2.
 
-### Services (2, collapsed from 5 on 2026-08-18 at the owner's direction)
+### Services (2)
 
-1. **Business Software** — `business-software` — capabilities: Task Management, CRM, Custom Software
-2. **Digital Solutions** — `digital-solutions` — capabilities: Websites, E-commerce, Branding and Design, Social Media Management
-
-The previous five (`web-development`, `app-development`, `technical-support`,
-`software-support`, `social-media-managing`) no longer exist as slugs anywhere
-in `content/maco.ts` — `projects[].services` was remapped, not left dangling.
-Capability copy reuses the retired services' real descriptions wherever one
-substantively overlaps; see the comment above `services` in `content/maco.ts`
-for exactly which capability inherited which retired entry's text.
+1. **Business Software** — `business-software` — Task Management, CRM, Custom Software
+2. **Digital Solutions** — `digital-solutions` — Websites, E-commerce, Branding and Design, Social Media Management
 
 ### Projects / selected work (4)
 
 1. **Ananta Nethralaya** — eye clinic website — `ananta-nethralaya`
 2. **Al Afzah** — Qatar construction company website — `al-afzah`
 3. **Soorath Autos** — used-car dealership website — `soorath-autos`
-4. **HeadGreen** — EV fleet/cab service (Kochi) website — `headgreen` — the client is **HeadGreen**, not "HeadGreen Mobility" (a fabricated name that shipped on the pre-reset homepage and has since been corrected)
+4. **HeadGreen** — EV fleet/cab service (Kochi) website — `headgreen`
 
 ### Products (2)
 
 1. **Driver's Diary** — PWA/platform for HeadGreen ops (attendance, rides, payroll, docs, reporting) — `drivers-diary`
-2. **Bridge** — MaCo's own SaaS/PWA + desktop task/project platform — `bridge` — gets the strongest product treatment (EVIDENCE movement + first PRODUCTS card)
+2. **Bridge** — MaCo's own SaaS/PWA + desktop task/project platform — `bridge` — gets the strongest treatment (EVIDENCE section + first PRODUCTS card, the only real video footage on the site)
 
-### Clients (4 — names only; no logos without permission)
+### Clients (4 — names only)
 
-- Ananta Nethralaya (Healthcare)
-- Al Afzah Group WLL (Construction)
-- Soorath Autos (Automotive retail)
-- HeadGreen (EV mobility)
+Ananta Nethralaya (Healthcare) · Al Afzah Group WLL (Construction) · Soorath Autos (Automotive retail) · HeadGreen (EV mobility)
 
 ### Process steps
 
@@ -213,17 +178,17 @@ A Scope → B Model → C Build → D Hand over
 
 | Path | File | Purpose |
 |------|------|---------|
-| `/` | `routes/index.tsx` | Home — the 10-movement homepage (§10) |
+| `/` | `routes/index.tsx` | Home — the 11-section homepage (§10) |
 | `/services` | `services.index.tsx` | Services index |
 | `/services/$slug` | `services.$slug.tsx` | Service detail |
 | `/work` | `work.index.tsx` | Work index |
 | `/work/$slug` | `work.$slug.tsx` | Case study |
 | `/products` | `products.index.tsx` | Products index |
-| `/products/$slug` | `products.$slug.tsx` | Product detail |
+| `/products/$slug` | `products.$slug.tsx` | Product detail (uses `SystemField`) |
 | `/clients` | `clients.tsx` | Clients |
-| `/about` | `about.tsx` | About (still uses `MaCoGlobe`, `SystemField`) |
+| `/about` | `about.tsx` | About (uses `MaCoGlobe`/`GlobeSection`) |
 | `/contact` | `contact.tsx` | Contact / lead — real POST, see §8 |
-| `__root.tsx` | Shell, theme, pre-hydration theme script, header/footer, SEO head links |
+| `__root.tsx` | Shell, theme, pre-hydration theme script, fixed header/footer, SEO head links |
 
 Nav labels: Services, Work, Products, Clients, About, Contact.
 
@@ -245,9 +210,7 @@ Documented in `backend/README.md`. Base: `/api/v1/`
 | GET | `/api/v1/clients/` | Only approved for publication |
 | POST | `/api/v1/contact/` | Lead capture (`ScopedRateThrottle` 10/hour, honeypot field `website`) |
 
-Writes (except contact) via Django Admin only.
-
-**The contact form is now actually wired to this.** `frontend/.env.example` documents `VITE_API_BASE_URL=http://localhost:8000` — without it, the frontend contact form errors loudly rather than silently discarding the submission (the pre-fix behavior; see `AI_HANDOFF.md`).
+Writes (except contact) via Django Admin only. `frontend/.env.example` documents `VITE_API_BASE_URL=http://localhost:8000` — without it, the contact form errors loudly rather than silently discarding the submission.
 
 ---
 
@@ -255,13 +218,11 @@ Writes (except contact) via Django Admin only.
 
 ### Themes
 
-Stored in `localStorage` key `maco-theme`. Applied as `data-theme` on `<html>`, set pre-hydration by an inline script in `RootShell` (`__root.tsx`) so a returning Cobalt user never sees an Obsidian flash.
+Stored in `localStorage` key `maco-theme`. Applied as `data-theme` on `<html>`, set pre-hydration by an inline script in `__root.tsx` so a returning Cobalt user never sees an Obsidian flash. Switching themes triggers a GSAP `clipPath: circle()` radial wipe from the click origin (`theme.tsx`).
 
-Both themes share the same two-ground model (`data-ground="paper" | "deep"` on each section) — the difference between themes is the color mapping under each ground **and, critically, a completely different font set** (below). This is the mechanism that makes the two themes feel like different modes rather than a palette swap.
+Both themes share the same two-ground model (`data-ground="paper" | "deep"` on each section) — the difference between themes is the color mapping under each ground and, critically, a **completely different font set**.
 
-### Typography (pivoted 2026-08-18)
-
-User-selected fonts, deliberately split per theme:
+### Typography
 
 | Role | Obsidian | Cobalt |
 |---|---|---|
@@ -269,9 +230,7 @@ User-selected fonts, deliberately split per theme:
 | Body (`--maco-font-body`) | Jost | Tenor Sans |
 | Label (`--maco-font-label`) | Agdasima | Krona One |
 
-Loaded via one combined Google Fonts request in `__root.tsx`. Michroma, Tenor Sans, and Krona One are single-static-weight families — verified against the Google Fonts CSS2 API before wiring in; don't request weight axes that don't exist for them.
-
-Type scale (`display-hero` / `display-lg` / `display-md` / `lead` / `body` / `label`) is defined once in `styles.css` and shared across themes; only the family tokens differ.
+Loaded via one combined Google Fonts request in `__root.tsx`. Michroma, Tenor Sans, and Krona One are single-static-weight families — don't request weight axes that don't exist for them.
 
 ### Structural utilities
 
@@ -279,298 +238,135 @@ Type scale (`display-hero` / `display-lg` / `display-md` / `lead` / `body` / `la
 
 ### Brand assets (`frontend/public/`)
 
-- `logo-mark.png` — the real mark, URL-safe copy of `logo final-07 (1).png`, used by `Mark` via CSS `mask-image` everywhere in chrome (header/footer/nav) at small sizes
-- `maco-mark-hero.png` — the OPEN hero's mark, generated from `white-logo.png` by `scripts/shrink-hero-mark.cjs` (2026-08-18): 637KB RGBA → 61.6KB grayscale+alpha at half-resolution. Rendered via the same CSS-mask technique (`<Mark src="/maco-mark-hero.png">`) — only the alpha channel is ever read, so the RGB-channel downsample is lossless for this use. Confirmed by decoding both PNGs' alpha channels directly: source is 23.2%/59.2% fully-opaque/fully-transparent, output is 23.5%/59.0% — same shape
-- `logo final-04.png`, `logo final-07 (1).png/.jpg`, `logo final-10.png`, `white-logo.png` — original exports; `white-logo.png` is now the source for `maco-mark-hero.png` above, the rest remain unused
+- `logo-mark.png` — the real mark, used by `Mark` via CSS `mask-image` everywhere in chrome (header/footer/nav)
+- `maco-mark-hero.png` — the OPEN hero's larger mark, rendered via the same CSS-mask technique
 - `favicon.png`
+- `geo/countries-110m.geojson` — globe geometry, `/about` only
+- `media/brand/*.webp` — client logos (6), referenced from `content/maco.ts`
+- `media/bridge/*` — Bridge product video + poster, referenced from `content/maco.ts`
 
 ---
 
-## 10. The homepage (post Motion Rebuild architecture, 2026-08-19)
+## 10. The homepage — 11 sections, Cuberto-parity structure
 
-Ten movements, composed in `routes/index.tsx`, built under `components/home/`,
-plus `<GroundHandoff>` (renders nothing — see below). OPEN (brand alone) and
-SURFACE (the old hero's promise/proof/video merged with the old standalone
-CLAIM) replace the previous two-section OPEN+CLAIM opening. Ground sequence
-retuned this pass per the plan's Phase 4 rhythm: deep · paper · deep deep ·
-paper paper · deep · paper paper · deep — no run longer than two.
+Composed in `routes/index.tsx`, built under `components/home/`, plus `<GroundHandoff>` (renders nothing — cross-section continuity, see below).
 
-| Movement | Ground | File | Behaviour |
-|---|---|---|---|
-| OPEN | deep | `open-logo.tsx` | Hero — MaCo's brand alone: the real mark (`<Mark src="/maco-mark-hero.png">`) + the animated "MaCo" wordmark (`<SplitReveal>`, GSAP `SplitText` char-rise then a continuous 115° `.maco-shine` rake), existing eyebrows, a scroll cue fading on a `ScrollTrigger` scrub |
-| SURFACE | paper | `working-surface.tsx` | The promise, the 4-cell proof row (staggered via one shared `ScrollTrigger`), two magnetic CTAs, and Bridge in motion — the video panel "lays flat" on scroll (composed with the existing pointer tilt), its light-pass sweep moved off the pointer onto its own scroll transit |
-| EVIDENCE | deep | `evidence-expand.tsx` | Scroll-linked clip-path expand, now aspect-locked to the video's real 16:9 (previously grew to the viewport's aspect and let `objectFit:cover` crop real footage) — GSAP `ScrollTrigger` `pin`+`scrub` writing straight to inline style/CSS vars in `onUpdate`, pin extended 120%→160% |
-| WORK | deep | `work-sequence.tsx` | 4 real projects — pinned horizontal rail (`lg+`) via `WorkRail`/`WorkPanel`, mounted unconditionally with the pin itself gated by `gsap.matchMedia()` (fixed a mount-order race that previously let `useMediaQuery`'s SSR-safe flip desync the pin from its own transform, see §10's bug note below); plain vertical list (`WorkList`) on mobile, migrated onto the same `ScrubReveal`/`Stagger` vocabulary as the rest of the page. Progress on a registered, inherited `--p` custom property |
-| CAPABILITY | paper | `capability-selector.tsx` | Services selector, 2 tabs (Business Software, Digital Solutions) — sticky on desktop, a section-spanning `ScrollTrigger` maps scroll progress to the active tab; click/arrow-key sets a flag that wins outright until the section scrolls fully past |
-| PRODUCTS | paper | `product-story.tsx` | Bridge + Driver's Diary as a sticky overlap stack — each card `position:sticky` with ascending z-index so the second visibly covers the first, each card itself a `data-ground="deep"` tile with its own `ScrollTrigger`-scrubbed light-pass sweep (`ProductMedia`); aspect ratio derived from real asset dimensions (Driver's Diary is a real 900×1203 portrait) |
-| IDENTITY | deep | `identity.tsx` | "One name. Many scripts." — fully scroll-driven dial via a registered, inherited `--t` custom property (replaces a prior `setInterval` reel); no animated `filter:blur()`, no `motion/react` involvement, correct `lang` code per script, `sr-only` full listing |
-| METHOD | paper | `method-line.tsx` | A → B → C → D — pinned vertical step-through (GSAP `ScrollTrigger`, `~150vh` pin, `scrub`), a *different* pin mechanic from WORK's horizontal rail deliberately; progress written straight to refs, not React state; reduced-motion keeps the static 4-step grid |
-| RECORD | paper | `record.tsx` | Clients + company — the plan's one deliberate rest point: a single `RakingSurface` lights the logo grid once, tiles settle via a low-amplitude `Stagger` (not motionless, but restrained) |
-| CLOSE | deep | `close-intake.tsx` | A rule draws outward from centre (the one place on the page a rule draws from the middle), the page's biggest scrub reveal, a final light pass; links to `/contact` rather than duplicating a form |
+Rebuilt 2026-08-28 (plan "Cuberto-parity homepage rebuild") at the owner's explicit direction: a full structural clone of cuberto.com's homepage — section inventory, order, spacing/grid rhythm, hero shape and component layouts — wearing MaCo's Obsidian/Cobalt tokens, MaCo's six typefaces, and `content/maco.ts`'s real copy. Cuberto's own colour values, typefaces and copy were never used, not even temporarily — see the "CUBERTO-PARITY STRUCTURE" block at the top of `styles.css` and `docs/references/cuberto/skillui/`. This overrides the "don't rebuild the homepage" / "reference sites are technique-only" rules that stood in `AGENTS.md`, `ROADMAP.md` and every `docs/references/*/NOTES.md` before this date — see the dated entry in `AI_HANDOFF.md` for the full reasoning and what still doesn't override.
 
-### Cross-section continuity — `GroundHandoff` (2026-08-19)
+The eleven `aria-label`s are unchanged from the previous (pre-2026-08-28) architecture — same labels, new order, new component behind each one. `scripts/shoot.mjs`'s `SECTIONS` list reflects the new order.
 
-`components/home/ground-handoff.tsx`, mounted once after CLOSE in
-`routes/index.tsx`, renders nothing itself. On 4 hand-picked boundary pairs,
-the outgoing section scales down/dims/lifts as the incoming section arrives,
-so the boundary reads as one section being overtaken rather than a hard cut.
-Only pairs whose outgoing side is pin-free are eligible — a `transform` on the
-ancestor of a `position:fixed` pinned element repositions it relative to that
-ancestor instead of the viewport, so EVIDENCE/WORK/IDENTITY/METHOD (each hosts
-a pin) can never be an outgoing side; PRODUCTS is safe outgoing since its
-cards are `position:sticky`, not `fixed`.
+| # | Section | Cuberto source | Ground | File | `aria-label` | Pin? |
+|---|---|---|---|---|---|---|
+| 1 | TOPHEAD | `cb-tophead` | paper | `top-head.tsx` | Introduction | no |
+| 2 | PREVIEW | `cb-preview` | deep | `evidence-expand.tsx` | Bridge in motion | yes |
+| 3 | OVERVIEW | `cb-overview` | paper | `overview.tsx` | What MaCo does | no |
+| 4 | FEATURE | `cb-feature` | paper | `feature-accordion.tsx` | Capabilities | no |
+| 5 | LOGOREEL | `cb-logoreel` | paper | `logo-reel.tsx` | Who we work with | no |
+| 6 | SUMMARY (inverse) | `cb-summary.-inverse` | deep | `summary.tsx` (`FeaturedWork`) | Selected client work | no |
+| 7 | SUMMARY | `cb-summary` | paper | `summary.tsx` (`ProductSummary`) | Products | no |
+| 8 | OVERVIEW (2nd) | `cb-overview` | paper | `identity.tsx` | MaCo, in one name and many scripts | yes |
+| 9 | SUMMARY (inverse) | `cb-summary.-inverse` | deep | `record.tsx` | Clients and company | no |
+| 10 | FAQ (inverse) | `cb-faq.-inverse` | deep | `faq.tsx` | How MaCo works | no |
+| 11 | OUTRO | `cb-outro` | deep | `outro.tsx` | Start a project | no |
 
-### Two mount-order races found and fixed (2026-08-18 and 2026-08-19)
+Ground sequence: paper · deep · paper paper paper · deep · paper paper · deep deep deep. Matches Cuberto's own `L L L L L · D · L L · D D` rhythm (with PREVIEW's own deep ground folded in as the first `D`) — the alternation the pre-2026-08-28 architecture didn't have.
 
-Same bug class, found twice: `useMediaQuery("(min-width: 1024px)")` is
-SSR-safe by initialising to `false` and only flipping to `true` in an effect
-after mount, so whichever section conditionally renders its pinned variant off
-that hook mounts its pin-spacer one render late. Any `ScrollTrigger` created
-in the meantime (by a sibling section) measures against a document missing
-that spacer and fires at the wrong offset. First hit METHOD-vs-WORK
-(2026-08-18, fixed via `scheduleRefresh()` coalescing all trigger creation
-into one next-frame `ScrollTrigger.refresh()`). Recurred as IDENTITY-vs-WORK
-(2026-08-19) because WORK itself was still switching `<WorkRail>`/`<WorkList>`
-via the same `useMediaQuery` pattern — fixed by mounting both unconditionally
-(split by CSS breakpoint) and gating the pin itself with `gsap.matchMedia()`,
-which reverts automatically on a breakpoint crossing, closing the bug class
-rather than patching another instance of it.
+Only two sections pin: PREVIEW (`evidence-expand.tsx`, pins its own `<section>`) and the 2nd OVERVIEW / IDENTITY (`identity.tsx`, same). Everything else is pin-free — a deliberate drop from the previous architecture's four pins (the retired `ServicesConvergence`, `ProductShowcase`-as-sticky-but-effectively-staged, and `MethodLine` are gone), which is also why the page is roughly one pinned viewport shorter than before.
 
-### Two real bugs found and fixed in this pass (Brand Hero & Bug Fix, 2026-08-18)
+Cuberto's measured rhythm, adopted as the `cb-*` utilities in `styles.css`: **108px (6.75rem)** section padding unit (`@utility cb-section`), **180px (11.25rem)** hero-only lead-in (`@utility cb-tophead`), radius scale `7.2px` / `1.6rem` / `2rem` / `1000px` (`--radius-chip/card/plate/pill`), and the accordion open/close transition taken verbatim off their stylesheet (`grid-template-rows .3s ease-out, opacity .4s ease-out` — `@utility cb-panel`).
 
-Both reported by the user after actually scrolling the built page ("WORK races
-past its panels, then METHOD pops up mid-scroll, then a big empty gap"), both
-traced to a provable root cause in the code, not tuned by guesswork:
+### What each section does
 
-- **WORK's pin distance and its transform disagreed by 4×.** `end` was
-  measured in pixels (`rail.scrollWidth - window.innerWidth`, ≈3 viewport
-  widths for 4 panels) but the rail was moved by `-progress * (n-1) * 100%` —
-  a percentage that resolves against the rail's own width (4 × viewport
-  width), not the viewport. The panels finished travelling at `progress ≈
-  0.25`; the remaining ~75% of the pin held an empty pinned viewport. Fixed by
-  deriving both `end` and the transform from the exact same
-  `rail.scrollWidth - rail.clientWidth` measurement, applied as `gsap.quickSetter(rail, "x", "px")`.
-- **METHOD's `ScrollTrigger` was created before WORK's, against a document
-  that didn't yet contain WORK's pin-spacer.** `useMediaQuery` initialises to
-  `false` and only flips to `true` in an effect after mount, so on first
-  render `WorkSequence` renders the non-pinning `<WorkList>` and creates no
-  trigger, while `MethodLine` creates its trigger immediately. `<WorkRail>`
-  (and its trigger) mount one render later. `ScrollTrigger` only measures the
-  trigger it's currently creating, not siblings, so METHOD's `start` was
-  measured too early and fired while WORK was still pinned, with a
-  correspondingly large empty gap where METHOD should have appeared. Fixed by
-  adding `scheduleRefresh()` to `lib/scroll-runtime.ts` — every scene calls it
-  right after creating its trigger, coalescing into one `ScrollTrigger.refresh()`
-  next frame regardless of mount order.
+- **TOPHEAD** (`top-head.tsx`) — Cuberto's actual opening shape: brand row (`<SplitReveal>` wordmark entrance), one large left-aligned `<h1>` (`site.tagline`), short subtext (`site.statement`) and the entry CTA, under `<RakingSurface>`. Replaces the previous full-viewport centred-logo OPEN section — the page now starts reading immediately instead of resolving to a brand lockup first.
+- **PREVIEW** (`evidence-expand.tsx`, unchanged) — the page's one pinned cinematic set-piece: a clip-path frame locked to the video's real 16:9, grows to ~88vw on `ScrollTrigger` pin+scrub.
+- **OVERVIEW** (`overview.tsx`) — Cuberto's `cb-overview` 2-col flex: positioning statement left, a counted `<dl>` of real figures (service/client/project/product counts, derived from `content/maco.ts` — never invented) plus a route to `/about` right.
+- **FEATURE** (`feature-accordion.tsx`) — every capability across both service lines, flattened into one `<Accordion>` (`components/home/accordion.tsx`, shared with FAQ below), numbered rows, first row open, one open at a time. Replaces the previous two-card `ServicesConvergence` pin — Cuberto's homepage states its full capability range as one list, not two headline cards.
+- **LOGOREEL** (`logo-reel.tsx`) — continuous CSS-only horizontal drift of client logo cards (`@utility cb-reel`, radius `--radius-chip`, edge-masked), the track duplicated and translated -50% for a seamless loop, `aria-hidden` on the duplicate half. Replaces the previous scroll-scrubbed scatter field (`client-field.tsx`) — a reel reads correctly at every viewport width with no separate mobile branch.
+- **SUMMARY / FeaturedWork** (`summary.tsx`) — client platforms as a `cb-cards` grid (Cuberto's measured `450×608`-ish portrait plates), on deep ground. One `<Summary>` component, two call sites (here and PRODUCTS below) — matching Cuberto's own reuse of `cb-summary` twice.
+- **SUMMARY / ProductSummary** (`summary.tsx`) — MaCo's own two products, same card shape, paper ground.
+- **IDENTITY** (`identity.tsx`, unchanged) — "One name. Many scripts." — a pinned, fully scroll-driven script dial, glyph position is pure CSS `calc(--i - --t)`, zero re-renders, correct `lang` per script. Ground flipped `deep` → `paper` in this pass to match Cuberto's own alternation.
+- **RECORD** (`record.tsx`) — the page's one rest beat, client logo wall settling under a single `RakingSurface` pass. Ground flipped `paper` → `deep` in this pass.
+- **FAQ** (`faq.tsx`) — the same four-step process (A→D) as before, now through the shared `<Accordion>` on inverted ground, matching Cuberto's `cb-faq.-inverse`. Replaces the previous pinned `MethodLine` progress-spine.
+- **OUTRO** (`outro.tsx`) — Cuberto's `cb-outro` 2-col grid: closing statement left, contact route right. Carries over the previous CLOSE section's `light-pass` sweep and centre-drawn `<RuleDraw>` — the one thing worth keeping from the section it replaces.
+
+### Cross-section continuity — `GroundHandoff`
+
+`components/home/ground-handoff.tsx`, mounted once after OUTRO, renders nothing. On 8 hand-picked boundary pairs, matched by `aria-label`, the outgoing section scales down/dims/lifts as the incoming section arrives; 3 of the 8 (each at a real ground flip) additionally get a curved-corner "sheet" reveal on the incoming side. Only pairs whose outgoing side is pin-free are eligible — a `transform` on the ancestor of a `position:fixed` pinned element repositions it relative to that ancestor instead of the viewport, so PREVIEW and IDENTITY (the only two sections that pin) can never be an outgoing side. See the file's own doc comment for the full derivation.
 
 ### `SurfaceMedia` (`components/media/surface-media.tsx`)
 
-Three-tier media slot, because the repo has zero product photography or video: tier 1 (video, not yet used), tier 2 (image, not yet used), tier 3 (designed fallback — a material gradient + the `light-pass` device + an honest caption naming what's missing). Extending `content/maco.ts` with a `media` field on a project/product and swapping in a real `<video>`/`<picture>` upgrades one slot without touching the component's shape.
+Three-tier media slot: tier 1 (video), tier 2 (image), tier 3 (designed fallback — a material gradient + `light-pass` + an honest caption naming what's missing).
 
 ### The light-pass device (`@utility light-pass`, `styles.css`)
 
-The plan's single signature device — one raking-light gradient (`::after`, `mix-blend-mode: overlay`) reused at multiple scales rather than a different decorative device per section. Position is read from a `--sweep` CSS custom property (0–1). Drivers: SURFACE's pointer field, EVIDENCE's scroll progress, per-PRODUCTS-card scroll progress. The hero wordmark's `.maco-shine` (below) is the same 115° angle applied at word-scale via `background-clip:text`, not a `.light-pass` instance itself.
+One raking-light gradient (`::after`, `mix-blend-mode: overlay`) reused at multiple scales instead of a different decorative device per section. Position read from a `--sweep` CSS custom property (0–1).
 
-### Scroll substrate & interaction layer (current, 2026-08-19)
+### Scroll substrate & interaction layer
 
-Ownership is split, not layered — see §12 for the full rule. **Lenis** owns raw
-scroll position (`src/lib/scroll-runtime.ts`, a lazy module-level singleton
-booted by `<ScrollRuntimeProvider>` in `__root.tsx`, `null` on the server or
-under reduced motion, now with `destroy()` correctly clearing the singleton so
-a dev HMR remount doesn't hand every scene a dead Lenis instance); **GSAP
-`ScrollTrigger`** owns every pin/scrub, on every one of the 10 homepage
-sections now (previously 6 had none); `motion` v13 keeps only discrete UI
-state (hover springs) and no longer touches scroll.
+Ownership is split, not layered (see §12). **Lenis** owns raw scroll position (`src/lib/scroll-runtime.ts`, a lazy module-level singleton booted by `<ScrollRuntimeProvider>` in `__root.tsx`, `null` on the server or under reduced motion). **GSAP `ScrollTrigger`** owns every pin/scrub, on all 11 sections. `motion` v13 keeps only discrete UI state (hover springs) and never touches scroll.
 
-`hooks/use-scroll-scene.ts` (~30 lines) is the standard entry point for any
-scroll-linked component — wraps `gsap.context()` for auto-cleanup, added in
-place of the heavier `@gsap/react` dependency (which would pull
-`gsap`/`ScrollTrigger`/`SplitText` into the eager bundle instead of staying
-lazy chunks).
+`hooks/use-scroll-scene.ts` is the standard entry point for any scroll-linked component — wraps `gsap.context()` for auto-cleanup.
 
-Motion vocabulary (`components/motion/`), all writing to registered
-`@property` CSS custom properties whose initial-value IS the at-rest
-composition — so SSR/no-JS/reduced-motion/a blocked GSAP import all render
-correctly with no second branch per component:
+Motion vocabulary (`components/motion/`), all writing to registered `@property` CSS custom properties whose initial value IS the at-rest composition:
 
-- `<ScrubReveal>` — reversible scroll-linked reveal (`--r`), the general
-  replacement for `MotionSection`'s one-shot fade.
-- `<RuleDraw>` — a rule drawing in from an edge (or, on CLOSE, outward from
-  centre) as its own `ScrollTrigger` progresses.
-- `<Stagger>` — scrubbed reveal across N children with per-child bands,
-  one shared `ScrollTrigger` rather than N independent ones.
-- `<RakingSurface>` — unifies `.light-pass`'s `--sweep` driver onto one
-  source (each surface's own transit through the viewport) instead of the
-  three independent sources (pointer/pin-progress/element-transit) that
-  predated this pass.
-- `<Magnetic>` (`components/motion/magnetic.tsx`) — reuses
-  `rubberband()`/`SPRING_MOMENTUM` from `lib/motion.ts`; wraps CTAs and
-  interactive buttons site-wide, homepage and inner pages alike.
-- `<LineReveal>` (`components/motion/line-reveal.tsx`) — GSAP `SplitText`
-  (`type:"lines", mask:"lines", autoSplit:true`) + a one-shot or `scrub`-mode
-  `ScrollTrigger`, for section headlines site-wide. SSR ships the plain
-  headline; `SplitText` mutates after paint. Its tween is now built inside
-  `SplitText`'s `onSplit` callback (was outside it — a re-split from a
-  font-load or resize could previously strand a heading mid-reveal).
-- `<SplitReveal>` (`components/motion/split-reveal.tsx`) — the OPEN hero's
-  "MaCo" wordmark only: GSAP `SplitText` (`type:"chars", mask:"chars"`)
-  stagger-rises the characters on mount, then reverts to plain text and adds
-  `.maco-shine` — a continuous `background-clip:text` gradient animated on
-  `background-position`, at 115°, the same angle `.light-pass` uses
-  everywhere else, so the hero ties into MaCo's one signature device instead
-  of importing an unrelated shimmer.
+- `<ScrubReveal>` — reversible scroll-linked reveal, the general replacement for `MotionSection`'s one-shot fade
+- `<RuleDraw>` — a rule drawing in from an edge (or, on CLOSE, outward from centre)
+- `<Stagger>` — scrubbed reveal across N children, one shared `ScrollTrigger`
+- `<RakingSurface>` — unifies `.light-pass`'s `--sweep` driver onto one source
+- `<Magnetic>` — pointer-lean wrapper for buttons/links, `rubberband()`/`SPRING_MOMENTUM`
+- `<LineReveal>` — GSAP `SplitText` line-mask headline reveal, for section headlines site-wide
+- `<SplitReveal>` — the OPEN hero wordmark only, char-rise on mount then `.maco-shine`
 
-`MotionSection` has exactly one remaining call site on the homepage
-(`method-line.tsx`'s reduced-motion static branch, inert by construction) —
-every other homepage call site migrated to the vocabulary above during the
-2026-08-19 motion rebuild.
-
-**Removed the same day, after live-browser verification** (were never
-verified in a browser before this pass — see `AI_HANDOFF.md`): the raw-WebGL2
-cursor-reactive hero field (`<FieldCanvas>`), the hover-distortion shader
-(`<DistortSurface>`, PRODUCTS/EVIDENCE), the blend-difference cursor
-companion (`<CursorRing>`), and text-scramble hovers (`<Scramble>`). All four
-`components/webgl/*` files and `cursor-ring.tsx`/`motion/scramble.tsx` are
-deleted, not just unmounted — grep for `FieldCanvas`/`DistortSurface`/
-`CursorRing`/`Scramble` in `frontend/src` returns nothing. `data-cursor="…"`
-attributes were removed alongside `<CursorRing>` since nothing reads them now.
-
-`<ScrollRuntimeProvider>` is global chrome (site-wide, not homepage-only); the
-pinned/scrubbed scenes (EVIDENCE/WORK/METHOD/PRODUCTS) stay homepage-only.
-`<LineReveal>`/`<Magnetic>` are now used on every inner route too (`about`,
-`clients`, `products.index`/`$slug`, `services.index`/`$slug`, `work.index`/
-`$slug`, `contact`) — see `AI_HANDOFF.md` for the full per-route list.
+`MotionSection` has no homepage call site as of the 2026-08-28 Cuberto-parity rebuild (its one prior use, `method-line.tsx`'s reduced-motion branch, was retired with that file); it's still used across the 7 inner routes.
 
 ### `system-field.tsx`
 
-6×8-cell grid forming logo-derived geometry. Retired from the homepage in the reset but still imported by `/about` and `/products/$slug` — do not delete.
+6×8-cell grid forming logo-derived geometry. Retired from the homepage, still imported by `/products/$slug` only (§2 rule 3).
 
 ---
 
-## 11. React Bits policy
+## 11. Cleanup pass (2026-08-21)
 
-Official catalogue: [https://reactbits.dev/](https://reactbits.dev/)
+The codebase and docs had drifted apart over several redesign passes — components got replaced (`BlindsField`→`PrismField`, `PortfolioGrid`/`ProductStory`→`WorkReveal`/`ProductShowcase`, `ScrollThread` built-then-reverted) without doc updates, and a full shadcn/Radix scaffold was installed early on and never wired in. This pass:
 
-| Policy | Detail |
-|--------|--------|
-| Use | Take the *technique*, not the file — reimplement on the installed `motion` stack |
-| Free vs Pro | Never copy Pro-locked preview code |
-| Density | One major signature device reused at scale, not one-off decorations per section |
+**Deleted (dead code, ~52% of source files):**
+- `components/ui/` — 47-file shadcn/Radix scaffold, zero imports from any route or app component
+- `hooks/use-mobile.tsx`, `lib/utils.ts` — only consumed by the dead `ui/` tree
+- `components/theme-atmosphere.tsx`, `lib/read-css-color.ts` — orphaned by earlier component swaps
+- `components.json`, `maco-21st-theme.css` — shadcn/21st.dev config for the now-deleted `ui/` tree
+- `scripts/shrink-hero-mark.cjs` — one-off script, output already committed
+- Dead exports in `lib/motion.ts` (`clamp`, `project`, `SPRING_DEFAULT`, `SPRING_REEL`, `EASE_STANDARD`, `EASE_EMPHASIS`) and `hooks/use-script-fonts.ts` (`useScriptFonts`)
+- 10 unused raw client-logo PNGs/JPGs in `public/` (superseded by `public/media/brand/*.webp`) + 1 byte-identical duplicate
 
-### Techniques adopted (concept only, reimplemented on `motion`/GSAP)
+**Pruned:** 45 of 52 `package.json` dependencies (everything that only the dead `ui/` tree used — all Radix packages, `zod`, `react-hook-form`, `recharts`, `cmdk`, `vaul`, `sonner`, `date-fns`, etc.)
 
-- `ScrollExpand` → EVIDENCE's clip-path expand
-- `Split Text` → the OPEN hero wordmark's char-rise entrance (`<SplitReveal>`, GSAP `SplitText`)
-- `Shiny Text` → the OPEN hero wordmark's idle rake (`.maco-shine`, `background-clip:text`)
-- `Magnet` → `<Magnetic>`, now applied site-wide (CTAs, chrome)
+**Untracked from git (kept on disk where needed as build input):** `.playwright-cli/` verification dumps (both root and `frontend/`), `frontend/package-lock.json` (duplicate of `bun.lock`), `frontend/src/assets/Bridge Demo.mp4` (36MB raw video, ffmpeg input for `scripts/build-media.mjs` — its 780KB output in `public/media/` is what ships)
 
-### Rejected
-
-- `ogl`-dependent components (`CircularGallery`, `FlyingPosters`, and — 2026-08-19 — GradientBlinds) — never installed; where the technique is worth keeping, it's reimplemented on `three` (already a dependency) instead, e.g. `<BlindsField>` below.
-- DotGrid, Particles, Aurora, LetterGlitch, FaultyTerminal, all background-effect components — this is precisely the decorative language the reset removed.
-- R3F (`@react-three/fiber`) — both `three` consumers (`<BlindsField>` on the homepage, `MaCoGlobe` on `/about`) use raw `three` directly.
-
-### Adopted, then reverted the same day — WebGL field, cursor ring, text scramble (2026-08-18)
-
-The Immersive Motion Rebuild (below) shipped a raw-WebGL2 cursor-reactive hero
-field, a hover-distortion shader, a blend-difference cursor-ring companion,
-and text-scramble hovers — reimplemented from React Bits/CodeGrid-style
-techniques with **0KB dependency cost** (hand-written WebGL2, no `three`). All
-four were still deleted the same day, once actually driven in a browser: the
-combination read as a generic agency template
-(user's reference: `evirexsoft.com`), not as MaCo. This was a design verdict,
-not a technical failure — the code worked, `tsc`/`eslint`/`build` were clean,
-the shaders rendered correctly. "Zero dependency cost" does not by itself
-justify keeping a device; it still has to earn its place on the actual page.
-Lenis and GSAP `ScrollTrigger`/`SplitText` were kept — those were judged to
-still be working (the pins/scrubs/reveals), unlike the four decorative
-devices layered on top of them.
-
-### Adopted, third attempt — `<BlindsField>` on OPEN (2026-08-19, same day as the motion rebuild)
-
-Unlike the 2026-08-18 revert above, this one shipped as `three`-backed (not
-"0KB dependency cost" hand-written WebGL2 — the prior devices' zero-cost
-framing didn't save them anyway, see the verdict above), scoped to one
-section only, and live-verified via Playwright before being called done.
-See the dedicated note under §4 and `AI_HANDOFF.md` for the full record.
-The rule this section's verdict established — a device has to earn its
-place on the actual page, dependency cost or not — still applies; this is
-a different device on a different section, not a re-litigation of the
-2026-08-18 verdict.
-
-### Adopted after reconsideration — GSAP + Lenis (Immersive Motion Rebuild, 2026-08-18)
-
-The homepage reset originally rejected GSAP/Lenis as new dependencies —
-`useScroll`/`useTransform` covered the same ground for free. That held until
-this pass, where the user explicitly chose the full immersive rebuild (Lenis
-smooth scroll + GSAP `ScrollTrigger`/`SplitText` for every pinned/scrubbed
-scene) after I recommended a lighter, dependency-free alternative instead.
-Confirmed free for commercial use (GSAP 3.15 — ScrollTrigger + SplitText
-included, no Club GSAP paywall; Lenis 1.3 — MIT). Also confirmed Lenis drives
-real `window.scrollTo` rather than a transform-wrapper (unlike Locomotive
-Scroll v4), so `position:sticky` and `motion`'s own hooks keep working — the
-risk that blocked this option earlier was not real.
-
-**Net new dependencies from the reset: `gsap`, `lenis`.** Measured cost from a
-real `npm run build` (client, gzip), re-measured 2026-08-18 after the WebGL/
-cursor/scramble revert: `lenis` 5.39 KB, `scroll-runtime` (the shared
-singleton module) 5.39 KB, `gsap` core 27.42 KB, `ScrollTrigger` 17.54 KB,
-`SplitText` 3.26 KB — all in dynamic chunks fetched after first paint (LCP
-unaffected). The homepage's *eager* entry chunk is **141.96 KB gzip**
-(452.03 KB raw) — down from the immersive-rebuild peak of 148.61 KB now that
-`FieldCanvas`/`DistortSurface`/`CursorRing`/`Scramble` and their shader
-strings are gone, but still above the pre-rebuild 106 KB, since Lenis/GSAP
-glue code and the new hero/working-surface components remain.
-
-**2026-08-19 addendum:** `<BlindsField>` (§4, §10) adds no new eager weight
-either — the homepage entry chunk is still 141.93 KB gzip — but `three`
-itself (561 KB / 141 KB gzip, previously `/about`-only via `MaCoGlobe`) is
-now also fetched, as its own dynamic chunk, on the homepage's first paint
-of OPEN. Not free; accepted as the cost of reusing an installed WebGL
-runtime instead of adding `ogl` as a second one.
-
-### `components/ui/` (46 shadcn files)
-
-Dead code — not imported anywhere in the current homepage or other routes checked. Deliberately **not deleted**: purging them and their ~35 dependencies is an infrastructure project orthogonal to a homepage redesign. Logged as an explicit follow-up in the plan's risk register, not silently ignored.
+**Verified:** `bun run build`, `bun run lint`, and `tsc --noEmit` all pass after every deletion (one pre-existing `tsc` error in `MaCoGlobe.tsx` unrelated to this pass, left alone).
 
 ---
 
 ## 12. Motion system
 
-House style (from `apple-design` guidance, adopted as the project's motion rules):
+House style: critically-damped by default, momentum only when a gesture carried velocity, transform/opacity only.
 
 | Use | Mechanism |
 |---|---|
-| Default UI | `motion` spring, `bounce: 0`, `duration: 0.4` (critically damped) — `SPRING_DEFAULT` in `lib/motion.ts` |
-| Momentum (gesture carried velocity) | `motion` spring, `bounce: 0.2`, `duration: 0.4` — `SPRING_MOMENTUM`, used by `<Magnetic>` and the pointer-release moments it targets |
-| Scroll position | **Lenis** — the single source of truth for scroll; nothing else smooths it a second time |
-| Pins, scrubs, line reveals | **GSAP `ScrollTrigger`**, `scrub: 0.3` (a touch of ScrollTrigger's own internal easing — deliberately not `motion`'s `useSpring`, which is what caused the double-smoothing bug this pass fixed) |
-| 2D pointer tracking (`<Magnetic>`, `usePointerField` tilt/watermarks) | Two **independent** critically-damped springs, one per axis — never a single spring on a 2D distance (apple-design rule) |
+| Default UI | `motion` spring, `bounce: 0`, `duration: 0.4` |
+| Momentum (gesture carried velocity) | `motion` spring, `bounce: 0.2`, `duration: 0.4` — `SPRING_MOMENTUM` in `lib/motion.ts`, used by `<Magnetic>` |
+| Scroll position | **Lenis** — the single source of truth; nothing else smooths it a second time |
+| Pins, scrubs, line reveals | **GSAP `ScrollTrigger`**, `scrub: 0.3` |
+| 2D pointer tracking | Two independent critically-damped springs, one per axis — never a single spring on a 2D distance |
 
-**Ownership is a hard split, not a layering**: Lenis owns scroll position, GSAP
-`ScrollTrigger` (via `useScrollScene()`, §10) owns everything scroll-linked —
-now all 10 homepage sections, not the 4 that had pins before 2026-08-19 —
-`motion` v13 owns only discrete UI state (hover springs; IDENTITY's reel was
-moved OFF `motion`/`setInterval` onto a scroll-driven `--t` custom property
-this pass) and never touches scroll. See §10's "Scroll substrate & interaction
-layer" for the concrete file list — there is no WebGL layer in the current
-build (removed 2026-08-18, see §11). One motion-preference resolver now
-governs both `getScrollRuntime()` and `useReducedMotion()`
-(`resolveMotionPreference()` in `lib/motion.ts`, layering a
-`?motion=full|reduced` override, persisted to `localStorage`, over
-`prefers-reduced-motion`) — previously these ran two independent `matchMedia`
-calls that could disagree. Rules unchanged: animate `transform`/`opacity`
-only; no animated `filter: blur()` (a real violation — IDENTITY's old reel had
-one — found and removed this pass); every animation starts from its live
-presentation value, never a jump to target; nothing purely decorative.
+**Ownership is a hard split, not a layering**: Lenis owns scroll position, GSAP `ScrollTrigger` (via `useScrollScene()`) owns everything scroll-linked, `motion` owns only discrete UI state and never touches scroll. One motion-preference resolver governs both `getScrollRuntime()` and `useReducedMotion()` (`resolveMotionPreference()` in `lib/motion.ts`, layering an optional `?motion=full|reduced` override, persisted to `localStorage`, over `prefers-reduced-motion`). Rules: animate `transform`/`opacity` only; no animated `filter: blur()`; every animation starts from its live presentation value, never a jump to target; nothing purely decorative.
 
 ---
 
 ## 13. Accessibility & reduced motion
 
-- Skip link in root, `:focus-visible` outline (verified present via computed style on the active element)
-- `useReducedMotion()` — 17+ consumers; every cinematic homepage moment (EVIDENCE, WORK's rail, IDENTITY's cycle, OPEN's tilt) branches on it with a **designed static fallback**, not just a disabled animation
-- Mobile nav (`MobilePillNav`, `chrome.tsx`): real focus trap (Tab/Shift+Tab wrap), Escape, backdrop click-to-dismiss — verified via real keyboard-driven interaction
+- Skip link in root, `:focus-visible` outline
+- `useReducedMotion()` — every cinematic homepage moment branches on it with a designed static fallback, not just a disabled animation
+- Mobile nav (`MobilePillNav`, `chrome.tsx`): real focus trap (Tab/Shift+Tab wrap), Escape, backdrop click-to-dismiss
 - IDENTITY's cross-fading word carries a correct BCP-47 `lang` attribute per script plus a `sr-only` full listing
 
 ---
@@ -581,18 +377,18 @@ presentation value, never a jump to target; nothing purely decorative.
 
 ```powershell
 cd E:\Downloads\maco-website-v2\frontend
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
-→ usually http://localhost:5173
+→ http://localhost:5173
 
 ### Backend
 
 ```powershell
 cd E:\Downloads\maco-website-v2\backend
 .\venv\Scripts\Activate.ps1
-# ensure .env DATABASE_URL + DJANGO_SECRET_KEY
+# ensure .env has DATABASE_URL + DJANGO_SECRET_KEY
 python manage.py migrate
 python manage.py seed_content
 python manage.py createsuperuser
@@ -606,7 +402,7 @@ Set `frontend/.env` (copy from `.env.example`) with `VITE_API_BASE_URL=http://lo
 
 ### Vite note
 
-Do **not** add a separate `TanStackRouterVite({ autoCodeSplitting: true })` alongside `tanstackStart()` — causes `TSRSplitComponent is not defined` 500s.
+Do **not** add a separate `TanStackRouterVite({ autoCodeSplitting: true })` alongside `tanstackStart()` — the router plugin is already bundled in; adding it separately causes `TSRSplitComponent is not defined` 500s.
 
 ---
 
@@ -622,19 +418,18 @@ Frontend — see `frontend/.env.example`: `VITE_API_BASE_URL`.
 
 Do not document as done unless verified:
 
-- "Tested / responsive / accessible" → only if checks were actually run (see `AI_HANDOFF.md`'s "Tests / checks run" section for exactly what has and hasn't been verified)
-- "Everything complete" → only if the roadmap phase is actually done, not just coded
-- Any number or name on the homepage → must trace to `content/maco.ts`. This was the reset's second major finding: the pre-reset homepage shipped invented stats (`4 Products Deployed`, `2+ Years Engineering`) and a wrong client name (`HeadGreen Mobility`).
+- "Tested / responsive / accessible" → only if checks were actually run
+- "Everything complete" → only if actually done, not just coded
+- Any number or name on the homepage → must trace to `content/maco.ts`. The pre-reset homepage once shipped invented stats and a wrong client name — never repeat that.
 
 ---
 
 ## 17. Related reading order for next AI
 
-1. `HOMEPAGE_REDESIGN_PLAN.md` — the authoritative plan, if working on the homepage
-2. `AI_HANDOFF.md` — live status, what was just verified vs. not
-3. `PROJECT_STATUS.md`
-4. `CONTEXT.md` (this file)
-5. `ROADMAP.md`
-6. `frontend/src/content/maco.ts`
-7. `frontend/src/routes/index.tsx`, then `frontend/src/components/home/*`
-8. `frontend/src/styles.css`
+1. `CONTEXT.md` (this file) — current state
+2. `PROJECT_STATUS.md` — what's done vs. not
+3. `ROADMAP.md` — what's left
+4. `AI_HANDOFF.md` — latest session notes
+5. `frontend/src/content/maco.ts`
+6. `frontend/src/routes/index.tsx`, then `frontend/src/components/home/*`
+7. `frontend/src/styles.css`

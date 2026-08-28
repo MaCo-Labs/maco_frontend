@@ -3,7 +3,7 @@ import { clients, site } from "@/content/maco";
 import { RakingSurface } from "@/components/motion/raking-surface";
 import { Stagger } from "@/components/motion/stagger";
 import { RuleDraw } from "@/components/motion/rule-draw";
-import { LineReveal } from "@/components/motion/line-reveal";
+import { ScrubReveal } from "@/components/motion/scrub-reveal";
 
 /**
  * RECORD — clients and the company, deliberately at rest. Every section
@@ -23,8 +23,8 @@ import { LineReveal } from "@/components/motion/line-reveal";
  */
 export function Record() {
   return (
-    <section data-ground="paper" className="rule-t" aria-label="Clients and company">
-      <div className="shell grid gap-14 py-24 md:py-32 lg:grid-cols-[1.3fr_1fr] lg:gap-20">
+    <section data-ground="deep" aria-label="Clients and company">
+      <div className="shell cb-section grid gap-14 lg:grid-cols-[1.3fr_1fr] lg:gap-20">
         <div>
           <p className="label">Clients</p>
           <div className="relative mt-8 pt-8">
@@ -43,7 +43,7 @@ export function Record() {
                     href={client.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="stagger-item group flex aspect-square flex-col items-center justify-center gap-3 rounded-xl border border-line p-5 transition-all hover:-translate-y-1 hover:border-text"
+                    className="stagger-item group flex aspect-square flex-col items-center justify-center gap-3 rounded-xl border border-line p-5 transition-[transform,border-color] hover:-translate-y-1 hover:border-text"
                     style={{ background: "var(--surface-2)", "--i": i } as CSSProperties}
                   >
                     {client.brand ? (
@@ -81,9 +81,9 @@ export function Record() {
 
         <div>
           <p className="label">About</p>
-          <LineReveal as="p" mode="scrub" className="lead mt-8">
+          <ScrubReveal as="p" hold className="lead mt-8">
             {site.statement}
-          </LineReveal>
+          </ScrubReveal>
           <p className="mt-6" style={{ color: "var(--muted)" }}>
             {site.category}, based in {site.location}. Working with clients across India and the
             Gulf.

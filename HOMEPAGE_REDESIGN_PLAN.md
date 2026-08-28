@@ -1,6 +1,11 @@
 # MaCo Homepage — Creative Reset Plan
 
-Status: **Approved 2026-08-18. Implementation in progress.**
+Status: **Superseded — historical planning document.** Implemented and
+shipped; the current homepage grew to 11 sections during build (this plan's
+draft had 9) and several details below (typography, dependency choices)
+were revised after this was written. For the actual current architecture,
+read `CONTEXT.md` §10, not this file. Kept for the audit findings in §1,
+which are still the accurate record of *why* the reset happened.
 Branch: `homepage-reset` (off `main`, which holds the pre-reset baseline at commit `54bfb02`).
 Scope: **homepage only** (`frontend/src/routes/index.tsx` and its section components). No other route, the backend, or the CMS schema changes.
 

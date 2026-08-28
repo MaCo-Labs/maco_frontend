@@ -37,6 +37,19 @@ dist-ssr
 # binary artifacts in history.
 .playwright-mcp/
 frontend/.playwright-mcp/
+.playwright-cli/
+frontend/.playwright-cli/
+audit/
+motion-audits/
+
+# skillui reconnaissance dumps (reference-site screenshots + raw computed
+# styles, several MB of PNGs per site). The distilled findings — the only
+# part meant to ship — live in docs/references/<site>/NOTES.md, tracked.
+docs/references/*/skillui/
+
+# Raw media build input (36MB source for scripts/build-media.mjs).
+# Output lives in public/media/ and is tracked; the raw source is not.
+frontend/src/assets/Bridge Demo.mp4
 
 # Editor directories and files
 .vscode/*

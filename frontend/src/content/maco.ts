@@ -27,6 +27,12 @@ export interface Media {
   width: number;
   height: number;
   video?: { webm: string; mp4: string };
+  /** Set only when this slot's poster is standing in for real product
+   *  capture that doesn't exist yet (a brand illustration, not a screenshot)
+   *  — rendered as a visible caption by ProductVideo. Per AGENTS.md's
+   *  no-silent-placeholder rule: never let a stand-in read as the real
+   *  thing. See docs/MEDIA-GAP.md for the full asset inventory. */
+  note?: string;
 }
 
 export interface Service {
@@ -59,6 +65,9 @@ export interface Project {
   seo_description: string;
   /** The client's real logo, e.g. for the WORK rail. Optional — falls back to text. */
   brand?: Brand;
+  /** Real project footage/screenshot for the WORK hover panel. Optional —
+   *  falls back to the brand-mark-on-plate treatment. Mirrors `Product.media`. */
+  media?: Media;
 }
 
 export interface Product {
@@ -320,6 +329,7 @@ export const products: Product[] = [
       alt: "Driver's Diary — a fleet operations record, visualised as HeadGreen's mark on the map it operates across",
       width: 900,
       height: 1203,
+      note: "Brand illustration — not product UI. Real screen capture is pending.",
     },
   },
   {

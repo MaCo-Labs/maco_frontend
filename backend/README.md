@@ -1,7 +1,8 @@
 # MaCo — Django + DRF backend
 
-The API that powers the React frontend and the editorial CMS, per
-`04_BACKEND_SCHEMA.md`. Stack: Django 5, Django REST Framework, PostgreSQL.
+The API that powers the React frontend and the editorial CMS. Stack: Django 5,
+Django REST Framework, PostgreSQL. Schema lives in `content/models.py` — no
+separate schema doc.
 
 ## Layout
 

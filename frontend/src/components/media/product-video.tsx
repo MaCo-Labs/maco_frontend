@@ -211,6 +211,19 @@ export function ProductVideo({
         </button>
       )}
 
+      {media.note && (
+        <span
+          className="label absolute bottom-3 left-3 right-3 px-2 py-1"
+          style={{
+            background: "color-mix(in oklab, var(--bg) 72%, transparent)",
+            color: "var(--muted)",
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          {media.note}
+        </span>
+      )}
+
       <p className="sr-only">{media.alt}</p>
     </div>
   );

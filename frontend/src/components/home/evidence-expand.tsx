@@ -109,7 +109,7 @@ export function EvidenceExpand() {
 
   if (reduced) {
     return (
-      <section data-ground="deep" aria-label="Bridge in motion" className="shell py-24">
+      <section data-ground="deep" aria-label="Bridge in motion" className="shell cb-section">
         {bridge?.media ? (
           <div
             className="relative overflow-hidden rounded-2xl border border-line"

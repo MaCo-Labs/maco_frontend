@@ -45,10 +45,3 @@ export function useScriptFontsWhenVisible<T extends HTMLElement>() {
 
   return ref;
 }
-
-/** Immediate load (e.g. when multilingual section mounts and is primary). */
-export function useScriptFonts() {
-  useEffect(() => {
-    injectScriptFonts();
-  }, []);
-}

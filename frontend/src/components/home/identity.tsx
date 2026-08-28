@@ -112,11 +112,11 @@ export function Identity() {
   return (
     <section
       ref={sectionRef as never}
-      data-ground="deep"
-      className="rule-t relative z-[41] flex min-h-[100svh] flex-col items-center justify-center overflow-hidden"
+      data-ground="paper"
+      className="relative z-[41] flex min-h-[100svh] flex-col items-center justify-center overflow-hidden"
       aria-label="MaCo, in one name and many scripts"
     >
-      <div className="shell flex flex-col items-center gap-6 py-24 text-center md:py-32">
+      <div className="shell cb-section flex flex-col items-center gap-6 text-center">
         <p className="label">One name. Many scripts.</p>
 
         <div

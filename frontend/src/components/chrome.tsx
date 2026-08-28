@@ -1,4 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { site } from "@/content/maco";
 import { Mark, Wordmark } from "./mark";
@@ -28,7 +29,7 @@ function ThemeSwitch() {
         className="label group flex items-center gap-2 border border-line px-3 py-2 transition-colors hover:border-text hover:text-text"
       >
         <span
-          className="block h-2.5 w-2.5 border border-current transition-transform duration-500 group-hover:rotate-90"
+          className="block h-2.5 w-2.5 border border-current transition-transform duration-300 group-hover:rotate-90"
           style={{ background: "var(--accent)" }}
         />
         {theme === "obsidian" ? "Obsidian" : "Cobalt"}
@@ -48,6 +49,13 @@ function MobilePillNav() {
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const reduced = useReducedMotion();
+  // Mirrors --ease-emphasis (styles.css) — the sheet used to enter via the
+  // `maco-rise` keyframe but had no exit, snapping out of existence
+  // (motion audit, PHASE-2-MOTION-PLAN.md item 1). AnimatePresence needs
+  // the values as JS so exit gets the same easing as enter.
+  const easeEmphasis = [0.16, 1, 0.3, 1] as const;
+  const enterTransition = reduced ? { duration: 0 } : { duration: 0.45, ease: easeEmphasis };
+  const exitTransition = reduced ? { duration: 0 } : { duration: 0.3, ease: easeEmphasis };
 
   useEffect(() => {
     setOpen(false);
@@ -107,78 +115,87 @@ function MobilePillNav() {
 
   return (
     <>
-      {open && (
-        <button
-          type="button"
-          aria-hidden="true"
-          tabIndex={-1}
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 z-[45] max-lg:block hidden cursor-default"
-          style={{ background: "color-mix(in oklab, var(--bg) 55%, transparent)" }}
-        />
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.button
+            key="mobile-nav-scrim"
+            type="button"
+            aria-hidden="true"
+            tabIndex={-1}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-[45] max-lg:block hidden cursor-default"
+            style={{ background: "color-mix(in oklab, var(--bg) 55%, transparent)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: enterTransition }}
+            exit={{ opacity: 0, transition: exitTransition }}
+          />
+        )}
+      </AnimatePresence>
       <div className="fixed inset-x-0 bottom-0 z-50 hidden max-lg:flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="w-full max-w-sm">
-          {open && (
-            <div
-              ref={panelRef}
-              id={menuId}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Site navigation"
-              className="mb-3 overflow-hidden rounded-[1.75rem] border border-line shadow-[0_-8px_40px_color-mix(in_oklab,var(--bg)_55%,transparent)]"
-              style={{
-                background: "var(--surface)",
-                animation: reduced ? undefined : "maco-rise 0.45s var(--ease-emphasis) both",
-              }}
-            >
-              <div className="flex items-center justify-between border-b border-line px-5 py-3">
-                <span className="label flex items-center gap-2">
-                  <Mark size={18} />
-                  MaCo
-                </span>
-                <ThemeSwitch />
-              </div>
-              <nav aria-label="Mobile">
-                <Link
-                  to="/"
-                  className="flex items-center justify-between px-6 py-3.5 font-display text-xl"
-                  style={{
-                    color: pathname === "/" ? "var(--text)" : "var(--muted)",
-                  }}
-                >
-                  Home
-                </Link>
-                {site.nav.map((item) => {
-                  const active = pathname === item.to || pathname.startsWith(item.to + "/");
-                  return (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className="flex min-h-12 items-center border-t border-line px-6 py-3.5 font-display text-xl"
-                      style={{ color: active ? "var(--text)" : "var(--muted)" }}
-                    >
-                      <span className="flex items-center gap-3">
-                        {active && (
-                          <span
-                            className="block h-1.5 w-1.5 rounded-full"
-                            style={{ background: "var(--accent)" }}
-                            aria-hidden="true"
-                          />
-                        )}
-                        {item.label}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </nav>
-              <div className="border-t border-line p-3">
-                <Link to="/contact" className="btn-solid w-full justify-center !py-3">
-                  Start a project
-                </Link>
-              </div>
-            </div>
-          )}
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                key="mobile-nav-panel"
+                ref={panelRef}
+                id={menuId}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Site navigation"
+                className="mb-3 overflow-hidden rounded-[1.75rem] border border-line shadow-[0_-8px_40px_color-mix(in_oklab,var(--bg)_55%,transparent)]"
+                style={{ background: "var(--surface)" }}
+                initial={{ opacity: 0, y: "1.4rem" }}
+                animate={{ opacity: 1, y: 0, transition: enterTransition }}
+                exit={{ opacity: 0, y: "1.4rem", transition: exitTransition }}
+              >
+                <div className="flex items-center justify-between border-b border-line px-5 py-3">
+                  <span className="label flex items-center gap-2">
+                    <Mark size={18} />
+                    MaCo
+                  </span>
+                  <ThemeSwitch />
+                </div>
+                <nav aria-label="Mobile">
+                  <Link
+                    to="/"
+                    className="flex items-center justify-between px-6 py-3.5 font-display text-xl"
+                    style={{
+                      color: pathname === "/" ? "var(--text)" : "var(--muted)",
+                    }}
+                  >
+                    Home
+                  </Link>
+                  {site.nav.map((item) => {
+                    const active = pathname === item.to || pathname.startsWith(item.to + "/");
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className="flex min-h-12 items-center border-t border-line px-6 py-3.5 font-display text-xl"
+                        style={{ color: active ? "var(--text)" : "var(--muted)" }}
+                      >
+                        <span className="flex items-center gap-3">
+                          {active && (
+                            <span
+                              className="block h-1.5 w-1.5 rounded-full"
+                              style={{ background: "var(--accent)" }}
+                              aria-hidden="true"
+                            />
+                          )}
+                          {item.label}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+                <div className="border-t border-line p-3">
+                  <Link to="/contact" className="btn-solid w-full justify-center !py-3">
+                    Start a project
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <button
             ref={buttonRef}
             type="button"

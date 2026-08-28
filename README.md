@@ -28,21 +28,22 @@ maco-website-v2/
 
 ## Frontend Setup
 
-Requires **Node.js 18+** and **npm** (or **bun**).
+Requires **Node.js 18+**. **`bun` is the canonical package manager** — `bun.lock` is the only lockfile tracked; use `npm`/`pnpm` only if you know what you're doing with the lockfile.
 
 ```bash
 cd frontend
-npm install       # or: bun install
-npm run dev       # starts dev server at http://localhost:5173
+bun install
+bun run dev       # starts dev server at http://localhost:5173
 ```
 
 Other scripts:
 
 ```bash
-npm run build     # production build
-npm run preview   # preview production build
-npm run lint      # run ESLint
-npm run format    # run Prettier
+bun run build     # production build
+bun run preview   # preview production build
+bun run lint      # run ESLint
+bun run format    # run Prettier
+bun run media     # regenerate public/media/ from raw source assets
 ```
 
 ---
@@ -96,7 +97,7 @@ Open two terminals:
 
 ```bash
 # Terminal 1 — Frontend
-cd frontend && npm run dev
+cd frontend && bun run dev
 
 # Terminal 2 — Backend
 cd backend && venv\Scripts\activate && python manage.py runserver

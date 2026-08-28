@@ -7,47 +7,59 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  * incoming section then reads as physically overtaking it, rather than
  * merely following it. Mounted once in routes/index.tsx.
  *
- * Deliberately a hand-picked list of pairs, NOT a generic loop over every
- * `[data-ground]` boundary: a `transform` on an ancestor of a
+ * Rebuilt 2026-08-28 for the Cuberto-parity twelve-slot structure (plan
+ * "Cuberto-parity homepage rebuild") — the previous PAIRS keyed off
+ * sections (ServicesConvergence, ProductShowcase, WorkReveal, MethodLine,
+ * ClientField) that no longer exist. Same hazard as before, restated for
+ * the new component set: a `transform` on an ancestor of a
  * `position: fixed` element repositions that fixed element relative to
- * the TRANSFORMED ancestor instead of the viewport — applying this to a
- * section that HOSTS a pin would silently break it. Four of the eleven
- * homepage sections host one (directly or, on a `gsap.matchMedia`-gated
- * desktop-only descendant): EVIDENCE, CAPABILITY, IDENTITY, METHOD. WORK
- * (`work-reveal.tsx`) and PRODUCTS (`product-showcase.tsx`) are pin-free —
- * PRODUCTS uses `position: sticky` for its expand/reel stage, never a
- * literal ScrollTrigger `pin: true`, specifically so it stays eligible as
- * the outgoing side below. CLIENTS (`client-field.tsx`, between WORK and
- * CAPABILITY) is pin-free too, but has no pair here — nothing currently
- * calls for one at that boundary. Only the OUTGOING section is ever
- * transformed here (the incoming section is just the ScrollTrigger's
- * reference point, never itself touched) — so a pair is safe whenever the
- * OUTGOING side is pin-free, regardless of what the incoming side hosts.
+ * the TRANSFORMED ancestor instead of the viewport, so a section that
+ * HOSTS a pin must never be the OUTGOING side. Only two of the twelve
+ * sections pin at all now: EvidenceExpand (`aria-label="Bridge in
+ * motion"`, pins its own `<section>`) and Identity (`aria-label="MaCo, in
+ * one name and many scripts"`, same — pins its own `<section>` directly,
+ * confirmed in identity.tsx). Both are therefore excluded as OUTGOING —
+ * which is why there is no "Bridge in motion" -> "What MaCo does" pair
+ * and no "MaCo, in one name and many scripts" -> "Clients and company"
+ * pair below, even though both are real adjacent boundaries. Every other
+ * section on the page is pin-free, so every other boundary is eligible.
  *
- * Two of the four pairs (marked `sheet: true` in PAIRS) also get a
- * curved-corner reveal on the INCOMING side: `clip-path: inset(...
- * round ...)` scrubbed from a rounded rect down to square, on the same
- * scrollTrigger window as the recede above, so the two motions read as
- * one gesture. Only applied where the boundary is also a ground change
- * (PRODUCTS -> IDENTITY, RECORD -> CLOSE) — the other two pairs keep a
- * plain recede since their ground doesn't change either side. Unlike the
- * plain recede, this DOES touch the incoming section — so the "outgoing
- * side pin-free" rule above isn't sufficient for a `sheet: true` pair; the
- * INCOMING side matters too. `clip-path` on an element clips its entire
- * painted subtree, including `position: fixed` descendants, so a
- * `sheet: true` incoming section is only safe if it either pins ITSELF
- * (IDENTITY does — `identity.tsx`) or doesn't pin at all (CLOSE doesn't).
- * It must never pin via a descendant: CAPABILITY's `ServicesStage`
- * (`services-convergence.tsx`) pins `stage`, a child of the `<section>`,
- * not the section itself — so CAPABILITY must never get `sheet: true` as
- * an incoming section, or clipping the outer section would clip its own
- * pinned stage mid-pin.
+ * Only the OUTGOING section is ever transformed here (the incoming
+ * section is just the ScrollTrigger's reference point, never itself
+ * touched) — so a plain-recede pair is safe whenever the OUTGOING side is
+ * pin-free, regardless of what the incoming side hosts.
+ *
+ * `sheet: true` pairs additionally get a curved-corner reveal on the
+ * INCOMING side (`clip-path: inset(... round ...)` scrubbed from a
+ * rounded rect to square, same scrollTrigger window as the recede) —
+ * reserved for boundaries that are ALSO a ground change, so the two
+ * motions read as one "sheet lifting into place" gesture rather than a
+ * decoration on every boundary. Unlike the plain recede, this DOES touch
+ * the incoming section: `clip-path` clips an element's entire painted
+ * subtree, including `position: fixed` descendants, so a `sheet: true`
+ * incoming section is only safe if it either pins ITSELF or doesn't pin
+ * at all — never via a descendant.
+ *
+ * The page's actual ground sequence is
+ * paper,deep,paper,paper,paper,deep,paper,paper,deep,deep,deep — six
+ * flips: 1->2, 2->3, 5->6, 6->7, 7->8(none, both paper — not a flip,
+ * disregard), 8->9. Two of the six sit at an excluded (pinned-outgoing)
+ * boundary — 2->3 (EvidenceExpand outgoing) and 8->9 (Identity
+ * outgoing) — so they get no pair at all, sheet or otherwise. The three
+ * that remain (1->2, 5->6, 6->7) all have a pin-free outgoing side and an
+ * incoming side that either pins itself (EvidenceExpand, at 1->2) or
+ * doesn't pin at all (FeaturedWork at 5->6, ProductSummary at 6->7), so
+ * all three are safe as `sheet: true`.
  */
 const PAIRS: readonly [outgoing: string, incoming: string, sheet?: boolean][] = [
-  ["What MaCo does", "Bridge in motion"],
-  ["Selected client work", "Who we work with"],
-  ["Products", "MaCo, in one name and many scripts", true],
-  ["Clients and company", "Start a project", true],
+  ["Introduction", "Bridge in motion", true],
+  ["What MaCo does", "Capabilities"],
+  ["Capabilities", "Who we work with"],
+  ["Who we work with", "Selected client work", true],
+  ["Selected client work", "Products", true],
+  ["Products", "MaCo, in one name and many scripts"],
+  ["Clients and company", "How MaCo works"],
+  ["How MaCo works", "Start a project"],
 ];
 
 export function GroundHandoff() {

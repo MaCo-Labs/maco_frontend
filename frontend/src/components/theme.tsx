@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { getScrollRuntime } from "@/lib/scroll-runtime";
 
@@ -7,6 +15,13 @@ export type Theme = "obsidian" | "cobalt";
 type Origin = { x: number; y: number };
 
 const KEY = "maco-theme";
+
+// useLayoutEffect no-ops on the server (React warns if called during SSR),
+// so it must fall back to useEffect there — but on the client it must stay
+// useLayoutEffect: it runs after the hydration commit but before the browser
+// paints, so a returning Cobalt visitor's localStorage correction lands
+// before first paint instead of one visible Obsidian-tinted frame after it.
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const ThemeCtx = createContext<{
   theme: Theme;
@@ -23,7 +38,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const tweenRef = useRef<{ kill: () => void } | null>(null);
   const reduced = useReducedMotion();
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const stored = window.localStorage.getItem(KEY) as Theme | null;
     if (stored === "obsidian" || stored === "cobalt") setThemeState(stored);
   }, []);

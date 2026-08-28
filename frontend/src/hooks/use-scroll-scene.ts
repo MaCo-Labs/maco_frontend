@@ -1,7 +1,11 @@
-import { useEffect, type DependencyList } from "react";
+import { useEffect, useLayoutEffect, type DependencyList } from "react";
 import { getScrollRuntime, type ScrollRuntime } from "@/lib/scroll-runtime";
 
 type GsapContext = ReturnType<ScrollRuntime["gsap"]["context"]>;
+
+// useLayoutEffect warns if called during SSR; this file's effect is
+// browser-only work anyway, so fall back to useEffect on the server.
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /**
  * Shared substrate for every scroll-linked scene. Resolves the lazy
@@ -27,12 +31,22 @@ type GsapContext = ReturnType<ScrollRuntime["gsap"]["context"]>;
  * after first paint. `gsap.context()` is already in GSAP core and reached
  * only through the already-lazy `getScrollRuntime()`, so this gets the
  * same auto-cleanup for zero new bytes and zero new dependencies.
+ *
+ * Layout effect, not a passive one, specifically because of `pin: true`:
+ * ScrollTrigger pins by reparenting the pinned element into a generated
+ * `.pin-spacer` div, which React's fiber tree knows nothing about. A
+ * passive (`useEffect`) cleanup runs AFTER React's mutation phase, so on
+ * route change React reached `parent.removeChild(section)` while the
+ * section still lived inside the spacer and threw `NotFoundError: The node
+ * to be removed is not a child of this node`. Running `ctx.revert()` in
+ * the layout phase un-nests the spacer synchronously, before React removes
+ * anything. Same reason `@gsap/react`'s `useGSAP()` is layout-phase too.
  */
 export function useScrollScene(
   setup: (rt: ScrollRuntime) => void,
   deps: DependencyList = [],
 ): void {
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     let cancelled = false;
     let ctx: GsapContext | null = null;
 
@@ -48,6 +62,5 @@ export function useScrollScene(
     };
     // `setup` is an inline closure at every call site; callers list their
     // own dependencies explicitly, same convention as a bare useEffect.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }

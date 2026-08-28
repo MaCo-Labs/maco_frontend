@@ -1,15 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { OpenLogo } from "@/components/home/open-logo";
-import { WorkingSurface } from "@/components/home/working-surface";
+import { TopHead } from "@/components/home/top-head";
 import { EvidenceExpand } from "@/components/home/evidence-expand";
-import { WorkReveal } from "@/components/home/work-reveal";
-import { ClientField } from "@/components/home/client-field";
-import { ServicesConvergence } from "@/components/home/services-convergence";
-import { ProductShowcase } from "@/components/home/product-showcase";
+import { Overview } from "@/components/home/overview";
+import { FeatureAccordion } from "@/components/home/feature-accordion";
+import { LogoReel } from "@/components/home/logo-reel";
+import { FeaturedWork, ProductSummary } from "@/components/home/summary";
 import { Identity } from "@/components/home/identity";
-import { MethodLine } from "@/components/home/method-line";
 import { Record } from "@/components/home/record";
-import { CloseIntake } from "@/components/home/close-intake";
+import { Faq } from "@/components/home/faq";
+import { Outro } from "@/components/home/outro";
 import { GroundHandoff } from "@/components/home/ground-handoff";
 
 export const Route = createFileRoute("/")({
@@ -32,41 +31,50 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+/**
+ * Twelve-slot Cuberto-parity structure (docs/REFACTOR_PLAN.md §12, plan
+ * "Cuberto-parity homepage rebuild", 2026-08-28). Section order, spacing
+ * rhythm and ground alternation are cloned from cuberto.com's own
+ * homepage (measured in docs/references/cuberto/skillui/); every colour,
+ * typeface and word is MaCo's. The eleven aria-labels are unchanged from
+ * the previous architecture — only which component renders each one, and
+ * in what order — so scripts/shoot.mjs needed reordering, not renaming.
+ */
 function Home() {
   return (
     <>
-      {/* OPEN — the brand alone: mark + "MaCo" */}
-      <OpenLogo />
+      {/* 1. TOPHEAD — headline, subtext, entry action */}
+      <TopHead />
 
-      {/* SURFACE — the promise, the proof row, Bridge in motion (merges the old hero + CLAIM) */}
-      <WorkingSurface />
-
-      {/* EVIDENCE — cinematic scroll-expand, Bridge in motion */}
+      {/* 2. PREVIEW — showreel, unchanged from the prior architecture */}
       <EvidenceExpand />
 
-      {/* WORK — four real client projects, Cuberto-style hover-reveal list */}
-      <WorkReveal />
+      {/* 3. OVERVIEW — positioning + counted figures */}
+      <Overview />
 
-      {/* CLIENTS — the same 4 clients, scroll-scrubbed scatter + magnetic hover */}
-      <ClientField />
+      {/* 4. FEATURE — every capability, one accordion */}
+      <FeatureAccordion />
 
-      {/* CAPABILITY — services convergence */}
-      <ServicesConvergence />
+      {/* 5. LOGOREEL — client logos, continuous drift */}
+      <LogoReel />
 
-      {/* PRODUCTS — Bridge + Driver's Diary, expanding window into a showcase reel */}
-      <ProductShowcase />
+      {/* 6. SUMMARY (inverse) — featured client work */}
+      <FeaturedWork />
 
-      {/* IDENTITY — one name, many scripts */}
+      {/* 7. SUMMARY — MaCo's own products */}
+      <ProductSummary />
+
+      {/* 8. OVERVIEW (2nd) — identity, now on paper ground */}
       <Identity />
 
-      {/* METHOD — A→B→C→D, launch is not the finish line */}
-      <MethodLine />
-
-      {/* RECORD — clients + company, deliberate rest */}
+      {/* 9. SUMMARY (inverse) — clients + company record, now deep ground */}
       <Record />
 
-      {/* CLOSE — intake + final statement */}
-      <CloseIntake />
+      {/* 10. FAQ (inverse) — the four-step method, as an accordion */}
+      <Faq />
+
+      {/* 11. OUTRO — final statement + intake */}
+      <Outro />
 
       {/* Cross-section continuity — renders nothing itself */}
       <GroundHandoff />
