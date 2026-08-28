@@ -4,10 +4,12 @@
 
 Overall: **STABLE.** The homepage was fully rebuilt on Cuberto's structural
 foundation 2026-08-28 (11 sections, new order — see `CONTEXT.md` §10 and
-the seventh-pass entry below), then refined the same day (eighth pass:
-EVIDENCE crop fix, dead-code sweep, hero treatment, client consolidation,
-adaptive navbar — see below), and a full dead-code/dependency cleanup pass
-ran 2026-08-21 (see `CONTEXT.md` §11). Build/lint are clean.
+the seventh-pass entry below), refined the same day (eighth pass: EVIDENCE
+crop fix, dead-code sweep, hero treatment, client consolidation, adaptive
+navbar), and pushed further 2026-08-29 (ninth pass: dark-first ground
+sequence, a Capabilities dark-panel accordion, a masked video-in-text hero,
+a restrained custom cursor — see below). A full dead-code/dependency
+cleanup pass ran 2026-08-21 (see `CONTEXT.md` §11). Build/lint are clean.
 
 ## 2026-08-27 session — re-audit + 2 confirmed bugs fixed
 
@@ -391,6 +393,87 @@ production-build checks per item as described above; `/work`, `/about`,
 `/contact` confirmed to default the header to paper with no new console
 errors (the one React #419 error on `/about` is `MaCoGlobe`-related and
 pre-existing — confirmed present on the pre-eighth-pass build too).
+
+## 2026-08-29, ninth pass — dark-first ground, Capabilities dark panel, masked hero, cursor
+
+A new, separate owner request (not §13) in five parts. Each item verified
+live in a real browser against a production build before being kept; two
+items each needed a second and third live-verified fix after the first
+attempt turned out wrong.
+
+1. **The white gap between Outro and Footer.** Root cause: `Footer`'s
+   `mt-32` sat *outside* both Outro's and Footer's own dark backgrounds —
+   margin between two elements always exposes whatever's behind them,
+   which was `body`'s un-grounded default (paper). Moved the same
+   separation inside `Footer` as padding instead. Also added a standing
+   backdrop safety net: the header's existing ground-tracking ticker now
+   also writes `data-ground-now` on `<html>`, and `body`'s own
+   `background-color` follows it — covers `GroundHandoff`'s recede (a
+   scaled-down section exposes slivers of `body` at its edges) and any
+   future spacing mistake of the same shape.
+2. **Dark-first three-act ground sequence.** Flipped from
+   `paper,deep,paper×3,deep,paper×2,deep×3` to
+   `deep,deep,paper×6,deep×3` — the page now opens and closes on the
+   material, paper only in the Overview→Identity middle. Only two
+   `data-ground` values actually moved (TopHead, `FeaturedWork`); every
+   other section was already on its target ground. `ground-handoff.tsx`
+   got a `"sheet-only"` pair mode for a ground flip whose outgoing side
+   pins (both of the sequence's two remaining flips land there). The
+   hero utilities from the previous day's pass were retuned to read off
+   `--focus` instead of `--accent` — on `deep` ground `--accent` resolves
+   to `--accent-inverted`, which is near-white for BOTH themes, so
+   Cobalt's "stronger, chromatic" half of the split had nothing left to
+   be chromatic about.
+3. **Capabilities accordion, dark contrast panel.** `Accordion` gets an
+   opt-in `panel="inverted"` mode (FEATURE only — FAQ stays default,
+   already on `deep` ground). The open panel wraps its content in
+   `.section-inverted` directly (a sibling overlay doesn't work — the
+   token remap is CSS custom properties, which only cascade to
+   descendants) plus `light-pass` and one restrained `--focus`-derived
+   radial accent. Hover-to-open added, gated to
+   `(hover: hover) and (pointer: fine)` — click stays the real,
+   touch-safe control everywhere.
+4. **Masked video-in-text hero, cycling taglines.** New
+   `components/motion/masked-heading.tsx` — reimplemented on this
+   project's stack (GSAP through `useScrollScene`, real tokens), not
+   copied, per `AGENTS.md`'s React Bits rule. SSR/first-paint/reduced
+   motion always render the plain `display-glow` `<h1>`; the masked
+   version only mounts client-side after layout-measuring can run
+   correctly. Two real problems surfaced and were fixed at the source:
+   Bridge's own dashboard footage contains a literal amber status badge
+   (a direct palette violation no contrast/saturation tuning could
+   safely avoid — fixed with `grayscale(1)` on the video, permanently),
+   and even after that, `TopHead`'s `light-pass` sweep still re-tinted
+   the now-grayscale letters amber-adjacent via its own
+   `mix-blend-mode: overlay` (confirmed live by A/B toggling the beam;
+   neither z-index nor isolation on the heading stopped it, since the
+   blend composites against `RakingSurface`'s own already-isolated
+   stacking context). Owner's call: drop `RakingSurface` from `TopHead`
+   entirely rather than keep fighting the interaction.
+5. **Restrained custom cursor + one text device.** New
+   `components/motion/cursor.tsx` (mounted in `__root.tsx`): one ring,
+   `gsap.quickSetter` + a ticker-driven lerp for position,
+   `mix-blend-mode: difference` for ground/theme-agnostic contrast,
+   fine-pointer-only, fully absent under reduced motion, event-delegated
+   hover detection (survives client-side route changes without stale
+   listeners — verified live). `LineReveal` gained a third
+   `mode="words"` (GSAP SplitText on words, blur-in + short rise),
+   applied once to Overview's opening statement. React Bits adopt/reject
+   log for this pass is in `CONTEXT.md`, not scattered across docs.
+
+**Found, confirmed pre-existing, not fixed this pass:** a chromatic-fringe
+artifact on Overview's "About MaCo" CTA link, but only in Playwright's
+viewport/clip screenshots — an isolated element screenshot of the same
+link is clean, computed styles are provably correct, and the same artifact
+reproduces on the pre-session baseline commit (`3577091`, checked via a
+throwaway `git worktree`) with none of this pass's changes present. Left
+open as a separate investigation; may be a Playwright/headless-Chromium
+rendering quirk rather than something a real visitor would ever see.
+
+Verified this pass: `bun run build`/`bun run lint`/`bunx tsc --noEmit`
+clean after every item (only the pre-existing `MaCoGlobe.tsx` error,
+unchanged); live checks against a production build (`bun run preview`),
+both themes, 1440/390, per item as described above.
 
 ## Read this first
 

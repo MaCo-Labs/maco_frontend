@@ -1,6 +1,6 @@
 # MaCo Website — Project Status
 
-Last updated: 2026-08-28
+Last updated: 2026-08-29
 
 Statuses: **DONE** | **PARTIAL** | **NOT STARTED**
 
@@ -8,7 +8,7 @@ Statuses: **DONE** | **PARTIAL** | **NOT STARTED**
 
 | Area | Status | Notes |
 |---|---|---|
-| Homepage (11 sections, Cuberto-parity structure) | DONE — full structural rebuild 2026-08-28 plus same-day §13 refinement pass (crop fix, dead-code sweep, hero treatment, client consolidation, adaptive navbar), plus 3 bug-fix passes + 6 motion-audit fixes from 2026-08-27 predating it | See `CONTEXT.md` §10 for the current architecture; see `AI_HANDOFF.md`'s eighth-pass entry for the refinement pass, seventh-pass for the rebuild, and its earlier three 2026-08-27 entries for the pre-rebuild fixes — all verified live |
+| Homepage (11 sections, Cuberto-parity structure) | DONE — full structural rebuild 2026-08-28, same-day §13 refinement pass, and a further 2026-08-29 pass (dark-first ground sequence, Capabilities dark-panel accordion, masked video-in-text hero, custom cursor + word-reveal text device), plus 3 bug-fix passes + 6 motion-audit fixes from 2026-08-27 predating it | See `CONTEXT.md` §10 for the current architecture; see `AI_HANDOFF.md`'s ninth-pass entry (2026-08-29), eighth-pass for the refinement pass, seventh-pass for the rebuild, and its earlier three 2026-08-27 entries for the pre-rebuild fixes — all verified live. One pre-existing, out-of-scope finding noted in the ninth-pass entry (unconfirmed whether it's a real bug or a headless-screenshot artifact) |
 | Two-theme system (Obsidian/Cobalt) | DONE | Separate font set per theme, radial clip-path wipe on switch |
 | Contact form → backend | DONE | Real `POST /api/v1/contact/`, throttled + honeypot |
 | Mobile nav | DONE | Focus trap, Escape, backdrop dismiss |
