@@ -319,6 +319,14 @@ export function Header() {
         const header = headerRef.current;
         if (header) header.dataset["over"] = ground;
         if (mobileNav) mobileNav.dataset["over"] = ground;
+        // Same sample reused for `<body>`'s own backdrop
+        // (html[data-ground-now] in styles.css) — a coarse safety net, not
+        // pixel-precise, for anything that ever exposes body's background:
+        // margin between two dark sections (the footer gap this was added
+        // for) or GroundHandoff's recede scaling a full-bleed section down
+        // a couple percent at its edges. Without this, either one shows
+        // body's un-grounded default (paper) through the gap.
+        document.documentElement.dataset["groundNow"] = ground;
       };
       rt.gsap.ticker.add(applyGround);
     });
@@ -326,6 +334,7 @@ export function Header() {
     return () => {
       cancelled = true;
       if (rt_ && applyGround) rt_.gsap.ticker.remove(applyGround);
+      delete document.documentElement.dataset["groundNow"];
     };
   }, []);
 
@@ -378,9 +387,13 @@ export function Footer() {
   const scriptRef = useScriptFontsWhenVisible<HTMLSpanElement>();
 
   return (
-    <footer className="section-inverted rule-t mt-32 pb-28 lg:pb-12">
+    <footer className="section-inverted rule-t pb-28 lg:pb-12">
       <div className="shell">
-        <div className="pt-16">
+        {/* pt-24, not the previous mt-32-on-<footer>: margin sits OUTSIDE
+            both this section's background and whatever section precedes
+            it, so it exposed body's own (paper) background as a white gap
+            whenever the section above was also deep — padding can't. */}
+        <div className="pt-24">
           <Wordmark size={44} />
         </div>
 

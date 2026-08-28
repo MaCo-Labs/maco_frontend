@@ -249,6 +249,20 @@
   color: var(--text);
 }
 
+/* Body backdrop safety net — chrome.tsx's Header effect writes
+   `data-ground-now` on <html> from the same sample it already takes for
+   the adaptive chrome (below), so `<body>`'s own background (normally
+   just the un-grounded paper default) matches whatever section is
+   actually in view. Covers anything that can expose body through a
+   section: margin between two sections (nothing currently does this on
+   purpose, but nothing should ever have to be careful about it either),
+   or GroundHandoff's recede scaling a full-bleed section down a couple
+   percent at its edges. body already transitions background-color, so
+   this cross-fades rather than snaps. */
+html[data-ground-now="deep"] body {
+  background-color: var(--surface-inverted);
+}
+
 /* Adaptive chrome — chrome.tsx's <Header> and <MobilePillNav>, both
    `position: fixed` and mounted outside every section's DOM subtree, so
    they never naturally inherit a [data-ground] remap. chrome.tsx's
