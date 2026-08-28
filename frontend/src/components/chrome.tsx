@@ -7,7 +7,7 @@ import { useTheme } from "./theme";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
 import { Magnetic } from "@/components/motion/magnetic";
-import { getLiveScrollRuntime } from "@/lib/scroll-runtime";
+import { getLiveScrollRuntime, getScrollRuntime } from "@/lib/scroll-runtime";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 
 function ThemeSwitch() {
@@ -131,7 +131,11 @@ function MobilePillNav() {
           />
         )}
       </AnimatePresence>
-      <div className="fixed inset-x-0 bottom-0 z-50 hidden max-lg:flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div
+        data-mobile-pill-nav
+        data-over="paper"
+        className="chrome-adaptive fixed inset-x-0 bottom-0 z-50 hidden max-lg:flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+      >
         <div className="w-full max-w-sm">
           <AnimatePresence>
             {open && (
@@ -231,14 +235,17 @@ function MobilePillNav() {
 }
 
 /**
- * Transparent-over-the-hero, solid-once-scrolled-past header. Driven by
- * one ScrollTrigger scrubbing OPEN's own transit (never React state tied
- * to a scroll listener) — see `--header-solid`'s registration and the
- * `.header-scroll` utility in styles.css for the property/CSS half of
- * this device. Selects OPEN the same way `ground-handoff.tsx` selects
- * every cross-section pair: an exact `aria-label` match, not a ref prop
- * threaded down from the route — `<Header>` mounts in `__root.tsx`, above
- * and independent of the homepage's own section tree.
+ * Transparent-over-the-hero, solid-once-scrolled-past, AND ground-adaptive
+ * header — three independent ScrollTrigger-driven properties, never React
+ * state tied to a scroll listener. `--header-solid` (opacity/blur, via
+ * `.header-scroll` in styles.css) scrubs across the Introduction section's
+ * own transit; `data-over` (`.chrome-adaptive` in styles.css) snaps to
+ * whichever `[data-ground]` section is currently behind the fixed header
+ * and mobile pill nav — both mount in `__root.tsx`, above and independent
+ * of the homepage's own section tree, so neither ever naturally inherits
+ * a ground remap the way an in-flow descendant would. Selects the hero
+ * the same way `ground-handoff.tsx` selects every cross-section pair: an
+ * exact `aria-label` match, not a ref prop threaded down from the route.
  */
 export function Header() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -247,27 +254,88 @@ export function Header() {
   useScrollScene((rt) => {
     const header = headerRef.current;
     const hero = document.querySelector<HTMLElement>('[aria-label="Introduction"]');
-    if (!header || !hero) return;
-    rt.gsap.fromTo(
-      header,
-      { "--header-solid": 0 },
-      {
-        "--header-solid": 1,
-        ease: "none",
-        scrollTrigger: {
-          trigger: hero,
-          start: "top top",
-          end: "bottom top",
-          scrub: 0.3,
-          invalidateOnRefresh: true,
+    if (header && hero) {
+      rt.gsap.fromTo(
+        header,
+        { "--header-solid": 0 },
+        {
+          "--header-solid": 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: hero,
+            start: "top top",
+            end: "bottom top",
+            scrub: 0.3,
+            invalidateOnRefresh: true,
+          },
         },
-      },
-    );
+      );
+    }
+  }, []);
+
+  // Adaptive ground: the header and mobile pill nav are both `position:
+  // fixed`, mounted in __root.tsx outside every section's DOM subtree, so
+  // neither naturally inherits a [data-ground] remap the way an in-flow
+  // descendant would. This reads `data-over` on both to match whichever
+  // [data-ground] section is currently behind them — CSS half is
+  // `.chrome-adaptive[data-over]` in styles.css. No-op on every non-home
+  // route (empty `grounds`): both elements keep their default
+  // `data-over="paper"` from the JSX.
+  //
+  // Two earlier approaches here both went stale mid-scroll: a ScrollTrigger
+  // (one per section, then a single whole-document one) reads the WRONG
+  // section the moment it crosses one that ALSO hosts its own pinning
+  // ScrollTrigger (EvidenceExpand, Identity — same hazard ground-
+  // handoff.tsx's doc comment describes for transforms, but for trigger
+  // geometry) or at a narrower viewport specifically (confirmed live:
+  // correct at 1440, wrong past the same section at 390); `rt.onScroll`
+  // (Lenis's scroll-progress subscription) skips the trigger/pin geometry
+  // but still lags — Lenis only fires "scroll" WHILE position is changing,
+  // so the geometry read on the LAST event before rest can be a frame or
+  // two behind the settled position, and nothing fires again once
+  // scrolling stops to correct it. `gsap.ticker` (the same rAF loop
+  // driving Lenis itself — scroll-runtime.ts) re-derives it every frame
+  // instead, so it's never more than one frame stale and self-corrects
+  // even with no further scroll input.
+  useEffect(() => {
+    let cancelled = false;
+    let rt_: Awaited<ReturnType<typeof getScrollRuntime>> = null;
+    let applyGround: (() => void) | null = null;
+
+    getScrollRuntime().then((rt) => {
+      if (cancelled || !rt) return;
+      const mobileNav = document.querySelector<HTMLElement>("[data-mobile-pill-nav]");
+      const grounds = [...document.querySelectorAll<HTMLElement>("[data-ground]")];
+      if (grounds.length === 0) return;
+
+      rt_ = rt;
+      applyGround = () => {
+        const y = 48;
+        const current = grounds.find((el) => {
+          const rect = el.getBoundingClientRect();
+          return rect.top <= y && rect.bottom >= y;
+        });
+        const ground = current?.dataset["ground"] ?? "paper";
+        const header = headerRef.current;
+        if (header) header.dataset["over"] = ground;
+        if (mobileNav) mobileNav.dataset["over"] = ground;
+      };
+      rt.gsap.ticker.add(applyGround);
+    });
+
+    return () => {
+      cancelled = true;
+      if (rt_ && applyGround) rt_.gsap.ticker.remove(applyGround);
+    };
   }, []);
 
   return (
     <>
-      <header ref={headerRef} className="header-scroll fixed inset-x-0 top-0 z-[42] rule-b">
+      <header
+        ref={headerRef}
+        data-over="paper"
+        className="header-scroll chrome-adaptive fixed inset-x-0 top-0 z-[42] rule-b"
+      >
         <div className="shell flex h-20 items-center justify-between gap-6 md:h-24">
           <Link to="/" className="transition-opacity hover:opacity-70" aria-label="MaCo — home">
             <Wordmark />

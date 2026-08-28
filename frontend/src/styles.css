@@ -249,6 +249,49 @@
   color: var(--text);
 }
 
+/* Adaptive chrome — chrome.tsx's <Header> and <MobilePillNav>, both
+   `position: fixed` and mounted outside every section's DOM subtree, so
+   they never naturally inherit a [data-ground] remap. chrome.tsx's
+   ScrollTrigger set writes `data-over` (default "paper") to match
+   whatever [data-ground] section is currently behind them; this is the
+   CSS half. Token-only, deliberately WITHOUT the [data-ground] blocks'
+   own `background`/`color` declarations — .header-scroll's own
+   color-mix (below) already owns the header's actual background/text,
+   scrubbed by --header-solid; this block only needs to feed it the
+   right --bg/--text/--line to mix from. Same reasoning covers
+   MobilePillNav: its pill button's background/border are already
+   var(--surface)/var(--line), so they follow for free once those
+   tokens flip. */
+.chrome-adaptive[data-over="paper"] {
+  --bg: var(--bg-paper);
+  --surface: var(--surface-paper);
+  --surface-2: var(--surface-2-paper);
+  --text: var(--text-paper);
+  --muted: var(--muted-paper);
+  --line: var(--line-paper);
+  --line-strong: var(--line-strong-paper);
+  --accent: var(--accent-paper);
+  --accent-ink: var(--accent-ink-paper);
+}
+.chrome-adaptive[data-over="deep"] {
+  --bg: var(--surface-inverted);
+  --surface: var(--surface-inverted-2);
+  --surface-2: color-mix(in oklab, var(--surface-inverted) 88%, var(--text-inverted));
+  --text: var(--text-inverted);
+  --muted: var(--muted-inverted);
+  --line: var(--line-inverted);
+  --line-strong: var(--line-inverted-strong);
+  --accent: var(--accent-inverted);
+  --accent-ink: var(--accent-inverted-ink);
+}
+.chrome-adaptive,
+.chrome-adaptive * {
+  transition:
+    color 0.35s var(--ease-standard),
+    background-color 0.35s var(--ease-standard),
+    border-color 0.35s var(--ease-standard);
+}
+
 @layer base {
   * {
     border-color: var(--line);
