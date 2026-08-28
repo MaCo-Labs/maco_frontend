@@ -88,7 +88,12 @@ function CardMedia({
       }}
     >
       {media ? (
-        <ProductVideo media={media} objectFit="cover" radius="var(--radius-card)" priority="low" />
+        <ProductVideo
+          media={media}
+          objectFit="contain"
+          radius="var(--radius-card)"
+          priority="low"
+        />
       ) : brand ? (
         <div className="absolute inset-0 grid place-items-center p-12">
           <img

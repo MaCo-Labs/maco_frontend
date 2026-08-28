@@ -14,16 +14,12 @@ import { lerp, smootherstep, clamp01 } from "@/lib/motion";
  * recording of Bridge in daily use, 1024x576) gets the page's most
  * expensive moment.
  *
- * The frame stays LOCKED to the video's own 16:9 aspect throughout —
- * computed in pixels (width/height), not a uniform inset(). A uniform
- * inset() on a 900px-tall viewport produces a box matching the
- * VIEWPORT's aspect ratio, not the video's; with `objectFit: "cover"`
- * that crops real content off the sides, and the previous inset(14%)-to-
- * inset(6%) range grew the frame only ~22% linearly (0.21px of growth
- * per pixel scrolled) — a full 1080px of pinned scroll for a change that
- * barely reads. Locked to 16:9, the frame here grows from a small panel
- * to ~88vw and the upscale stays capped at 1.24x of the source (still
- * sharp), because the growth is real width, not a shape distortion.
+ * The frame is a real sized box (`width`/`height` written in `onUpdate`,
+ * not a clip-path inset) locked to the video's own 16:9 aspect throughout,
+ * with `mediaRef` gone — `SurfaceMedia`/`ProductVideo` mount directly
+ * inside the frame, so `objectFit: "cover"` is a 1:1 fit and never crops.
+ * `wMax` caps at 1024px — the source recording's own resolution, so the
+ * frame never upscales past what's actually sharp.
  *
  * Pin + scrub come from GSAP ScrollTrigger — it computes its own
  * pin-spacing, and `scrub` reads directly off Lenis-smoothed native
@@ -38,7 +34,6 @@ export function EvidenceExpand() {
   // 0.5/0.5 on leave, so there is no separate touch branch to maintain.
   const sectionRef = usePointerField<HTMLDivElement>();
   const frameRef = useRef<HTMLDivElement>(null);
-  const mediaRef = useRef<HTMLDivElement>(null);
   const scrimRef = useRef<HTMLDivElement>(null);
   const vignetteRef = useRef<HTMLDivElement>(null);
   const captionInRef = useRef<HTMLParagraphElement>(null);
@@ -48,7 +43,6 @@ export function EvidenceExpand() {
   useScrollScene((rt) => {
     const section = sectionRef.current;
     const frame = frameRef.current;
-    const media = mediaRef.current;
     const scrim = scrimRef.current;
     const vignette = vignetteRef.current;
     const captionIn = captionInRef.current;
@@ -72,15 +66,14 @@ export function EvidenceExpand() {
         // never uniform (x and y differ) except by coincidence of the
         // viewport's own ratio.
         const wStart = Math.min(vw * 0.56, vh * 0.5 * (16 / 9));
-        const wMax = Math.min(vw * 0.88, vh * 0.94 * (16 / 9), 1280);
+        const wMax = Math.min(vw * 0.88, vh * 0.94 * (16 / 9), 1024);
         const w = lerp(wStart, wMax, e);
         const h = w * (9 / 16);
-        const insetX = ((vw - w) / 2 / vw) * 100;
-        const insetY = ((vh - h) / 2 / vh) * 100;
         const radius = lerp(32, 6, e);
-        frame.style.clipPath = `inset(${insetY}% ${insetX}% round ${radius}px)`;
+        frame.style.width = `${w}px`;
+        frame.style.height = `${h}px`;
+        frame.style.borderRadius = `${radius}px`;
         frame.style.setProperty("--sweep", String(p));
-        if (media) media.style.transform = `scale(${lerp(1.1, 1, e)})`;
         if (scrim) scrim.style.opacity = String(lerp(0.62, 0.1, e));
         // Above ~1600px viewport width, wMax caps out (the 1024px source
         // can only grow so far before it stops looking sharp) — hand the
@@ -129,8 +122,8 @@ export function EvidenceExpand() {
       ref={sectionRef}
       data-ground="deep"
       aria-label="Bridge in motion"
-      // z-[41]: see the matching comment in open-logo.tsx — keeps the pinned
-      // frame above the sticky header instead of behind it.
+      // z-[41]: one below the header's z-[42] (chrome.tsx) — the fixed
+      // header stays on top of this pinned frame throughout the scrub.
       className="relative z-[41] h-screen overflow-hidden"
     >
       <p
@@ -155,21 +148,22 @@ export function EvidenceExpand() {
 
       <div
         ref={frameRef}
-        className="absolute inset-0"
-        style={{ clipPath: "inset(22% 32% round 32px)" }}
+        className="absolute left-1/2 top-1/2 overflow-hidden"
+        style={{
+          width: "36vw",
+          height: "20.25vw",
+          borderRadius: 32,
+          transform: "translate(-50%, -50%)",
+        }}
       >
-        <div ref={mediaRef} className="absolute inset-0">
-          <SurfaceMedia
-            label={caption}
-            aspect="auto"
-            className="h-full w-full rounded-none"
-            style={{ aspectRatio: "auto", border: "none" }}
-          >
-            {bridge?.media && (
-              <ProductVideo media={bridge.media} priority="low" objectFit="cover" />
-            )}
-          </SurfaceMedia>
-        </div>
+        <SurfaceMedia
+          label={caption}
+          aspect="auto"
+          className="h-full w-full rounded-none"
+          style={{ aspectRatio: "auto", border: "none" }}
+        >
+          {bridge?.media && <ProductVideo media={bridge.media} priority="low" objectFit="cover" />}
+        </SurfaceMedia>
         <div
           ref={scrimRef}
           aria-hidden="true"
