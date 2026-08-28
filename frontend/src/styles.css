@@ -1076,9 +1076,14 @@ html.lenis:has(:target) {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
+  /* --ease-emphasis, not ease-out — the 2026-08-29 Capabilities-accordion
+     pass retimed this off Cuberto's original curve to the site's own
+     "one property, one curve, everything scrub-driven or discrete-UI
+     shares it" convention (also cubic-bezier(0.16, 1, 0.3, 1), so this is
+     purely a name change plus consistency, not a felt-different curve). */
   transition:
-    grid-template-rows 0.3s ease-out,
-    opacity 0.4s ease-out;
+    grid-template-rows 0.3s var(--ease-emphasis),
+    opacity 0.4s var(--ease-emphasis);
   > * {
     overflow: hidden;
   }
@@ -1087,6 +1092,23 @@ html.lenis:has(:target) {
 .cb-panel[data-open="true"] {
   grid-template-rows: 1fr;
   opacity: 1;
+}
+
+/* Fade + slide-up on the panel's own content, layered on the height
+   reveal above — the height reveal alone reads as a mechanical resize;
+   this is what makes the content itself feel like it's arriving. Shared
+   by both `panel="default"` and `panel="inverted"` accordion.tsx call
+   sites, not inverted-only. */
+.cb-panel-content {
+  opacity: 0;
+  transform: translateY(0.85rem);
+  transition:
+    opacity 0.35s var(--ease-emphasis),
+    transform 0.45s var(--ease-emphasis);
+}
+.cb-panel[data-open="true"] .cb-panel-content {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* The +/- toggle: one bar rotates onto the other. Cuberto animates its

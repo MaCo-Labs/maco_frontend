@@ -43,6 +43,12 @@ const ITEMS: AccordionItem[] = services
  * Losing that pin also shortens the page by roughly one pinned viewport,
  * which is why the rows are numbered: the index is what tells you the
  * list is finite when there is no longer a pin holding you in place.
+ *
+ * `panel="inverted"` (2026-08-29) opens each row into a `.section-inverted`
+ * dark card instead of a plain indented column — real contrast against
+ * this section's own `paper` ground (`Accordion`'s only other call site,
+ * `Faq`, stays default: it's already `deep`, so a second dark layer there
+ * would have nothing to contrast against).
  */
 export function FeatureAccordion() {
   return (
@@ -61,7 +67,7 @@ export function FeatureAccordion() {
         </LineReveal>
 
         <div className="mt-12 md:mt-16">
-          <Accordion items={ITEMS} defaultOpen={ITEMS[0]?.id} />
+          <Accordion items={ITEMS} defaultOpen={ITEMS[0]?.id} panel="inverted" />
         </div>
       </div>
     </section>
