@@ -20,9 +20,11 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  * one name and many scripts"`, same — pins its own `<section>` directly,
  * confirmed in identity.tsx). Both are therefore excluded as OUTGOING —
  * which is why there is no "Bridge in motion" -> "What MaCo does" pair
- * and no "MaCo, in one name and many scripts" -> "Clients and company"
- * pair below, even though both are real adjacent boundaries. Every other
- * section on the page is pin-free, so every other boundary is eligible.
+ * and no "MaCo, in one name and many scripts" -> "About MaCo" pair below,
+ * even though both are real adjacent boundaries. Every other section on
+ * the page is pin-free, so every other boundary is eligible. ("About
+ * MaCo" was Record's client-wall-plus-about "Clients and company"
+ * before its client wall was consolidated into LogoReel 2026-08-28.)
  *
  * Only the OUTGOING section is ever transformed here (the incoming
  * section is just the ScrollTrigger's reference point, never itself
@@ -58,7 +60,7 @@ const PAIRS: readonly [outgoing: string, incoming: string, sheet?: boolean][] = 
   ["Who we work with", "Selected client work", true],
   ["Selected client work", "Products", true],
   ["Products", "MaCo, in one name and many scripts"],
-  ["Clients and company", "How MaCo works"],
+  ["About MaCo", "How MaCo works"],
   ["How MaCo works", "Start a project"],
 ];
 

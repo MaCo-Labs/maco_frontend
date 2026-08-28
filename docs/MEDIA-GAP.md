@@ -37,7 +37,6 @@ and PRODUCTS-equivalent sections) and `logo-reel.tsx`.
 | PREVIEW | `evidence-expand.tsx` | Bridge `ProductVideo` (real capture) | 1 | Source is 1024x576 (`build-media.mjs`); frame caps growth at that width so it never upscales. Real clarity beyond that needs a 1920x1080 re-capture of Bridge — asset-blocked. |
 | SUMMARY / FeaturedWork | `summary.tsx` | Client project brand marks only (`CardMedia`, brand-mark-on-plate) | — (brand, not product media) | Real screen capture of each of the 4 client products (Ananta Nethralaya, Al Afzah, Soorath Autos, HeadGreen) would let this swap from a brand plate to an actual UI shot/loop |
 | LOGOREEL | `logo-reel.tsx` | Client brand marks only | — (brand, not product media) | Same 4 clients; this section never claimed to show product UI, so no gap to close here specifically |
-| RECORD | `record.tsx` (unchanged) | Client brand marks only (logo wall) | — (brand, not product media) | Same as above |
 | SUMMARY / ProductSummary | `summary.tsx` | Bridge `ProductVideo` (real) and Driver's Diary `ProductVideo` (brand illustration, poster only, **captioned as a stand-in** since 2026-08-27), same card grid, one path at every viewport width | 1 and 2b | Real screen capture of Driver's Diary (video ideally, poster at minimum) |
 
 The previous architecture's desktop/mobile fork for PRODUCTS (a pinned

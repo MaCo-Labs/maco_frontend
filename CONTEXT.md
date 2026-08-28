@@ -265,7 +265,7 @@ The eleven `aria-label`s are unchanged from the previous (pre-2026-08-28) archit
 | 6 | SUMMARY (inverse) | `cb-summary.-inverse` | deep | `summary.tsx` (`FeaturedWork`) | Selected client work | no |
 | 7 | SUMMARY | `cb-summary` | paper | `summary.tsx` (`ProductSummary`) | Products | no |
 | 8 | OVERVIEW (2nd) | `cb-overview` | paper | `identity.tsx` | MaCo, in one name and many scripts | yes |
-| 9 | SUMMARY (inverse) | `cb-summary.-inverse` | deep | `record.tsx` | Clients and company | no |
+| 9 | SUMMARY (inverse) | `cb-summary.-inverse` | deep | `record.tsx` | About MaCo | no |
 | 10 | FAQ (inverse) | `cb-faq.-inverse` | deep | `faq.tsx` | How MaCo works | no |
 | 11 | OUTRO | `cb-outro` | deep | `outro.tsx` | Start a project | no |
 
@@ -285,7 +285,7 @@ Cuberto's measured rhythm, adopted as the `cb-*` utilities in `styles.css`: **10
 - **SUMMARY / FeaturedWork** (`summary.tsx`) — client platforms as a `cb-cards` grid (Cuberto's measured `450×608`-ish portrait plates), on deep ground. One `<Summary>` component, two call sites (here and PRODUCTS below) — matching Cuberto's own reuse of `cb-summary` twice.
 - **SUMMARY / ProductSummary** (`summary.tsx`) — MaCo's own two products, same card shape, paper ground.
 - **IDENTITY** (`identity.tsx`, unchanged) — "One name. Many scripts." — a pinned, fully scroll-driven script dial, glyph position is pure CSS `calc(--i - --t)`, zero re-renders, correct `lang` per script. Ground flipped `deep` → `paper` in this pass to match Cuberto's own alternation.
-- **RECORD** (`record.tsx`) — the page's one rest beat, client logo wall settling under a single `RakingSurface` pass. Ground flipped `paper` → `deep` in this pass.
+- **RECORD** (`record.tsx`) — the page's one rest beat, About-only since 2026-08-28 (its client logo wall was consolidated into LOGOREEL, the single client display). Ground flipped `paper` → `deep` in this pass.
 - **FAQ** (`faq.tsx`) — the same four-step process (A→D) as before, now through the shared `<Accordion>` on inverted ground, matching Cuberto's `cb-faq.-inverse`. Replaces the previous pinned `MethodLine` progress-spine.
 - **OUTRO** (`outro.tsx`) — Cuberto's `cb-outro` 2-col grid: closing statement left, contact route right. Carries over the previous CLOSE section's `light-pass` sweep and centre-drawn `<RuleDraw>` — the one thing worth keeping from the section it replaces.
 

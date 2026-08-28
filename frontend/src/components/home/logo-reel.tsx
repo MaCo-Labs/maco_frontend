@@ -18,6 +18,11 @@ import { ScrubReveal } from "@/components/motion/scrub-reveal";
  * hears four clients, not eight. It is CSS-only (`cb-reel` in styles.css,
  * matching Cuberto's own pure-CSS motion): no ScrollTrigger, no rAF, and
  * it stops dead under `prefers-reduced-motion`.
+ *
+ * Each card carries its `client.industry` under the mark — this is now
+ * the ONLY client display on the page (Record's logo wall was
+ * consolidated in here 2026-08-28), so it needed to carry the one thing
+ * that wall showed and this reel didn't.
  */
 export function LogoReel() {
   const track = [...clients, ...clients];
@@ -49,20 +54,27 @@ export function LogoReel() {
 }
 
 function LogoCard({ client, interactive }: { client: Client; interactive: boolean }) {
-  const inner = client.brand ? (
-    <img
-      src={client.brand.src}
-      alt={interactive ? client.name : ""}
-      width={client.brand.width}
-      height={client.brand.height}
-      loading="lazy"
-      decoding="async"
-      className="h-14 w-auto max-w-full object-contain"
-    />
-  ) : (
-    <span className="font-display text-lg" style={{ color: "var(--text)" }}>
-      {client.name}
-    </span>
+  const inner = (
+    <div className="flex flex-col items-center gap-3">
+      {client.brand ? (
+        <img
+          src={client.brand.src}
+          alt={interactive ? client.name : ""}
+          width={client.brand.width}
+          height={client.brand.height}
+          loading="lazy"
+          decoding="async"
+          className="h-14 w-auto max-w-full object-contain"
+        />
+      ) : (
+        <span className="font-display text-lg" style={{ color: "var(--text)" }}>
+          {client.name}
+        </span>
+      )}
+      <span className="label" style={{ color: "var(--muted)" }}>
+        {client.industry}
+      </span>
+    </div>
   );
 
   const className =

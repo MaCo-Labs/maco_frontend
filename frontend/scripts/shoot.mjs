@@ -51,7 +51,7 @@ const SECTIONS = [
   ["Selected client work", "06-featured-work"],
   ["Products", "07-product-summary"],
   ["MaCo, in one name and many scripts", "08-identity"],
-  ["Clients and company", "09-record"],
+  ["About MaCo", "09-record"],
   ["How MaCo works", "10-faq"],
   ["Start a project", "11-outro"],
 ];
