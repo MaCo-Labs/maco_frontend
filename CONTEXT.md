@@ -257,19 +257,31 @@ The eleven `aria-label`s are unchanged from the previous (pre-2026-08-28) archit
 
 | # | Section | Cuberto source | Ground | File | `aria-label` | Pin? |
 |---|---|---|---|---|---|---|
-| 1 | TOPHEAD | `cb-tophead` | paper | `top-head.tsx` | Introduction | no |
+| 1 | TOPHEAD | `cb-tophead` | deep | `top-head.tsx` | Introduction | no |
 | 2 | PREVIEW | `cb-preview` | deep | `evidence-expand.tsx` | Bridge in motion | yes |
 | 3 | OVERVIEW | `cb-overview` | paper | `overview.tsx` | What MaCo does | no |
 | 4 | FEATURE | `cb-feature` | paper | `feature-accordion.tsx` | Capabilities | no |
 | 5 | LOGOREEL | `cb-logoreel` | paper | `logo-reel.tsx` | Who we work with | no |
-| 6 | SUMMARY (inverse) | `cb-summary.-inverse` | deep | `summary.tsx` (`FeaturedWork`) | Selected client work | no |
+| 6 | SUMMARY (inverse) | `cb-summary.-inverse` | paper | `summary.tsx` (`FeaturedWork`) | Selected client work | no |
 | 7 | SUMMARY | `cb-summary` | paper | `summary.tsx` (`ProductSummary`) | Products | no |
 | 8 | OVERVIEW (2nd) | `cb-overview` | paper | `identity.tsx` | MaCo, in one name and many scripts | yes |
 | 9 | SUMMARY (inverse) | `cb-summary.-inverse` | deep | `record.tsx` | About MaCo | no |
 | 10 | FAQ (inverse) | `cb-faq.-inverse` | deep | `faq.tsx` | How MaCo works | no |
 | 11 | OUTRO | `cb-outro` | deep | `outro.tsx` | Start a project | no |
 
-Ground sequence: paper · deep · paper paper paper · deep · paper paper · deep deep deep. Matches Cuberto's own `L L L L L · D · L L · D D` rhythm (with PREVIEW's own deep ground folded in as the first `D`) — the alternation the pre-2026-08-28 architecture didn't have.
+Ground sequence: **deep deep · paper × 6 · deep deep deep**, footer also
+deep — a three-act shape (dark open, paper middle, dark close), not
+Cuberto's own alternation. Owner-directed 2026-08-28 (dark-first pass):
+the page had opened on paper before this and closed on deep, which meant
+Outro → Footer (both deep) had nothing marking the boundary while
+TopHead → PREVIEW (paper → deep, the very first thing a visitor sees)
+did. Only two `data-ground` values actually moved to get here — TOPHEAD
+(paper → deep) and SUMMARY-inverse/`FeaturedWork` (deep → paper); every
+other section was already on its target ground. Down from six ground
+flips to two, both of which now land exactly on the page's two
+pinned-outgoing boundaries (see `ground-handoff.tsx`'s `"sheet-only"`
+mode, added the same pass to give a pinned-outgoing flip a sheet reveal
+without the transform-on-a-pin hazard a recede would hit there).
 
 Only two sections pin: PREVIEW (`evidence-expand.tsx`, pins its own `<section>`) and the 2nd OVERVIEW / IDENTITY (`identity.tsx`, same). Everything else is pin-free — a deliberate drop from the previous architecture's four pins (the retired `ServicesConvergence`, `ProductShowcase`-as-sticky-but-effectively-staged, and `MethodLine` are gone), which is also why the page is roughly one pinned viewport shorter than before.
 

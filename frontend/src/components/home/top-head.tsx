@@ -29,11 +29,19 @@ import { RakingSurface } from "@/components/motion/raking-surface";
  * without the sweep), and a `hero-backlight`/`hero-grain` pair behind
  * it. Eyebrow above the brand row is `site.category` — real copy, not
  * invented. All four are `styles.css` utilities so Obsidian/Cobalt each
- * resolve their own restrained/stronger intensity off existing tokens.
+ * resolve their own restrained/stronger intensity off existing tokens
+ * (`--focus`, not `--accent` — see `display-glow`'s comment in
+ * styles.css for why).
+ *
+ * `data-ground="deep"` since the 2026-08-28 dark-first pass — the page
+ * now opens on the material rather than the page, closing the loop with
+ * `Record`/`Faq`/`Outro`/`Footer` at the bottom, also `deep` (`CONTEXT.md`
+ * §10). Was `paper` before; every hero utility above was retuned for
+ * this ground, not just recoloured.
  */
 export function TopHead() {
   return (
-    <section data-ground="paper" aria-label="Introduction" className="relative overflow-hidden">
+    <section data-ground="deep" aria-label="Introduction" className="relative overflow-hidden">
       <div aria-hidden="true" className="hero-backlight" />
       <div aria-hidden="true" className="hero-grain" />
       <RakingSurface className="light-pass is-lit">

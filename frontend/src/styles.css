@@ -403,15 +403,32 @@ html.lenis:has(:target) {
    scrubbed too (via the same --header-solid) since a visible rule-b under a
    fully transparent header would read as a stray line floating over the
    hero. */
+/* A floor under both the tint and the blur — never fully raw glass, even
+   at --header-solid: 0. Added for the dark-first pass's hero (a
+   full-strength light-pass sweep now runs behind a transparent header,
+   where it previously ran behind an opaque paper one): with no floor, a
+   bright sweep crossing directly behind unblurred nav text washed
+   CLIENTS/ABOUT to near-invisible on Cobalt at the exact moment a
+   visitor's eye is on the header. A permanent few px of frost turns that
+   into soft bokeh instead of a legibility failure, and reads as
+   intentional glass rather than a bug — restrained on purpose (6px/8%
+   floor, not a heavy panel; AGENTS.md names "excessive glassmorphism"
+   as a failure mode). Same fix protects the item-4 video-hero work still
+   to come: whatever plays behind a transparent header from here on, the
+   header stays legible without a per-hero special case. */
 @utility header-scroll {
-  background: color-mix(in oklab, var(--bg) calc(var(--header-solid, 1) * 88%), transparent);
+  background: color-mix(
+    in oklab,
+    var(--bg) calc(8% + var(--header-solid, 1) * 80%),
+    transparent
+  );
   border-bottom-color: color-mix(
     in oklab,
     var(--line) calc(var(--header-solid, 1) * 100%),
     transparent
   );
-  backdrop-filter: blur(calc(var(--header-solid, 1) * 12px));
-  -webkit-backdrop-filter: blur(calc(var(--header-solid, 1) * 12px));
+  backdrop-filter: blur(calc(6px + var(--header-solid, 1) * 10px));
+  -webkit-backdrop-filter: blur(calc(6px + var(--header-solid, 1) * 10px));
 }
 
 /* Label — replaces every monospace technical tag on the site. Runs the
@@ -725,14 +742,26 @@ html.lenis:has(:target) {
   opacity: 0.45;
 }
 
-/* Introduction's light-pass sits over live body text (eyebrow, headline,
-   lead paragraph), not an empty panel or media plate — full-strength
-   overlay was washing out whole words where the sweep crossed them
-   (worst on Cobalt's near-white paper ground, where overlay blending has
-   the most headroom to lighten). Same lighter-touch reasoning as the
-   [data-media] rule above, applied by section instead of by content type. */
+/* Introduction's RakingSurface box starts at the very top of the
+   section (cb-tophead's own top padding lives INSIDE it, same y=0 as
+   the fixed header), so the base rule's -20% top inset — which starts
+   the ::after pseudo-element's own box ABOVE the section's real edge —
+   let the sweep paint directly behind the ~96px the header physically
+   occupies. header-scroll's own background/blur floor (above) softens
+   whatever crosses there, but the surgical fix is not letting the
+   sweep paint that band at all. A `mask-image` on this same
+   pseudo-element was the first attempt and measurably did nothing —
+   confirmed live — because a mask's gradient is positioned relative to
+   the MASKED element's own box, which (thanks to that same -20% inset)
+   starts well above the section's true top; "88px into the mask"
+   landed above the viewport entirely, nowhere near the header. Moving
+   the pseudo-element's own top edge down to a fixed 6rem — below the
+   header's real height at every viewport width — keeps the beam out
+   of that band structurally instead of trying to mask it after the
+   fact. Left/right/bottom keep the base rule's -40%/-20% for the
+   sweep's horizontal drift room; only top changes. */
 [aria-label="Introduction"] .light-pass::after {
-  opacity: 0.35;
+  top: 6rem;
 }
 
 /* Shiny Text — the hero wordmark's idle state, applied by <SplitReveal>
@@ -918,22 +947,31 @@ html.lenis:has(:target) {
 }
 
 /* Hero gradient-fill glow — same background-clip:text device as
-   .maco-shine above, but top-to-bottom rather than diagonal: a
-   diagonal band crosses each line of a 3-line headline at a different
-   horizontal offset, so mid-word brightness jumps read as a legibility
-   bug rather than a glow. Vertical keeps every character on the same
-   line at the same tone, fading from a lifted top line down to solid
-   --text — reads as light falling on the headline from the backlight
-   above it. Obsidian stays restrained (small lift toward white);
-   Cobalt runs the lift from --accent itself and further down the
-   block, stronger, matching the "two modes of one brand" split every
-   other Obsidian/Cobalt pair here uses. white is the same token-free
-   mix target .maco-shine already uses — not a new colour. */
+   .maco-shine above, still top-to-bottom (a diagonal band crosses each
+   line of a 3-line headline at a different horizontal offset, reading
+   as a legibility bug rather than a glow — see the dark-first pass
+   below for why that still matters here).
+   Introduction moved to `deep` ground in the 2026-08-28 dark-first
+   pass, which flips this gradient's own logic: --text on deep IS
+   already near-white, so "lift toward white" at the top had nothing
+   left to lift — both gradient stops resolved to the same value. Now
+   inverted: full --text at the top (lit, as if the backlight below is
+   striking the glyphs from above) fading toward transparent by the
+   bottom (the material swallowing the tail of the drop-shadow-free
+   glyph, since transparent text over the section's own near-black
+   background reads as dimming, not disappearing). --focus, not
+   --accent, drives the per-theme tint — --accent remaps to
+   accent-inverted per [data-ground="deep"], which is near-white for
+   BOTH themes (no chroma left to tell Obsidian and Cobalt apart);
+   --focus is never ground-remapped, so it stays each theme's own
+   grey/blue regardless of which ground the hero sits on. Obsidian
+   stays restrained (no tint, pure value fade); Cobalt runs stronger
+   (a real blue lit-edge, fading further). */
 @utility display-glow {
   background-image: linear-gradient(
     180deg,
-    color-mix(in oklab, var(--text) 75%, white 25%) 0%,
-    var(--text) 55%
+    var(--text) 0%,
+    color-mix(in oklab, var(--text) 70%, transparent) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -942,8 +980,8 @@ html.lenis:has(:target) {
 [data-theme="cobalt"] .display-glow {
   background-image: linear-gradient(
     180deg,
-    color-mix(in oklab, var(--accent) 60%, white 40%) 0%,
-    var(--text) 70%
+    color-mix(in oklab, var(--text) 75%, var(--focus) 25%) 0%,
+    color-mix(in oklab, var(--text) 45%, transparent) 100%
   );
 }
 @supports not (background-clip: text) {
@@ -953,28 +991,30 @@ html.lenis:has(:target) {
   }
 }
 
-/* Radial backlight behind the hero headline — Obsidian keeps it a
-   faint lift, Cobalt runs it larger/brighter, same accent-derived
-   restrained/stronger split as .display-glow above. */
+/* Radial backlight behind the hero headline — same --focus-over-
+   --accent reasoning as .display-glow above (--accent washes out to
+   near-white on deep ground for both themes; --focus keeps each
+   theme's own colour regardless of ground). Obsidian keeps it a faint
+   grey lift, Cobalt runs an actually-blue glow, larger/brighter. */
 @utility hero-backlight {
   position: absolute;
   inset: -15% 10% auto 10%;
   height: 70%;
   background: radial-gradient(
     ellipse at 30% 40%,
-    color-mix(in oklab, var(--accent) 14%, transparent),
+    color-mix(in oklab, var(--focus) 20%, transparent),
     transparent 70%
   );
-  filter: blur(70px);
+  filter: blur(80px);
   pointer-events: none;
 }
 [data-theme="cobalt"] .hero-backlight {
   background: radial-gradient(
     ellipse at 30% 40%,
-    color-mix(in oklab, var(--accent) 24%, transparent),
+    color-mix(in oklab, var(--focus) 36%, transparent),
     transparent 70%
   );
-  filter: blur(90px);
+  filter: blur(100px);
 }
 
 /* Film grain — CSS-only feTurbulence data-URI, no image asset. Sits

@@ -7,66 +7,63 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  * incoming section then reads as physically overtaking it, rather than
  * merely following it. Mounted once in routes/index.tsx.
  *
- * Rebuilt 2026-08-28 for the Cuberto-parity twelve-slot structure (plan
- * "Cuberto-parity homepage rebuild") — the previous PAIRS keyed off
- * sections (ServicesConvergence, ProductShowcase, WorkReveal, MethodLine,
- * ClientField) that no longer exist. Same hazard as before, restated for
- * the new component set: a `transform` on an ancestor of a
- * `position: fixed` element repositions that fixed element relative to
- * the TRANSFORMED ancestor instead of the viewport, so a section that
- * HOSTS a pin must never be the OUTGOING side. Only two of the twelve
- * sections pin at all now: EvidenceExpand (`aria-label="Bridge in
- * motion"`, pins its own `<section>`) and Identity (`aria-label="MaCo, in
- * one name and many scripts"`, same — pins its own `<section>` directly,
- * confirmed in identity.tsx). Both are therefore excluded as OUTGOING —
- * which is why there is no "Bridge in motion" -> "What MaCo does" pair
- * and no "MaCo, in one name and many scripts" -> "About MaCo" pair below,
- * even though both are real adjacent boundaries. Every other section on
- * the page is pin-free, so every other boundary is eligible. ("About
- * MaCo" was Record's client-wall-plus-about "Clients and company"
- * before its client wall was consolidated into LogoReel 2026-08-28.)
+ * Rebuilt 2026-08-28 for the Cuberto-parity twelve-slot structure, then
+ * retuned the same day for the dark-first three-act ground sequence
+ * (`CONTEXT.md` §10: `deep deep | paper×6 | deep deep deep`). Same pin
+ * hazard as before: a `transform` on an ancestor of a `position: fixed`
+ * element repositions that fixed element relative to the TRANSFORMED
+ * ancestor instead of the viewport, so a section that HOSTS a pin must
+ * never be the OUTGOING side of a recede. Only two of the eleven
+ * sections pin at all: EvidenceExpand (`aria-label="Bridge in motion"`)
+ * and Identity (`aria-label="MaCo, in one name and many scripts"`), both
+ * pinning their own `<section>` directly.
  *
- * Only the OUTGOING section is ever transformed here (the incoming
- * section is just the ScrollTrigger's reference point, never itself
- * touched) — so a plain-recede pair is safe whenever the OUTGOING side is
- * pin-free, regardless of what the incoming side hosts.
+ * Only the OUTGOING section is ever transformed by a recede (the
+ * incoming section is just the ScrollTrigger's reference point) — so a
+ * plain recede is safe whenever the OUTGOING side is pin-free, regardless
+ * of what the incoming side hosts.
  *
- * `sheet: true` pairs additionally get a curved-corner reveal on the
- * INCOMING side (`clip-path: inset(... round ...)` scrubbed from a
- * rounded rect to square, same scrollTrigger window as the recede) —
- * reserved for boundaries that are ALSO a ground change, so the two
- * motions read as one "sheet lifting into place" gesture rather than a
- * decoration on every boundary. Unlike the plain recede, this DOES touch
- * the incoming section: `clip-path` clips an element's entire painted
- * subtree, including `position: fixed` descendants, so a `sheet: true`
- * incoming section is only safe if it either pins ITSELF or doesn't pin
- * at all — never via a descendant.
+ * The curved-corner sheet reveal (`clip-path: inset(... round ...)`
+ * scrubbed from a rounded rect to square) touches the INCOMING side
+ * instead, and is reserved for boundaries that are ALSO a ground
+ * change — every other boundary just recedes, so the sheet gesture keeps
+ * meaning "the ground just changed" rather than decorating every
+ * crossing. `clip-path` clips an element's entire painted subtree,
+ * including `position: fixed` descendants, so a sheet is only safe on an
+ * incoming section that either pins ITSELF or doesn't pin at all — never
+ * via a descendant.
  *
- * The page's actual ground sequence is
- * paper,deep,paper,paper,paper,deep,paper,paper,deep,deep,deep — six
- * flips: 1->2, 2->3, 5->6, 6->7, 7->8(none, both paper — not a flip,
- * disregard), 8->9. Two of the six sit at an excluded (pinned-outgoing)
- * boundary — 2->3 (EvidenceExpand outgoing) and 8->9 (Identity
- * outgoing) — so they get no pair at all, sheet or otherwise. The three
- * that remain (1->2, 5->6, 6->7) all have a pin-free outgoing side and an
- * incoming side that either pins itself (EvidenceExpand, at 1->2) or
- * doesn't pin at all (FeaturedWork at 5->6, ProductSummary at 6->7), so
- * all three are safe as `sheet: true`.
+ * The dark-first sequence puts BOTH of the page's two ground flips
+ * exactly on the two pinned-outgoing boundaries (EvidenceExpand -> What
+ * MaCo does, Identity -> About MaCo) — the only boundaries a recede can't
+ * touch. Each `mode` covers one shape:
+ *   - default (no `mode`): plain recede only. Every boundary that isn't a
+ *     ground change — which, after the inversion, is every OTHER boundary
+ *     on the page.
+ *   - `"sheet"`: recede + sheet, for a ground-change boundary whose
+ *     outgoing side is pin-free (none currently — both ground flips now
+ *     sit on a pinned-outgoing boundary, so this mode is unused today but
+ *     kept for the next ground change that doesn't).
+ *   - `"sheet-only"`: sheet on the incoming side, NO recede (the outgoing
+ *     side pins, so it's excluded from transforms entirely) — both of
+ *     today's ground flips use this.
  */
-const PAIRS: readonly [outgoing: string, incoming: string, sheet?: boolean][] = [
-  ["Introduction", "Bridge in motion", true],
+const PAIRS: readonly [outgoing: string, incoming: string, mode?: "sheet" | "sheet-only"][] = [
+  ["Introduction", "Bridge in motion"],
+  ["Bridge in motion", "What MaCo does", "sheet-only"],
   ["What MaCo does", "Capabilities"],
   ["Capabilities", "Who we work with"],
-  ["Who we work with", "Selected client work", true],
-  ["Selected client work", "Products", true],
+  ["Who we work with", "Selected client work"],
+  ["Selected client work", "Products"],
   ["Products", "MaCo, in one name and many scripts"],
+  ["MaCo, in one name and many scripts", "About MaCo", "sheet-only"],
   ["About MaCo", "How MaCo works"],
   ["How MaCo works", "Start a project"],
 ];
 
 export function GroundHandoff() {
   useScrollScene((rt) => {
-    for (const [outLabel, inLabel, sheet] of PAIRS) {
+    for (const [outLabel, inLabel, mode] of PAIRS) {
       const outgoing = document.querySelector<HTMLElement>(`[aria-label="${outLabel}"]`);
       const incoming = document.querySelector<HTMLElement>(`[aria-label="${inLabel}"]`);
       if (!outgoing || !incoming) continue;
@@ -79,30 +76,30 @@ export function GroundHandoff() {
         invalidateOnRefresh: true,
       };
 
-      rt.gsap.fromTo(
-        outgoing,
-        { yPercent: 0, scale: 1, opacity: 1 },
-        {
-          yPercent: -4,
-          scale: 0.965,
-          opacity: 0.55,
-          ease: "none",
-          transformOrigin: "50% 0%",
-          scrollTrigger,
-        },
-      );
+      // "sheet-only" boundaries sit on a PINNED outgoing section — the
+      // recede below is exactly the transform-on-a-pin-ancestor hazard
+      // this file's doc comment describes, so it's skipped entirely here.
+      if (mode !== "sheet-only") {
+        rt.gsap.fromTo(
+          outgoing,
+          { yPercent: 0, scale: 1, opacity: 1 },
+          {
+            yPercent: -4,
+            scale: 0.965,
+            opacity: 0.55,
+            ease: "none",
+            transformOrigin: "50% 0%",
+            scrollTrigger,
+          },
+        );
+      }
 
       // Curved sheet: the incoming section's top corners start rounded
-      // and flatten to square as it settles into place — a one-way
-      // "sheet lifting into place" cue layered on the recede above, only
-      // where the boundary is ALSO a ground change (see PAIRS above).
-      // clip-path defaults to `none` in the JSX (no inline style), so with
-      // no JS / reduced motion the section just renders with its normal
-      // square top edge — the settled end-state. Safe here specifically
-      // because `incoming` either pins ITSELF (IDENTITY) or doesn't pin
-      // at all (CLOSE) — never a descendant — per the doc comment above;
-      // this is not a blanket exemption from the pin hazard.
-      if (sheet) {
+      // and flatten to square as it settles into place. clip-path
+      // defaults to `none` in the JSX (no inline style), so with no JS /
+      // reduced motion the section just renders with its normal square
+      // top edge — the settled end-state.
+      if (mode === "sheet" || mode === "sheet-only") {
         rt.gsap.fromTo(
           incoming,
           { clipPath: "inset(0px round 48px 48px 0px 0px)" },

@@ -12,11 +12,13 @@ import { ProductVideo } from "@/components/media/product-video";
  * `div.cb-summary-cards` is `450px 450px` with a 90px gap, each card a
  * portrait media plate with its title and caption beneath.
  *
- * One component, two call sites — `<FeaturedWork>` (client platforms, on
- * `deep` ground) and `<ProductSummary>` (MaCo's own products, on `paper`)
- * — which is exactly how Cuberto uses it, and why the alternation reads
- * as rhythm rather than as two unrelated sections that happen to look
- * alike.
+ * One component, two call sites — `<FeaturedWork>` (client platforms) and
+ * `<ProductSummary>` (MaCo's own products), both `paper` since the
+ * 2026-08-28 dark-first pass folded slots 3-8 into one uninterrupted
+ * paper middle act between a dark open and a dark close (`CONTEXT.md`
+ * §10) — Cuberto's own `#featured`/`#clients` alternate ground, but
+ * MaCo's ground sequence answers to the three-act shape, not to matching
+ * Cuberto section-for-section.
  *
  * Replaces `work-reveal.tsx` (a hover-reveal list with a floating panel)
  * and `product-showcase.tsx` (a sticky expand-to-reel stage). The
@@ -161,7 +163,7 @@ function SummaryCard({
 export function FeaturedWork() {
   return (
     <Summary
-      ground="deep"
+      ground="paper"
       ariaLabel="Selected client work"
       label="Work"
       heading="Platforms carrying real operational weight."
