@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { ThemeProvider } from "@/components/theme";
 import { Header, Footer } from "@/components/chrome";
+import { Cursor } from "@/components/motion/cursor";
 import { ScrollRuntimeProvider } from "@/components/scroll-runtime-provider";
 import { skipToMain } from "@/lib/skip-to-main";
 
@@ -145,6 +146,7 @@ function RootComponent() {
         >
           Skip to content
         </a>
+        <Cursor />
         <Header />
         <main id="main">
           <Outlet />

@@ -16,6 +16,13 @@ type Tag = "h1" | "h2" | "h3" | "p";
  * through `[start, end]` — a full line-height rise behind the line mask
  * (`yPercent 108 -> 0`), the largest single reveal available, reserved for
  * the page's biggest statements.
+ * `mode="words"` (2026-08-29): splits on WORDS instead of lines — a
+ * blur-in + small rise, staggered per word rather than per line, for
+ * copy that should settle into focus rather than rise into place. One
+ * device, applied once (Overview's opening statement) rather than
+ * scattered across every heading — AGENTS.md's "not an animation
+ * gallery" caution applies to the site's own devices too, not just
+ * imported ones.
  *
  * The tween is created INSIDE `onSplit`, not chained after `new
  * SplitText(...)` returns. SplitText re-splits on font load or viewport
@@ -40,7 +47,7 @@ export function LineReveal({
   className?: string;
   style?: CSSProperties;
   children: ReactNode;
-  mode?: "once" | "scrub";
+  mode?: "once" | "scrub" | "words";
   start?: string;
   end?: string;
 }) {
@@ -54,6 +61,30 @@ export function LineReveal({
 
     getScrollRuntime().then((rt) => {
       if (cancelled || !rt) return;
+      if (mode === "words") {
+        // No `mask: "words"` here, unlike the line modes below — masking
+        // wraps each word in its own overflow:hidden box sized to the
+        // word, which would clip a blur filter's soft edges right at
+        // that boundary (a mask is right for a yPercent RISE, where
+        // clipping the next line from peeking through is the point; it
+        // fights a BLUR reveal, where the point is a soft edge). The
+        // modest 25% rise below doesn't need a mask to read cleanly.
+        split = new rt.SplitText(el, {
+          type: "words",
+          autoSplit: true,
+          onSplit: (self) =>
+            rt.gsap.from(self.words, {
+              opacity: 0,
+              filter: "blur(8px)",
+              yPercent: 25,
+              duration: 0.7,
+              ease: "power2.out",
+              stagger: 0.035,
+              scrollTrigger: { trigger: el, start, once: true },
+            }),
+        });
+        return;
+      }
       split = new rt.SplitText(el, {
         type: "lines",
         mask: "lines",

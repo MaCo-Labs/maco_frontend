@@ -801,6 +801,42 @@ html.lenis:has(:target) {
   }
 }
 
+/* Custom cursor (components/motion/cursor.tsx) — one ring, position
+   written by GSAP quickSetter every frame (see that file's own comment
+   for why), everything else here is CSS: the active-state scale, and the
+   fill/blend that makes it correct on any ground/theme with zero
+   per-section rules. `background: white` + `mix-blend-mode: difference`
+   is the standard technique for a cursor that's guaranteed visible
+   against ANY backdrop — difference-against-white always inverts
+   whatever's underneath, so it never needs a --text/--bg lookup. white
+   is the same token-free mix target .maco-shine above already uses, not
+   a new colour. */
+.maco-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  margin-top: -9px;
+  border-radius: 999px;
+  background: white;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  z-index: 60;
+  transition:
+    opacity 0.2s var(--ease-standard),
+    width 0.25s var(--ease-emphasis),
+    height 0.25s var(--ease-emphasis),
+    margin 0.25s var(--ease-emphasis);
+}
+.maco-cursor.is-active {
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  margin-top: -22px;
+}
+
 /* currentColor mask marks (the logo, client brand glyphs) — Windows
    High Contrast forces `background-color` to Canvas, which makes a
    currentColor-filled mask disappear entirely. CanvasText survives

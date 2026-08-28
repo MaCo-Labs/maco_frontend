@@ -25,6 +25,13 @@ const FIGURES = [
  * block plus the route onward right. The figures are derived from
  * `content/maco.ts`, so they are claims the rest of the page can actually
  * back — no invented metrics, per AGENTS.md.
+ *
+ * The h2 uses `LineReveal`'s `mode="words"` (2026-08-29) — a blur-in
+ * word stagger, not the line-mask rise every other headline on the page
+ * uses. Deliberately placed exactly here: this is the first thing after
+ * the dark, cinematic hero, the moment the page settles into calm
+ * editorial reading — a different settle deserves a visibly different
+ * device, once, not scattered across every heading.
  */
 export function Overview() {
   return (
@@ -37,7 +44,7 @@ export function Overview() {
             </ScrubReveal>
             <LineReveal
               as="h2"
-              mode="scrub"
+              mode="words"
               className="display-lg mt-4"
               style={{ color: "var(--text)" }}
             >

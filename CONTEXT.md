@@ -126,6 +126,38 @@ Frontend and backend are only linked through the contact form (`VITE_API_BASE_UR
 - React-Three-Fiber — both `three` consumers use the raw API directly
 - `zod`, `react-hook-form`, any Radix/shadcn primitive — removed 2026-08-21, see §11
 
+### React Bits concept adopt/reject log (2026-08-29 dark-first pass)
+
+Per AGENTS.md §222 — recorded here, not scattered across other docs.
+
+- **Adopted — "Masked Heading" (video-in-text via SVG clipPath).**
+  Reimplemented as `components/motion/masked-heading.tsx`: GSAP through
+  `useScrollScene`, real content (`content/maco.ts`'s `heroLines`), real
+  media (Bridge's own capture). No dependency added — SVG `<clipPath>` +
+  `<text>` is a standard technique, not a library. Grades the video to
+  `grayscale(1)` — the source footage contains a real amber UI badge
+  (Bridge's "On Hold" status), a direct palette violation no filter math
+  could safely avoid; only luminance/shape/motion crosses over. Backs
+  onto the plain `display-glow` `<h1>` for SSR, first paint, and reduced
+  motion — never the masked version in any of those three cases.
+- **Adopted — custom cursor**, narrow scope per `AI_HANDOFF.md` #8's
+  standing caution (custom cursor/WebGL work needs its own live go/no-go,
+  given two earlier WebGL hero attempts were built and reverted for
+  reading like a generic template). One ring, fine-pointer-only, off
+  entirely under reduced motion, `mix-blend-mode: difference` against a
+  plain white fill for ground/theme-agnostic contrast with zero
+  per-section rules (`components/motion/cursor.tsx`).
+- **Adopted, minimal — word-stagger text reveal.** Not a new component:
+  a third `mode="words"` on the existing `LineReveal` (blur + short rise,
+  GSAP SplitText on `type: "words"` instead of `"lines"`). Applied once
+  — Overview's opening statement, the first thing after the hero — not
+  scattered across headings; AGENTS.md's "not an animation gallery"
+  caution applies to MaCo's own devices, not just imported ones.
+- **Rejected — contextual/content-preview cursor** (Cuberto's own
+  `cb-cursor` swaps in a media/text preview per hovered element).
+  `docs/references/cuberto/NOTES.md` already flags the FULL contextual-
+  cursor system as out of scope; this pass's cursor stays a plain ring.
+
 ---
 
 ## 5. Brand & messaging
