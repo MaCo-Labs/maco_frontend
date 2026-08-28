@@ -8,7 +8,7 @@ Statuses: **DONE** | **PARTIAL** | **NOT STARTED**
 
 | Area | Status | Notes |
 |---|---|---|
-| Homepage (11 sections, Cuberto-parity structure) | DONE — full structural rebuild 2026-08-28, plus 3 bug-fix passes + 6 motion-audit fixes from 2026-08-27 predating it | See `CONTEXT.md` §10 for the current architecture (rebuilt on Cuberto's actual section inventory/order/spacing system, MaCo colors/fonts/copy only); see `AI_HANDOFF.md`'s seventh-pass entry for the rebuild and its earlier three 2026-08-27 entries for the pre-rebuild fixes (OPEN/header-collision + PRODUCTS-compositing, the motion-audit pass, the `removeChild` route-transition crash fix) — all verified live |
+| Homepage (11 sections, Cuberto-parity structure) | DONE — full structural rebuild 2026-08-28 plus same-day §13 refinement pass (crop fix, dead-code sweep, hero treatment, client consolidation, adaptive navbar), plus 3 bug-fix passes + 6 motion-audit fixes from 2026-08-27 predating it | See `CONTEXT.md` §10 for the current architecture; see `AI_HANDOFF.md`'s eighth-pass entry for the refinement pass, seventh-pass for the rebuild, and its earlier three 2026-08-27 entries for the pre-rebuild fixes — all verified live |
 | Two-theme system (Obsidian/Cobalt) | DONE | Separate font set per theme, radial clip-path wipe on switch |
 | Contact form → backend | DONE | Real `POST /api/v1/contact/`, throttled + honeypot |
 | Mobile nav | DONE | Focus trap, Escape, backdrop dismiss |

@@ -4,7 +4,9 @@
 
 Overall: **STABLE.** The homepage was fully rebuilt on Cuberto's structural
 foundation 2026-08-28 (11 sections, new order — see `CONTEXT.md` §10 and
-the seventh-pass entry below) and a full dead-code/dependency cleanup pass
+the seventh-pass entry below), then refined the same day (eighth pass:
+EVIDENCE crop fix, dead-code sweep, hero treatment, client consolidation,
+adaptive navbar — see below), and a full dead-code/dependency cleanup pass
 ran 2026-08-21 (see `CONTEXT.md` §11). Build/lint are clean.
 
 ## 2026-08-27 session — re-audit + 2 confirmed bugs fixed
@@ -324,6 +326,71 @@ paths), `bun run build` (client + server, 0 warnings), full 154-shot live
 matrix (144/154 clean, 10 known-flake as above), spot-checked screenshots
 in both themes confirming the accordion, reel, card grids, and all three
 ground flips render correctly.
+
+## 2026-08-28, eighth pass — §13 refinement pass (crop fix, hero, clients, adaptive navbar)
+
+The seventh-pass Cuberto-parity rebuild landed entirely uncommitted; this
+pass committed it as a baseline (`d6e567f`) and then executed
+`docs/REFACTOR_PLAN.md` §13's five refinement items (1, 5, 2, 3, 4 in that
+order — 6 stays deferred, see `ROADMAP.md`). Each item verified live in a
+real browser against a production build (`bun run preview`), not just
+`tsc`/`eslint`/`build`, before being committed.
+
+1. **EVIDENCE frame crop, root-caused and fixed** — the clip-path aperture
+   in `evidence-expand.tsx` was correctly 16:9-locked, but the media box
+   underneath it (`mediaRef`, full `inset-0`) was the whole viewport;
+   `objectFit="cover"` into a non-16:9 box cropped the video's long axis at
+   almost every aspect ratio, and an extra `scale(1.1->1)` cropped further
+   at progress 0. Now a real sized box (`width`/`height` written in
+   `onUpdate`, `mediaRef` and the scale gone); `wMax` dropped 1280->1024
+   (the Bridge recording's actual source resolution) so it never upscales
+   past what's sharp. `summary.tsx`'s portrait card had the same defect,
+   switched to `objectFit="contain"`.
+2. **Dead-code sweep** — the "dead prefooter" was `Footer` duplicating
+   `Outro`'s closing CTA (no literal prefooter component ever existed);
+   stripped. Removed unused `@property --lay`/`--p`, the `.maco-aurora`/
+   `.maco-thread` block (`ThemeAtmosphere` is gone), `--radius-plate`.
+   Fixed stale comments naming deleted components (Prism WebGL, OPEN,
+   method-line) and a backwards z-index comment on EVIDENCE.
+3. **Hero treatment** — `TopHead` gets a `site.category` eyebrow, a static
+   `display-glow` gradient-fill on the `<h1>` (`.maco-shine`'s
+   background-clip:text device, vertical not diagonal — a diagonal band
+   crossed a 3-line headline at a different horizontal offset per line,
+   read as a legibility bug, not a glow), a `hero-backlight` radial glow, a
+   CSS-only `hero-grain` film-grain texture, and a one-shot `hero-reveal`
+   scale-in. Live preview surfaced a real interaction: the section's
+   pre-existing `light-pass` sweep (shipped before this pass) washed out
+   words in both the new glow headline and the plain lead paragraph via its
+   `overlay` blend, worst on Cobalt's near-white paper ground — dampened
+   with a scoped `[aria-label="Introduction"] .light-pass::after` opacity
+   rule, same pattern `styles.css` already uses for `[data-media]` content.
+4. **Clients consolidated to one section** — `LogoReel` survives, carrying
+   each client's `industry` under the mark (the one thing `Record`'s old
+   logo wall showed that the reel didn't); `Record`'s client wall is gone,
+   About-only now. `Record`'s `aria-label` moved "Clients and company" ->
+   "About MaCo", updated in the three other places that string is a
+   selector: `ground-handoff.tsx`'s `PAIRS`, `shoot.mjs`'s `SECTIONS`,
+   `CONTEXT.md` §10.
+5. **Adaptive navbar** — `Header`/`MobilePillNav` are both `fixed`, mounted
+   in `__root.tsx` outside every section, so they never resolved anything
+   but paper's tokens. Now carry `data-over`, kept in sync with whichever
+   `[data-ground]` section is behind them
+   (`.chrome-adaptive[data-over]` in `styles.css`). Took three attempts to
+   get the JS right, each one caught live: a ScrollTrigger per section read
+   stale past a section that ALSO hosts its own pinning ScrollTrigger
+   (EvidenceExpand, Identity); a single whole-document ScrollTrigger
+   (`start 0, end "max"`) fixed that but went stale past Identity
+   specifically at 390px; `rt.gsap.ticker` (re-derive from live
+   `getBoundingClientRect()` every frame, no ScrollTrigger trigger/pin
+   geometry at all) is what actually holds up — verified 44/44 (11
+   sections x 2 themes x 2 widths).
+
+Verified this pass: `bun run build`/`bun run lint` clean after every item
+(only the pre-existing `MaCoGlobe.tsx` tsc error, unchanged); live
+production-build checks per item as described above; `/work`, `/about`,
+`/contact` confirmed to default the header to paper with no new console
+errors (the one React #419 error on `/about` is `MaCoGlobe`-related and
+pre-existing — confirmed present on the pre-eighth-pass build too).
 
 ## Read this first
 

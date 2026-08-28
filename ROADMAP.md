@@ -23,6 +23,7 @@ See `CONTEXT.md` §10 for the full per-section table (ground, file, pin behavior
 4. **Decide whether a test suite is worth adding.** Currently zero tests; `build` + `lint` are the only gates. Fine for a marketing site with no business logic on the frontend, worth revisiting if the backend API surface grows.
 5. **`react-globe.gl` type error in `MaCoGlobe.tsx`** — one pre-existing `tsc` error, harmless (build succeeds), low priority.
 6. **Item 2d from `PHASE-2-MOTION-PLAN.md`** (optional cursor-state hook system generalizing WORK's existing `gsap.quickSetter` cursor-follow; `position: sticky` as a lighter alternative to `ScrollTrigger` pin for future sections) — proposals only, not commitments. Needs its own go/no-go per `AI_HANDOFF.md` #8's documented caution around cursor/WebGL work.
+7. **`docs/REFACTOR_PLAN.md` §13 item 6** (motion-polish/reference-study pass — Iventions' footer name reveal, Minh Pham, By-Kin mechanisms) — deferred from the 2026-08-28 eighth pass to its own follow-up session; items 1-5 of that same list shipped in the eighth pass (see `AI_HANDOFF.md`).
 
 The `removeChild`/`NotFoundError` route-transition bug (item 6, listed here
 2026-08-27) is fixed — see `AI_HANDOFF.md`'s "third pass" entry.
