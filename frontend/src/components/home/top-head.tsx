@@ -1,9 +1,13 @@
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { site } from "@/content/maco";
+import { site, heroLines, getProduct } from "@/content/maco";
 import { Mark } from "@/components/mark";
 import { SplitReveal } from "@/components/motion/split-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
-import { RakingSurface } from "@/components/motion/raking-surface";
+import { MaskedHeading } from "@/components/motion/masked-heading";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
+const CYCLE_MS = 4800;
 
 /**
  * TOPHEAD — `section.cb-tophead`, the first section of Cuberto's
@@ -16,63 +20,112 @@ import { RakingSurface } from "@/components/motion/raking-surface";
  * That shape replaces the previous OPEN section (a full-height centred
  * mark + ghost wordmark). Adopted 2026-08-28 at the owner's explicit
  * direction to clone Cuberto's structure; the words are MaCo's
- * (`site.tagline` / `site.statement`), the mark is MaCo's, the light is
- * MaCo's `<RakingSurface>`, and the type runs the active theme's own
- * display face. Nothing of Cuberto's palette, type or copy is here.
+ * (`site.tagline` / `site.statement`), the mark is MaCo's, and the type
+ * runs the active theme's own display face. Nothing of Cuberto's
+ * palette, type or copy is here.
+ *
+ * No `<RakingSurface>` here (2026-08-29, masked-video-hero pass) — it
+ * wrapped the whole section before, but its `light-pass` sweep
+ * `mix-blend-mode: overlay`-s with whatever's beneath it, and once the
+ * `<h1>` below started rendering a graded video instead of solid text,
+ * that blend re-tinted the video off-palette on Cobalt (tried three
+ * fixes on the heading side — z-index, isolation, regrading — none of
+ * them stopped it; see `masked-heading.tsx`'s own comment). Simplest
+ * correct fix, and the owner's explicit call: no light-pass on this
+ * section at all, not just on the heading — confirmed live that the
+ * eyebrow/brand-row/statement read cleanly without it.
  *
  * `<SplitReveal>` still carries the wordmark entrance so the brand is the
- * first thing that moves; the statement below is a plain `<h1>` rather
- * than a scrub reveal because it sits above the fold, where there is no
- * scroll distance for a scrubbed reveal to run across — instead it gets
- * a one-shot `hero-reveal` scale-in on load (styles.css), a static
- * `display-glow` gradient fill (the `.maco-shine` clip-text device,
- * without the sweep), and a `hero-backlight`/`hero-grain` pair behind
- * it. Eyebrow above the brand row is `site.category` — real copy, not
- * invented. All four are `styles.css` utilities so Obsidian/Cobalt each
- * resolve their own restrained/stronger intensity off existing tokens
- * (`--focus`, not `--accent` — see `display-glow`'s comment in
- * styles.css for why).
+ * first thing that moves. Eyebrow above it is `site.category` — real
+ * copy, not invented.
  *
  * `data-ground="deep"` since the 2026-08-28 dark-first pass — the page
  * now opens on the material rather than the page, closing the loop with
  * `Record`/`Faq`/`Outro`/`Footer` at the bottom, also `deep` (`CONTEXT.md`
- * §10). Was `paper` before; every hero utility above was retuned for
- * this ground, not just recoloured.
+ * §10).
+ *
+ * The `<h1>` itself has two renders, deliberately never blended:
+ *
+ * - **Server / first paint / reduced motion**: a plain heading carrying
+ *   `display-hero display-glow hero-reveal` — the static `display-glow`
+ *   gradient fill, `hero-backlight`/`hero-grain` behind it, a one-shot
+ *   scale-in. This is the ONLY thing SSR ever renders for the headline;
+ *   see below for why.
+ * - **Client, motion allowed, after mount**: `<MaskedHeading>` — the
+ *   Bridge screen capture playing inside the letterforms, cycling through
+ *   `heroLines` (`content/maco.ts`) every ~5s.
+ *
+ * The swap is gated on a `mounted` flag rather than just `useReducedMotion()`
+ * (which is itself SSR-safe but defaults to `false`, i.e. "motion allowed",
+ * on the server) because `MaskedHeading`'s SVG clip-path coordinates are
+ * only correct once its own layout-measuring effect has run client-side —
+ * server-rendering it would clip to word positions of (0,0), a visible
+ * misaligned flash before hydration catches up. `mounted` keeps the first
+ * client render identical to the server's, so React never has to
+ * reconcile a mismatch, and only swaps in the masked version on the very
+ * next paint.
  */
 export function TopHead() {
+  const bridge = getProduct("bridge");
+  const reduced = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+  const [lineIndex, setLineIndex] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (reduced || heroLines.length < 2) return;
+    const id = window.setInterval(() => {
+      setLineIndex((i) => (i + 1) % heroLines.length);
+    }, CYCLE_MS);
+    return () => window.clearInterval(id);
+  }, [reduced]);
+
+  const showMasked = mounted && !reduced && bridge?.media?.video;
+
   return (
     <section data-ground="deep" aria-label="Introduction" className="relative overflow-hidden">
       <div aria-hidden="true" className="hero-backlight" />
       <div aria-hidden="true" className="hero-grain" />
-      <RakingSurface className="light-pass is-lit">
-        <div className="shell cb-tophead relative">
-          <p className="label">{site.category}</p>
+      <div className="shell cb-tophead relative">
+        <p className="label">{site.category}</p>
 
-          <div className="mt-6 flex items-center gap-4">
-            <Mark size={44} />
-            <SplitReveal
-              text={site.name}
-              as="p"
-              className="display-md"
-              style={{ color: "var(--text)" }}
-            />
-          </div>
+        <div className="mt-6 flex items-center gap-4">
+          <Mark size={44} />
+          <SplitReveal
+            text={site.name}
+            as="p"
+            className="display-md"
+            style={{ color: "var(--text)" }}
+          />
+        </div>
 
+        {showMasked && bridge?.media?.video ? (
+          <MaskedHeading
+            text={heroLines[lineIndex] ?? site.tagline}
+            className="display-hero mt-12 max-w-[16ch] md:mt-16"
+            videoWebm={bridge.media.video.webm}
+            videoMp4={bridge.media.video.mp4}
+            poster={bridge.media.poster}
+          />
+        ) : (
           <h1 className="display-hero display-glow hero-reveal mt-12 max-w-[16ch] md:mt-16">
             {site.tagline}
           </h1>
+        )}
 
-          <div className="mt-10 flex flex-col gap-8 md:mt-14 md:flex-row md:items-end md:justify-between">
-            <p className="lead max-w-xl">{site.statement}</p>
+        <div className="mt-10 flex flex-col gap-8 md:mt-14 md:flex-row md:items-end md:justify-between">
+          <p className="lead max-w-xl">{site.statement}</p>
 
-            <Magnetic>
-              <Link to="/contact" className="btn-solid shrink-0">
-                Start a project <span aria-hidden="true">→</span>
-              </Link>
-            </Magnetic>
-          </div>
+          <Magnetic>
+            <Link to="/contact" className="btn-solid shrink-0">
+              Start a project <span aria-hidden="true">→</span>
+            </Link>
+          </Magnetic>
         </div>
-      </RakingSurface>
+      </div>
     </section>
   );
 }

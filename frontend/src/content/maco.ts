@@ -111,6 +111,22 @@ export const site = {
 } as const;
 
 /**
+ * The hero's cycling taglines (top-head.tsx, 2026-08-29 masked-video-hero
+ * pass) — four lines, all lifted verbatim from copy already approved
+ * elsewhere on the site, nothing invented for this rotation specifically:
+ * `site.tagline` itself, two clauses out of `site.statement`, and the
+ * closing line `outro.tsx` already uses ("Good software earns its
+ * place.") — a deliberate refrain, not a duplicate: the hero previews the
+ * line, Outro lands it at the end of the page.
+ */
+export const heroLines: readonly string[] = [
+  site.tagline,
+  "Software that carries real operational weight.",
+  "Systems people log into every working day.",
+  "Good software earns its place.",
+];
+
+/**
  * Two services, 2026-08-18 — collapsed from the previous five at the
  * owner's direction (the real shape of what MaCo sells). Each
  * `capabilities` entry reuses the retired services' real descriptions

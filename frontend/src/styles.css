@@ -417,11 +417,7 @@ html.lenis:has(:target) {
    to come: whatever plays behind a transparent header from here on, the
    header stays legible without a per-hero special case. */
 @utility header-scroll {
-  background: color-mix(
-    in oklab,
-    var(--bg) calc(8% + var(--header-solid, 1) * 80%),
-    transparent
-  );
+  background: color-mix(in oklab, var(--bg) calc(8% + var(--header-solid, 1) * 80%), transparent);
   border-bottom-color: color-mix(
     in oklab,
     var(--line) calc(var(--header-solid, 1) * 100%),
@@ -1050,6 +1046,64 @@ html.lenis:has(:target) {
     animation: none;
     opacity: 1;
     scale: 1;
+  }
+}
+
+/* MaskedHeading's video layer (masked-heading.tsx) — the only real
+   footage on the site is Bridge's 1024x576 capture; at hero-headline
+   scale that would upscale into legible UI fragments rather than read
+   as light. Two grading passes before this one, both tried live and
+   both rejected:
+     1. contrast(1.35) saturate(0.4) — tuned against the wrong
+        assumption (a busy, colourful screenshot); Bridge's dashboard is
+        actually a mostly-white card UI (poster.jpg), so this washed the
+        whole heading to a flat white blob with no visible motion.
+     2. contrast(0.55) brightness(0.72) saturate(1) — legible and alive,
+        but the dashboard's own status-badge colours came through
+        (Bridge's UI uses conventional amber for an "On Hold" badge) —
+        a real, direct violation of "no amber/gold/orange or any colour
+        outside each theme's defined palette", not a styling choice to
+        tune around. No amount of filter math makes that safe: the
+        source frame simply contains that colour, and any pass through
+        the video eventually lands on it.
+   grayscale(1) removes the risk at its root rather than chasing it —
+   raw product footage can never leak an off-palette hue if there's no
+   hue left to leak. What's left is real luminance/shape/motion (cards,
+   the sidebar block, the chart curve, cursor movement) inside the
+   letterforms — genuinely alive, and provably within palette. A gentle
+   blur (softens 12-14px UI text/icons below legibility — the actual
+   goal, not a side-effect) keeps it from reading as a screenshot even
+   before the color removal. Scale is modest (1.35, not a larger
+   crop) so more of the dashboard's actual structure sits inside the
+   crop instead of zooming into one blank corner. The slow drift is
+   pure CSS, not a second rAF loop alongside GSAP's — cheaper, and this
+   is decorative texture, not something anything else needs to read the
+   position of. TopHead no longer wraps this in `light-pass` at all
+   (top-head.tsx's own comment) — its sweep's `mix-blend-mode: overlay`
+   was re-tinting the video off-palette on Cobalt (a real amber-adjacent
+   cast, tried and rejected live), and dropping the sweep from the whole
+   section was simpler and more certain than fighting the blend from
+   this side. */
+.hero-mask-media {
+  overflow: hidden;
+}
+.hero-mask-video {
+  transform-origin: 50% 50%;
+  filter: blur(2.5px) grayscale(1) contrast(0.55) brightness(0.85);
+  animation: hero-mask-drift 20s var(--ease-standard) infinite alternate;
+}
+@keyframes hero-mask-drift {
+  from {
+    transform: scale(1.35) translate3d(-3%, 2%, 0);
+  }
+  to {
+    transform: scale(1.35) translate3d(3%, -2%, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-mask-video {
+    animation: none;
+    transform: scale(1.35);
   }
 }
 
