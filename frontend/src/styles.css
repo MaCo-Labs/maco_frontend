@@ -668,6 +668,16 @@ html.lenis:has(:target) {
   opacity: 0.45;
 }
 
+/* Introduction's light-pass sits over live body text (eyebrow, headline,
+   lead paragraph), not an empty panel or media plate — full-strength
+   overlay was washing out whole words where the sweep crossed them
+   (worst on Cobalt's near-white paper ground, where overlay blending has
+   the most headroom to lighten). Same lighter-touch reasoning as the
+   [data-media] rule above, applied by section instead of by content type. */
+[aria-label="Introduction"] .light-pass::after {
+  opacity: 0.35;
+}
+
 /* Shiny Text — the hero wordmark's idle state, applied by <SplitReveal>
    once its entrance settles. Same 115deg as .light-pass above: this is
    the signature device at word-scale, not a separate imported effect.
@@ -847,6 +857,102 @@ html.lenis:has(:target) {
   @media (min-width: 768px) {
     padding-top: 11.25rem;
     padding-bottom: 6.75rem;
+  }
+}
+
+/* Hero gradient-fill glow — same background-clip:text device as
+   .maco-shine above, but top-to-bottom rather than diagonal: a
+   diagonal band crosses each line of a 3-line headline at a different
+   horizontal offset, so mid-word brightness jumps read as a legibility
+   bug rather than a glow. Vertical keeps every character on the same
+   line at the same tone, fading from a lifted top line down to solid
+   --text — reads as light falling on the headline from the backlight
+   above it. Obsidian stays restrained (small lift toward white);
+   Cobalt runs the lift from --accent itself and further down the
+   block, stronger, matching the "two modes of one brand" split every
+   other Obsidian/Cobalt pair here uses. white is the same token-free
+   mix target .maco-shine already uses — not a new colour. */
+@utility display-glow {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--text) 75%, white 25%) 0%,
+    var(--text) 55%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+[data-theme="cobalt"] .display-glow {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--accent) 60%, white 40%) 0%,
+    var(--text) 70%
+  );
+}
+@supports not (background-clip: text) {
+  .display-glow {
+    background-image: none;
+    color: var(--text);
+  }
+}
+
+/* Radial backlight behind the hero headline — Obsidian keeps it a
+   faint lift, Cobalt runs it larger/brighter, same accent-derived
+   restrained/stronger split as .display-glow above. */
+@utility hero-backlight {
+  position: absolute;
+  inset: -15% 10% auto 10%;
+  height: 70%;
+  background: radial-gradient(
+    ellipse at 30% 40%,
+    color-mix(in oklab, var(--accent) 14%, transparent),
+    transparent 70%
+  );
+  filter: blur(70px);
+  pointer-events: none;
+}
+[data-theme="cobalt"] .hero-backlight {
+  background: radial-gradient(
+    ellipse at 30% 40%,
+    color-mix(in oklab, var(--accent) 24%, transparent),
+    transparent 70%
+  );
+  filter: blur(90px);
+}
+
+/* Film grain — CSS-only feTurbulence data-URI, no image asset. Sits
+   over the hero at a low opacity with overlay blending so it reads as
+   texture on the glow/backlight, not visible noise on its own. */
+@utility hero-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Hero scale-in — one-shot on load, not scroll-linked (nothing to
+   scrub above the fold). Settles to the same end-state the reduced
+   motion branch renders immediately, so both paths agree on rest. */
+@utility hero-reveal {
+  animation: hero-scale-in 1.5s var(--ease-emphasis) both;
+}
+@keyframes hero-scale-in {
+  from {
+    opacity: 0;
+    scale: 0.94;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-reveal {
+    animation: none;
+    opacity: 1;
+    scale: 1;
   }
 }
 

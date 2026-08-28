@@ -23,14 +23,24 @@ import { RakingSurface } from "@/components/motion/raking-surface";
  * `<SplitReveal>` still carries the wordmark entrance so the brand is the
  * first thing that moves; the statement below is a plain `<h1>` rather
  * than a scrub reveal because it sits above the fold, where there is no
- * scroll distance for a scrubbed reveal to run across.
+ * scroll distance for a scrubbed reveal to run across — instead it gets
+ * a one-shot `hero-reveal` scale-in on load (styles.css), a static
+ * `display-glow` gradient fill (the `.maco-shine` clip-text device,
+ * without the sweep), and a `hero-backlight`/`hero-grain` pair behind
+ * it. Eyebrow above the brand row is `site.category` — real copy, not
+ * invented. All four are `styles.css` utilities so Obsidian/Cobalt each
+ * resolve their own restrained/stronger intensity off existing tokens.
  */
 export function TopHead() {
   return (
-    <section data-ground="paper" aria-label="Introduction">
+    <section data-ground="paper" aria-label="Introduction" className="relative overflow-hidden">
+      <div aria-hidden="true" className="hero-backlight" />
+      <div aria-hidden="true" className="hero-grain" />
       <RakingSurface className="light-pass is-lit">
-        <div className="shell cb-tophead">
-          <div className="flex items-center gap-4">
+        <div className="shell cb-tophead relative">
+          <p className="label">{site.category}</p>
+
+          <div className="mt-6 flex items-center gap-4">
             <Mark size={44} />
             <SplitReveal
               text={site.name}
@@ -40,7 +50,7 @@ export function TopHead() {
             />
           </div>
 
-          <h1 className="display-hero mt-12 max-w-[16ch] md:mt-16" style={{ color: "var(--text)" }}>
+          <h1 className="display-hero display-glow hero-reveal mt-12 max-w-[16ch] md:mt-16">
             {site.tagline}
           </h1>
 
