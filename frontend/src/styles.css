@@ -64,22 +64,6 @@
   inherits: false;
   initial-value: 1;
 }
-@property --lay {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 1;
-}
-@property --p {
-  syntax: "<number>";
-  inherits: true;
-  /* Matches WorkPanel's pre-existing `var(--p, 0)` — that explicit
-     fallback becomes dead code once --p is registered (a registered,
-     inherited custom property is never "guaranteed-invalid", so its own
-     var() fallback never triggers), so this MUST agree with what the
-     already-shipped calc() authored: 0 = first panel prominent, matching
-     the rail's rest composition before any scroll. */
-  initial-value: 0;
-}
 @property --t {
   syntax: "<number>";
   inherits: true;
@@ -353,14 +337,15 @@ html.lenis:has(:target) {
 }
 
 /* Header scroll-reactivity — chrome.tsx's <Header>. --header-solid (0..1,
-   @property above) is written by ONE ScrollTrigger scrubbing OPEN's own
-   transit, so the header reads transparent over the WebGL Prism field at
-   the very top of the page and solidifies as OPEN scrolls past — same
-   "one custom property, one scrollTrigger, CSS does the interpolation"
-   device every other scroll-linked piece of this site already uses,
-   never a React re-render per scroll frame. border-bottom is scrubbed
-   too (via the same --header-solid) since a visible rule-b under a fully
-   transparent header would read as a stray line floating over the hero. */
+   @property above) is written by ONE ScrollTrigger scrubbing the
+   Introduction section's (top-head.tsx) own transit, so the header reads
+   transparent over the hero at the very top of the page and solidifies as
+   it scrolls past — same "one custom property, one scrollTrigger, CSS does
+   the interpolation" device every other scroll-linked piece of this site
+   already uses, never a React re-render per scroll frame. border-bottom is
+   scrubbed too (via the same --header-solid) since a visible rule-b under a
+   fully transparent header would read as a stray line floating over the
+   hero. */
 @utility header-scroll {
   background: color-mix(in oklab, var(--bg) calc(var(--header-solid, 1) * 88%), transparent);
   border-bottom-color: color-mix(
@@ -774,66 +759,6 @@ html.lenis:has(:target) {
   border-color: var(--text-inverted);
 }
 
-/* Theme atmospheres — retained, used by the (currently unmounted)
-   ThemeAtmosphere component. Out of scope for this reset. */
-.maco-aurora {
-  position: absolute;
-  inset: -20%;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.28;
-  animation: maco-aurora-drift 18s ease-in-out infinite alternate;
-}
-.maco-aurora-a {
-  background: radial-gradient(
-    circle,
-    color-mix(in oklab, var(--accent) 22%, transparent),
-    transparent 65%
-  );
-  left: 40%;
-  top: -10%;
-}
-.maco-aurora-b {
-  background: radial-gradient(
-    circle,
-    color-mix(in oklab, var(--focus) 16%, transparent),
-    transparent 70%
-  );
-  right: -10%;
-  bottom: 10%;
-  animation-delay: -6s;
-  opacity: 0.2;
-}
-@keyframes maco-aurora-drift {
-  from {
-    transform: translate3d(-2%, 1%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(3%, -2%, 0) scale(1.08);
-  }
-}
-.maco-thread {
-  stroke-dasharray: 120;
-  stroke-dashoffset: 120;
-  animation: maco-thread-draw 10s var(--ease-emphasis) infinite;
-}
-@keyframes maco-thread-draw {
-  0% {
-    stroke-dashoffset: 120;
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.8;
-  }
-  50% {
-    stroke-dashoffset: 0;
-  }
-  100% {
-    stroke-dashoffset: -40;
-    opacity: 0;
-  }
-}
-
 /* Globe shell — retained, used by /about */
 .maco-globe-shell {
   position: relative;
@@ -1014,7 +939,6 @@ html.lenis:has(:target) {
 @theme inline {
   --radius-chip: 7.2px;
   --radius-card: 1.6rem;
-  --radius-plate: 2rem;
   --radius-pill: 1000px;
 }
 
@@ -1026,9 +950,7 @@ html.lenis:has(:target) {
     scroll-behavior: auto;
   }
 
-  .reveal,
-  .maco-aurora,
-  .maco-thread {
+  .reveal {
     animation: none !important;
   }
 

@@ -1,6 +1,6 @@
 # MaCo Website — Project Status
 
-Last updated: 2026-08-27
+Last updated: 2026-08-28
 
 Statuses: **DONE** | **PARTIAL** | **NOT STARTED**
 

@@ -1,6 +1,6 @@
 # MaCo Website — Roadmap
 
-Last updated: 2026-08-21
+Last updated: 2026-08-28
 
 The homepage creative reset (`HOMEPAGE_REDESIGN_PLAN.md`, historical) is
 **implemented and shipped** — current architecture is `CONTEXT.md` §10, not

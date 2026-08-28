@@ -133,10 +133,9 @@ export function EvidenceExpand() {
       >
         Bridge, in daily use
       </p>
-      {/* opacity:0 is safe here, unlike method-line's earlier bug: this
-          caption is a big enhanced restatement of text SurfaceMedia
-          already renders unconditionally (its own small `label`, always
-          visible, clip-path notwithstanding) — a blocked import loses the
+      {/* opacity:0 is safe here: this caption is a big enhanced restatement
+          of text SurfaceMedia already renders unconditionally (its own
+          small `label`, always visible) — a blocked import loses the
           enhancement, not the content. */}
       <p
         ref={captionOutRef}

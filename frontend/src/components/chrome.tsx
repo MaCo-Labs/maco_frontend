@@ -316,18 +316,8 @@ export function Footer() {
           <Wordmark size={44} />
         </div>
 
-        <div className="grid gap-12 py-16 lg:grid-cols-12">
-          <div className="lg:col-span-5">
-            <p className="display-md max-w-sm">Tell us what has to work.</p>
-            <Magnetic className="mt-8 inline-block">
-              <Link to="/contact" className="btn-solid">
-                Start a project
-                <span aria-hidden="true">→</span>
-              </Link>
-            </Magnetic>
-          </div>
-
-          <div className="lg:col-span-3 lg:col-start-7">
+        <div className="grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-12">
+          <div className="lg:col-span-3">
             <p className="label">Index</p>
             <ul className="mt-5 space-y-2.5">
               {site.nav.map((n) => (
