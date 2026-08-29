@@ -19,6 +19,12 @@ import { ScrubReveal } from "@/components/motion/scrub-reveal";
  * matching Cuberto's own pure-CSS motion): no ScrollTrigger, no rAF, and
  * it stops dead under `prefers-reduced-motion`.
  *
+ * The two-copy -50% loop only reads as seamless while the visible window
+ * is narrower than one copy: 4 cards x (w-72 288px + mx-3 24px) = 1248px.
+ * `.cb-reel-mask` (styles.css) caps at 76rem for exactly this reason — do
+ * not remove that max-width without re-deriving the bound, or the seam
+ * becomes visible above ~1248px and a client logo appears to duplicate.
+ *
  * Each card carries its `client.industry` under the mark — this is now
  * the ONLY client display on the page (Record's logo wall was
  * consolidated in here 2026-08-28), so it needed to carry the one thing

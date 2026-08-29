@@ -1244,6 +1244,13 @@ html.lenis:has(:target) {
 }
 
 .cb-reel-mask {
+  /* Half-track is 4 x 312px = 1248px (w-72 + mx-3, border-box). The two-copy
+     -50% loop only reads as seamless while the window is NARROWER than one
+     copy — wider and you see across the seam, which is what put HeadGreen on
+     screen twice at >=1440px. 76rem keeps 32px of margin on that bound.
+     Changing card width or client count means changing this number. */
+  max-width: 76rem;
+  margin-inline: auto;
   mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
 }
