@@ -1,7 +1,7 @@
 # MaCo Website — CONTEXT
 
 Complete project context for developers and AI agents.
-Last updated: 2026-08-21 (post-cleanup pass — dead code and unused deps removed, docs resynced to actual code; see §11 for what changed)
+Last updated: 2026-08-29 (tenth pass — first-paint preloader, layout-mode switcher, IDENTITY script curation; see the new subsection under §10 and `AI_HANDOFF.md`'s tenth-pass entry). §11 below still documents the 2026-08-21 cleanup pass.
 
 ---
 
@@ -328,7 +328,7 @@ Cuberto's measured rhythm, adopted as the `cb-*` utilities in `styles.css`: **10
 - **LOGOREEL** (`logo-reel.tsx`) — continuous CSS-only horizontal drift of client logo cards (`@utility cb-reel`, radius `--radius-chip`, edge-masked), the track duplicated and translated -50% for a seamless loop, `aria-hidden` on the duplicate half. Replaces the previous scroll-scrubbed scatter field (`client-field.tsx`) — a reel reads correctly at every viewport width with no separate mobile branch.
 - **SUMMARY / FeaturedWork** (`summary.tsx`) — client platforms as a `cb-cards` grid (Cuberto's measured `450×608`-ish portrait plates), on deep ground. One `<Summary>` component, two call sites (here and PRODUCTS below) — matching Cuberto's own reuse of `cb-summary` twice.
 - **SUMMARY / ProductSummary** (`summary.tsx`) — MaCo's own two products, same card shape, paper ground.
-- **IDENTITY** (`identity.tsx`, unchanged) — "One name. Many scripts." — a pinned, fully scroll-driven script dial, glyph position is pure CSS `calc(--i - --t)`, zero re-renders, correct `lang` per script. Ground flipped `deep` → `paper` in this pass to match Cuberto's own alternation.
+- **IDENTITY** (`identity.tsx`) — "One name. Many scripts." — a pinned, fully scroll-driven script dial, glyph position is pure CSS `calc(--i - --t)`, zero re-renders, correct `lang` per script. Ground flipped `deep` → `paper` in this pass to match Cuberto's own alternation. Script list curated from 13 to 10 in the 2026-08-29 tenth pass (English, Malayalam, Tamil, Telugu, Kannada, Hindi, Japanese, Korean, Arabic, Hebrew) and moved to `content/maco.ts` as `nameScripts` — the footer's compact strip (`chrome.tsx`) reads the same array, so the two can no longer drift apart the way the footer's old hand-written 7-item copy (which included Cyrillic, matching no client market) had.
 - **RECORD** (`record.tsx`) — the page's one rest beat, About-only since 2026-08-28 (its client logo wall was consolidated into LOGOREEL, the single client display). Ground flipped `paper` → `deep` in this pass.
 - **FAQ** (`faq.tsx`) — the same four-step process (A→D) as before, now through the shared `<Accordion>` on inverted ground, matching Cuberto's `cb-faq.-inverse`. Replaces the previous pinned `MethodLine` progress-spine.
 - **OUTRO** (`outro.tsx`) — Cuberto's `cb-outro` 2-col grid: closing statement left, contact route right. Carries over the previous CLOSE section's `light-pass` sweep and centre-drawn `<RuleDraw>` — the one thing worth keeping from the section it replaces.
@@ -362,6 +362,14 @@ Motion vocabulary (`components/motion/`), all writing to registered `@property` 
 - `<SplitReveal>` — the OPEN hero wordmark only, char-rise on mount then `.maco-shine`
 
 `MotionSection` has no homepage call site as of the 2026-08-28 Cuberto-parity rebuild (its one prior use, `method-line.tsx`'s reduced-motion branch, was retired with that file); it's still used across the 7 inner routes.
+
+### First-paint preloader & layout modes (`components/preloader.tsx`, `components/layout-mode.tsx` — 2026-08-29, tenth pass)
+
+Both mount in `__root.tsx`, both site-wide (not homepage-specific), both follow theme.tsx's anti-FOUC shape: a pre-paint `<script>` in `RootShell` stamps the relevant `data-*` attribute on `<html>` before hydration, so there's no flash either way.
+
+**Preloader** — a percentage ring around `<Mark>`, `data-ground="deep"` always (the page opens dark), progress on `--focus` rather than `--accent` (near-white on deep ground in both themes — same reasoning as the hero utilities in §10). A GSAP proxy tween runs toward a 92 ceiling (not 100 — see `preloader.tsx`'s own comment for why a tween that reaches 100 on its own schedule breaks the illusion once real loading outruns it) over ~1.6s; once web fonts and the hero's poster image actually resolve, the remainder snaps to 100 in 0.25s. Skips itself (via the pre-paint script's `data-preload="skip"`) under reduced motion or once already shown this session (`sessionStorage`).
+
+**Layout modes** — a `data-layout="1"|"2"|"3"` switcher (`LayoutProvider`/`useLayout`, small numbered control in `chrome.tsx`'s header), persisted via `localStorage["maco-layout"]`, with a non-persisting `?layout=` URL override for previews. Mode 1 is the site as built above. Mode 2 (Iventions' hamburger + diagonal wipe) and mode 3 (Minh Pham / by-kin.com's centred hero + corner nav) both replace the header's desktop link row and CTA with a hamburger → full-screen overlay (`FullScreenNav`'s trigger/panel split in `chrome.tsx`, `[data-layout]`-scoped CSS in `styles.css`) — chrome-wide; mode 3 additionally recomposes `TopHead` to centred, scoped to `[aria-label="Introduction"]` only. The overlay panel must render as a `<header>` sibling, never a descendant — nesting it inside `<header>` was tried first and inherited the header's own `.chrome-adaptive[data-over]` ground-remap, inverting each theme's accent colour.
 
 ### `system-field.tsx`
 

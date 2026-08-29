@@ -6,10 +6,15 @@ Overall: **STABLE.** The homepage was fully rebuilt on Cuberto's structural
 foundation 2026-08-28 (11 sections, new order — see `CONTEXT.md` §10 and
 the seventh-pass entry below), refined the same day (eighth pass: EVIDENCE
 crop fix, dead-code sweep, hero treatment, client consolidation, adaptive
-navbar), and pushed further 2026-08-29 (ninth pass: dark-first ground
+navbar), pushed further 2026-08-29 (ninth pass: dark-first ground
 sequence, a Capabilities dark-panel accordion, a masked video-in-text hero,
-a restrained custom cursor — see below). A full dead-code/dependency
-cleanup pass ran 2026-08-21 (see `CONTEXT.md` §11). Build/lint are clean.
+a restrained custom cursor), and again the same day (tenth pass: reel
+geometry fix, Lenis retune, IDENTITY script curation, a first-paint
+preloader, a full-width footer wordmark, and a three-mode layout
+switcher — see below). A full dead-code/dependency cleanup pass ran
+2026-08-21 (see `CONTEXT.md` §11). Build/lint are clean. One known,
+pre-existing, out-of-scope issue: `/about` falls back to client-only
+rendering ("window is not defined" during SSR) — see the tenth-pass entry.
 
 ## 2026-08-27 session — re-audit + 2 confirmed bugs fixed
 
@@ -474,6 +479,112 @@ Verified this pass: `bun run build`/`bun run lint`/`bunx tsc --noEmit`
 clean after every item (only the pre-existing `MaCoGlobe.tsx` error,
 unchanged); live checks against a production build (`bun run preview`),
 both themes, 1440/390, per item as described above.
+
+## 2026-08-29, tenth pass — reel geometry, scroll tuning, footer identity, preloader, layout modes
+
+Six owner-requested items, three of which (footer name treatment,
+preloader, layout modes) discharge the reference-study pass
+`ROADMAP.md`/§13 item 6 deferred (Iventions, Minh Pham, By-Kin). Two
+items were briefed from a premise exploration corrected before planning:
+item 1 ("HeadGreen duplicated in Clients") turned out to be a marquee
+geometry bug, not a data duplicate — `clients` in `content/maco.ts` has
+exactly four entries; item 3 ("footer's small multilingual line") turned
+out to already have a bigger home in `Identity`'s pinned 13-script dial,
+with the footer running its own unsynced 7-item copy. One item (footer
+wordmark) was rebuilt mid-pass after the owner pointed at
+iventions.com's actual scale — the first attempt applied the right
+technique to the wrong-sized element. Every item live-verified in a real
+browser against a production build (`bun run preview`) before being
+committed; one commit per item (footer wordmark: two commits, the
+rescale supersedes the first).
+
+1. **Clients logo reel — capped the band, not the data.** The two-copy
+   `-50%` marquee loop only reads as seamless while the visible window
+   is narrower than one copy (4 cards x 312px = 1248px); the mask
+   container had no `max-width`, so above ~1248px wide the window spans
+   the seam and HeadGreen appears at both ends. `.cb-reel-mask` now caps
+   at `76rem`. `logo-reel.tsx`'s own doc comment carries the invariant
+   forward so the next card-width change doesn't silently re-break it.
+2. **Lenis scroll feel tuned.** `lerp: 0.07` measured out to a ~0.71s
+   settle per wheel notch (Lenis normalises lerp for frame rate:
+   `damp = 1 - exp(-lambda*dt)`), and `wheelMultiplier: 0.9` compounded
+   it by shaving 10% off every notch's travel — read as lag, not
+   smoothness. `lerp: 0.09` (~0.55s settle) keeps the heavier-than-stock
+   character without the drag; multiplier back to `1`.
+3. **IDENTITY's script list curated to MaCo's actual footprint,
+   footer synced to the same array.** 13 scripts trimmed to 10 (dropped
+   Gujarati/Punjabi/Bengali/Odia/Persian, added Japanese/Korean — both
+   already in `--font-script-fallback`, no new font request). Moved to
+   `content/maco.ts` as `nameScripts`, the single source both `Identity`
+   and the footer strip now read — they can no longer disagree the way
+   the footer's old hand-written Cyrillic-including 7-item copy did.
+4. **First-paint preloader** — a percentage ring around MaCo's mark,
+   `data-ground="deep"` (the page opens dark), progress on `--focus`
+   rather than `--accent` (near-white on deep ground in both themes,
+   the same lesson the ninth pass's `display-glow` retune already
+   established). Renders in the SSR HTML; the pre-paint script now also
+   stamps `data-preload="skip"` before hydration (reduced motion, or
+   already shown this session) so CSS alone hides it with no flash
+   either way. One real bug caught live: the proxy tween's base illusion
+   reached `v:100` on its own 1.6s schedule regardless of real asset
+   readiness, so on a slow connection (reproduced by intentionally
+   delaying the poster response) the ring froze at a false "100%" for a
+   visible extra second-plus before the real snap. Fixed by capping the
+   illusion at 92 so a real gap always remains for the ready-signal
+   snap to close.
+5. **Footer wordmark — cursor-following gradient trace, at the right
+   scale.** First attempt put the trace on the existing 44px header-sized
+   lockup; live preview showed the effect was barely visible even after
+   tuning the gradient radius down from 9rem to 2.6rem, since the whole
+   element was smaller than a sensible spotlight. Owner pointed at
+   iventions.com's actual footer treatment — a wordmark filling most of
+   the section's width. Rebuilt: the small lockup reverted to plain, a
+   new `clamp(4.5rem, 15vw, 12rem)` full-width "MaCo" added near the
+   footer's bottom, radius now `22vw` (proportional to the element, not
+   a fixed value tuned for one size). MaCo is short enough to fill the
+   width without literally cropping off-screen the way Iventions' longer
+   name does — technique borrowed, literal composition not copied, per
+   the standing reference-site rule.
+6. **Layout-mode switcher — three modes, by-kin.com's own LAYOUT
+   toggle.** Mode 1 unchanged. Mode 2 (Iventions): hamburger + diagonal
+   `clip-path` polygon wipe (Motion's own complex-value interpolation,
+   not GSAP) reveals a full-screen link list in `var(--accent)`. Mode 3
+   (Minh Pham / by-kin.com): centred TOPHEAD copy, nav collapsed to a
+   corner — scoped to `[aria-label="Introduction"]` only, hero-treatment
+   stays homepage-only while the chrome swap is site-wide. Extracted
+   `MobilePillNav`'s focus-trap/scroll-lock/route-close logic into
+   `hooks/use-overlay-menu.ts` so the new full-screen menu didn't need a
+   second copy. Two bugs caught live before this was called done: the
+   overlay panel, first nested inside `<header>`, inherited the header's
+   own `.chrome-adaptive[data-over]` ground-remap and rendered each
+   theme's accent *inverted* (near-white panel instead of near-black/
+   blue) — fixed by rendering the panel as a `<header>` sibling, never a
+   descendant; and a single hamburger button couldn't relocate between
+   mode 2's (grouped with Wordmark) and mode 3's (grouped with
+   ThemeSwitch) positions via CSS `order` alone, since the two live in
+   different flex containers — fixed with two trigger instances sharing
+   one `useLayoutNavState()` object, `triggerRef` written imperatively
+   on click so Escape still returns focus correctly. Modes 2/3 also hide
+   the old mobile-only `MobilePillNav`, which would otherwise sit
+   alongside the new top hamburger as a second way to open navigation.
+
+**Found, confirmed pre-existing, not fixed this pass:** a
+"window is not defined" SSR error on `/about`, causing that route to
+fall back to client-only rendering — confirmed present on the baseline
+commit before any of this pass's changes too (checked via `git stash`
+against a clean checkout), so not introduced here. Most likely
+`MaCoGlobe.tsx`/`react-globe.gl` (the same file already has a known,
+separate `tsc` type error — see "Next exact actions" below). Worth its
+own investigation; out of scope for this pass.
+
+Verified this pass: `bun run build`/`bun run lint`/`bunx tsc --noEmit`
+clean after every item (only the pre-existing `MaCoGlobe.tsx` error,
+unchanged); live checks against a production build (`bun run preview`)
+across both themes and 1440/1024/768/390 widths per item, plus the
+layout switcher clicked through end-to-end (persistence across reload,
+keyboard activation, no mobile overflow) and five other routes
+smoke-tested for regressions from the header/footer changes, which
+mount globally.
 
 ## Read this first
 
