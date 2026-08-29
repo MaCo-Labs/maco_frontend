@@ -249,6 +249,7 @@ function useLayoutNavState() {
     menuId,
     panelRef,
     triggerRef,
+    reduced,
     enterTransition: reduced
       ? { duration: 0 }
       : ({ duration: 0.6, ease: [0.16, 1, 0.3, 1] } as const),
@@ -317,10 +318,39 @@ function LayoutNavTrigger({ nav, className }: { nav: LayoutNavState; className: 
  * yellow-green — see the doc comment on useLayoutNavState for why this
  * component MUST render outside `<header>`'s DOM subtree for that to
  * actually hold.
+ *
+ * Eleventh-pass preview (`?v2=nav2`, item 4): a leading light beam and a
+ * staggered link entrance, layered on TOP of the wipe above — the wipe
+ * itself already works and isn't being replaced. `hasNav2` is read
+ * directly from `document` rather than through a hook: this component's
+ * animated content only ever renders once `open` is true, which can only
+ * happen after a click, which can only happen post-hydration — there is
+ * no SSR/first-paint render of this branch to mismatch against. Parent/
+ * item `variants` collapse to a no-op transform when the flag is absent
+ * (`hidden` === `visible`, no stagger timing), so an unflagged visitor's
+ * links still appear immediately, unchanged.
  */
 function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { open, menuId, panelRef, enterTransition, exitTransition } = nav;
+  const { open, menuId, panelRef, enterTransition, exitTransition, reduced } = nav;
+  const hasNav2 =
+    typeof document !== "undefined" &&
+    (document.documentElement.dataset["v2"]?.split(" ").includes("nav2") ?? false);
+
+  const navVariants = {
+    hidden: {},
+    visible: hasNav2
+      ? { transition: { staggerChildren: reduced ? 0 : 0.06, delayChildren: reduced ? 0 : 0.22 } }
+      : {},
+  };
+  const itemVariants = {
+    hidden: hasNav2 ? { opacity: 0, y: 24 } : { opacity: 1, y: 0 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: reduced ? { duration: 0 } : { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
+    },
+  };
 
   return (
     <AnimatePresence>
@@ -332,48 +362,84 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
           role="dialog"
           aria-modal="true"
           aria-label="Site navigation"
-          className="fixed inset-0 z-[46] flex flex-col justify-center"
+          className="fixed inset-0 z-[46] flex flex-col justify-center overflow-hidden"
           style={{ background: "var(--accent)", color: "var(--accent-ink)" }}
           initial={{ clipPath: LAYOUT_NAV_CLOSED }}
           animate={{ clipPath: LAYOUT_NAV_OPEN, transition: enterTransition }}
           exit={{ clipPath: LAYOUT_NAV_CLOSED, transition: exitTransition }}
         >
-          <nav
+          {/* The beam that leads the wipe — enter only, never on exit; it
+              has no persistent state, so it simply disappears with the
+              panel on close rather than needing its own exit animation.
+              --sweep-light is the same signature light-pass token used
+              everywhere else on the site, not a new colour. `skewX` is set
+              through Motion's own style prop rather than a raw CSS
+              `transform` string — Motion owns the `transform` property
+              once it's animating `x`, and silently drops a hand-written
+              `transform` in the same `style` object rather than composing
+              with it (confirmed live: the beam rendered as a straight
+              vertical band with the raw-string version, not diagonal). */}
+          {hasNav2 && (
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 w-1/3"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, color-mix(in oklab, var(--sweep-light) 55%, transparent), transparent)",
+                skewX: -18,
+              }}
+              initial={{ x: "-140%" }}
+              animate={{ x: "140%" }}
+              transition={reduced ? { duration: 0 } : { duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+            />
+          )}
+
+          <motion.nav
             aria-label="Primary"
             data-lenis-prevent
-            className="shell flex max-h-full flex-col overflow-y-auto"
+            className="shell relative flex max-h-full flex-col overflow-y-auto"
+            variants={navVariants}
+            initial="hidden"
+            animate="visible"
           >
-            <Link
-              to="/"
-              className="py-3 font-display text-4xl md:text-6xl"
-              style={{ opacity: pathname === "/" ? 1 : 0.6 }}
-            >
-              Home
-            </Link>
+            <motion.div variants={itemVariants}>
+              <Link
+                to="/"
+                className="block py-3 font-display text-4xl md:text-6xl"
+                style={{ opacity: pathname === "/" ? 1 : 0.6 }}
+              >
+                Home
+              </Link>
+            </motion.div>
             {site.nav.map((item) => {
               const active = pathname === item.to || pathname.startsWith(item.to + "/");
               return (
-                <Link
+                <motion.div
                   key={item.to}
-                  to={item.to}
-                  className="border-t py-3 font-display text-4xl md:text-6xl"
-                  style={{
-                    opacity: active ? 1 : 0.6,
-                    borderColor: "color-mix(in oklab, var(--accent-ink) 20%, transparent)",
-                  }}
+                  variants={itemVariants}
+                  className="border-t"
+                  style={{ borderColor: "color-mix(in oklab, var(--accent-ink) 20%, transparent)" }}
                 >
-                  {item.label}
-                </Link>
+                  <Link
+                    to={item.to}
+                    className="block py-3 font-display text-4xl md:text-6xl"
+                    style={{ opacity: active ? 1 : 0.6 }}
+                  >
+                    {item.label}
+                  </Link>
+                </motion.div>
               );
             })}
-            <Link
-              to="/contact"
-              className="btn-solid mt-8 w-fit"
-              style={{ background: "var(--accent-ink)", color: "var(--accent)" }}
-            >
-              Start a project
-            </Link>
-          </nav>
+            <motion.div variants={itemVariants} className="mt-8 w-fit">
+              <Link
+                to="/contact"
+                className="btn-solid"
+                style={{ background: "var(--accent-ink)", color: "var(--accent)" }}
+              >
+                Start a project
+              </Link>
+            </motion.div>
+          </motion.nav>
         </motion.div>
       )}
     </AnimatePresence>
