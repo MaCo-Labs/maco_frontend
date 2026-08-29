@@ -88,15 +88,17 @@ export function getScrollRuntime(): Promise<ScrollRuntime | null> {
         autoRaf: false,
         smoothWheel: true,
         syncTouch: false,
-        // Stock defaults (lerp 0.1, wheelMultiplier 1) read as barely
-        // smoothed — a touch heavier and a touch less eager per wheel
-        // notch is what gives Lenis an actual felt character. Lowered
-        // again (0.085 -> 0.07) for the sitewide restructure: with the
-        // ground regroup's larger chapters, a noticeably heavier glide
-        // reads as more premium/continuous than the previous value,
-        // which felt closer to instant catch-up than real momentum.
-        lerp: 0.07,
-        wheelMultiplier: 0.9,
+        // Lenis normalises lerp for frame rate: damp(x, y, lerp*60, dt) =
+        // 1 - exp(-lambda*dt). 0.07 (lambda 4.2/s) measured out to a ~0.71s
+        // settle per wheel notch, and the 0.9 multiplier compounded it by
+        // shaving 10% off every notch's travel — more wheeling needed to
+        // cover the same distance, each notch taking longer to land. That
+        // read as lag, not smoothness. 0.09 (lambda 5.4/s, ~0.55s settle)
+        // keeps the same heavier-than-stock (0.1) character without the
+        // dragging tail; multiplier back to 1 so travel-per-notch matches
+        // native scroll and only the glide is smoothed.
+        lerp: 0.09,
+        wheelMultiplier: 1,
       });
 
       lenis.on("scroll", ScrollTrigger.update);
