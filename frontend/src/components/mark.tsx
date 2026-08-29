@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { forwardRef, type CSSProperties } from "react";
 import { site } from "@/content/maco";
 
 /**
@@ -45,17 +45,21 @@ export function Mark({
   );
 }
 
-export function Wordmark({ size = 36, className = "" }: { size?: number; className?: string }) {
+export const Wordmark = forwardRef<
+  HTMLSpanElement,
+  { size?: number; className?: string; style?: CSSProperties }
+>(function Wordmark({ size = 36, className = "", style }, ref) {
   return (
     <span
+      ref={ref}
       className={`inline-flex items-center gap-2.5 font-display text-xl font-semibold tracking-[-0.04em] md:text-2xl ${className}`}
-      style={{ color: "var(--text)" }}
+      style={{ color: "var(--text)", ...style }}
       aria-label={`MaCo — ${site.tagline}`}
     >
       <Mark size={size} className="shrink-0" />
       <span>MaCo</span>
     </span>
   );
-}
+});
 
 export { MaCoSystemField, SystemField } from "@/components/system-field";

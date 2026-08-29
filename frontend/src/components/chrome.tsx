@@ -6,6 +6,7 @@ import { Mark, Wordmark } from "./mark";
 import { useTheme } from "./theme";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
+import { usePointerField } from "@/hooks/use-pointer-field";
 import { Magnetic } from "@/components/motion/magnetic";
 import { getLiveScrollRuntime, getScrollRuntime } from "@/lib/scroll-runtime";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
@@ -385,6 +386,7 @@ export function Header() {
 
 export function Footer() {
   const scriptRef = useScriptFontsWhenVisible<HTMLSpanElement>();
+  const wordmarkRef = usePointerField<HTMLSpanElement>();
 
   return (
     <footer className="section-inverted rule-t pb-28 lg:pb-12">
@@ -394,7 +396,12 @@ export function Footer() {
             it, so it exposed body's own (paper) background as a white gap
             whenever the section above was also deep — padding can't. */}
         <div className="pt-24">
-          <Wordmark size={44} />
+          <Wordmark
+            ref={wordmarkRef}
+            size={44}
+            className="wordmark-trace"
+            style={{ color: "transparent" }}
+          />
         </div>
 
         <div className="grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-12">
