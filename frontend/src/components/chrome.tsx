@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
-import { site } from "@/content/maco";
+import { nameScripts, site } from "@/content/maco";
 import { Mark, Wordmark } from "./mark";
 import { useTheme } from "./theme";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
@@ -386,7 +386,7 @@ export function Header() {
 
 export function Footer() {
   const scriptRef = useScriptFontsWhenVisible<HTMLSpanElement>();
-  const wordmarkRef = usePointerField<HTMLSpanElement>();
+  const giantMarkRef = usePointerField<HTMLDivElement>();
 
   return (
     <footer className="section-inverted rule-t pb-28 lg:pb-12">
@@ -396,12 +396,7 @@ export function Footer() {
             it, so it exposed body's own (paper) background as a white gap
             whenever the section above was also deep — padding can't. */}
         <div className="pt-24">
-          <Wordmark
-            ref={wordmarkRef}
-            size={44}
-            className="wordmark-trace"
-            style={{ color: "transparent" }}
-          />
+          <Wordmark size={44} />
         </div>
 
         <div className="grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-12">
@@ -441,9 +436,20 @@ export function Footer() {
             style={{ fontFamily: "var(--font-script-fallback)" }}
             aria-hidden="true"
           >
-            MaCo · മാകോ · माको · ماكو · Мако · マコ · 마코
+            {nameScripts.map((s) => s.text).join(" · ")}
           </span>
           <span>Obsidian / Cobalt</span>
+        </div>
+      </div>
+
+      {/* The giant name moment — technique studied from iventions.com's
+          footer wordmark (scale + cursor-following gradient), never their
+          literal crop-off-the-edge composition: MaCo is a 4-letter word,
+          so it's sized to fill the shell width on its own without needing
+          to bleed past it to read as large. */}
+      <div className="shell overflow-hidden">
+        <div ref={giantMarkRef} className="footer-giant-mark wordmark-trace" aria-hidden="true">
+          MaCo
         </div>
       </div>
     </footer>

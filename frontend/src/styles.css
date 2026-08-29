@@ -837,33 +837,40 @@ html.lenis:has(:target) {
   margin-top: -22px;
 }
 
-/* Footer wordmark — cursor-following gradient reveal, studied from
-   iventions.com's footer name treatment. usePointerField writes --px/--py
-   (0..1, resting at 0.5/0.5) straight onto the Wordmark span; that resting
-   value is the correct static composition, so there's no separate
-   reduced-motion or touch branch to write.
-   The "MaCo" text gets its gradient via background-clip:text, which needs
-   color:transparent on the same element (set inline by the Footer caller,
-   winning over this class). The mark glyph is a currentColor mask, not
-   text, so it inherits transparent too and needs its OWN background-image
-   — same gradient, painted through its mask instead of clipped to glyphs. */
+/* Footer giant wordmark — cursor-following gradient reveal, studied from
+   iventions.com's footer name treatment (the scale + the light sweep, not
+   their literal edge-cropped composition — see footer-giant-mark below).
+   usePointerField writes --px/--py (0..1, resting at 0.5/0.5) straight
+   onto the element; that resting value is the correct static composition,
+   so there's no separate reduced-motion or touch branch to write.
+   background-clip:text needs color:transparent on the same element (set
+   inline by the Footer caller, winning over this class). */
 .wordmark-trace {
-  /* Radius sized to the lockup itself (~140x44px), not a fixed rem value —
-     9rem left the whole box inside the gradient's bright stop regardless
-     of cursor position, so nothing visibly tracked. 2.6rem (~42px) is
-     under half the lockup's width, so crossing it produces a real
-     bright-to-dim sweep instead of uniform brightness. */
+  /* Radius scales with the element (clamp(4.5rem,15vw,12rem) font-size
+     below) rather than a fixed value, so the sweep stays proportional to
+     the text instead of drowning it at one viewport and pinpricking it
+     at another. */
   --wordmark-grad: radial-gradient(
-    circle 2.6rem at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
+    circle 22vw at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
     var(--text),
-    color-mix(in oklab, var(--text) 12%, transparent)
+    color-mix(in oklab, var(--text) 10%, transparent)
   );
   background-image: var(--wordmark-grad);
   background-clip: text;
   -webkit-background-clip: text;
 }
-.wordmark-trace .maco-mark {
-  background-image: var(--wordmark-grad);
+
+.footer-giant-mark {
+  display: block;
+  width: 100%;
+  margin-top: 1.5rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.82;
+  letter-spacing: -0.03em;
+  font-size: clamp(4.5rem, 15vw, 12rem);
+  white-space: nowrap;
+  color: transparent;
 }
 
 /* currentColor mask marks (the logo, client brand glyphs) — Windows
