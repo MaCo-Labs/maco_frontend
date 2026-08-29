@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { ThemeProvider } from "@/components/theme";
 import { Header, Footer } from "@/components/chrome";
 import { Cursor } from "@/components/motion/cursor";
+import { Preloader } from "@/components/preloader";
 import { ScrollRuntimeProvider } from "@/components/scroll-runtime-provider";
 import { skipToMain } from "@/lib/skip-to-main";
 
@@ -106,10 +107,22 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
         {/* Runs before paint — reads the stored theme so Cobalt users never
-            see an Obsidian flash before hydration corrects it. */}
+            see an Obsidian flash before hydration corrects it. Also decides
+            whether the preloader should skip itself (reduced motion, or
+            already shown once this session) — matchMedia only, not the full
+            ?motion= override resolver (lib/motion.ts): the asymmetric risk
+            of the two ways this heuristic can be wrong favors the simpler
+            check. Worst case with matchMedia-only is the loader silently
+            not showing when the full resolver would have allowed it — the
+            page just loads instantly, which is harmless. The other
+            direction (animating for someone who explicitly wants reduced
+            motion) is the one that actually matters, and matchMedia alone
+            already catches it. If sessionStorage itself is blocked, skip
+            outright rather than risk a loader that can never confirm it's
+            already run. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("maco-theme");if(t==="obsidian"||t==="cobalt"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem("maco-theme");if(t==="obsidian"||t==="cobalt"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}try{var r=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;var s=sessionStorage.getItem("maco-preloaded");if(r||s){document.documentElement.setAttribute("data-preload","skip");}}catch(e){document.documentElement.setAttribute("data-preload","skip");}})();`,
           }}
         />
         {/* Runs before hydration — kills hijacking Workbox SWs from other localhost:5173 apps */}
@@ -139,6 +152,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <ScrollRuntimeProvider />
+        <Preloader />
         <a
           href="#main"
           onClick={skipToMain}

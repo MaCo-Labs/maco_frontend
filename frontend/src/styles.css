@@ -263,6 +263,14 @@ html[data-ground-now="deep"] body {
   background-color: var(--surface-inverted);
 }
 
+/* Preloader skip — the pre-paint script in __root.tsx stamps this
+   attribute before hydration (reduced motion, or already shown once this
+   session), so the loader is hidden from the very first paint rather than
+   flashing then disappearing once React's own mount-time check catches up. */
+html[data-preload="skip"] .maco-preloader {
+  display: none;
+}
+
 /* Adaptive chrome — chrome.tsx's <Header> and <MobilePillNav>, both
    `position: fixed` and mounted outside every section's DOM subtree, so
    they never naturally inherit a [data-ground] remap. chrome.tsx's
