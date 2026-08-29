@@ -809,16 +809,19 @@ html.lenis:has(:target) {
   }
 }
 
-/* Custom cursor (components/motion/cursor.tsx) — one ring, position
-   written by GSAP quickSetter every frame (see that file's own comment
-   for why), everything else here is CSS: the active-state scale, and the
-   fill/blend that makes it correct on any ground/theme with zero
-   per-section rules. `background: white` + `mix-blend-mode: difference`
-   is the standard technique for a cursor that's guaranteed visible
-   against ANY backdrop — difference-against-white always inverts
-   whatever's underneath, so it never needs a --text/--bg lookup. white
-   is the same token-free mix target .maco-shine above already uses, not
-   a new colour. */
+/* Custom cursor (components/motion/cursor.tsx) — position written by GSAP
+   quickSetter every frame (see that file's own comment for why),
+   everything else here is CSS. Default paint (no `?v2=` flag): one ring,
+   `background: white` + `mix-blend-mode: difference` — the standard
+   technique for a cursor guaranteed visible against ANY backdrop, so it
+   never needs a --text/--bg lookup. white is the same token-free mix
+   target .maco-shine above already uses, not a new colour.
+   `[data-state]` (any value) is written whenever the pointer is over
+   something hoverable — renamed from a plain `.is-active` class so the
+   same attribute also carries which state (cursor.tsx's `resolveState`),
+   for the flagged rules below to key off. The bare presence check here
+   keeps default (no-flag) behaviour identical to the old class: every
+   hoverable enlarges the same ring, regardless of which state it is. */
 .maco-cursor {
   position: fixed;
   top: 0;
@@ -836,13 +839,93 @@ html.lenis:has(:target) {
     opacity 0.2s var(--ease-standard),
     width 0.25s var(--ease-emphasis),
     height 0.25s var(--ease-emphasis),
-    margin 0.25s var(--ease-emphasis);
+    margin 0.25s var(--ease-emphasis),
+    background-color 0.25s var(--ease-emphasis),
+    border-color 0.25s var(--ease-emphasis);
 }
-.maco-cursor.is-active {
+.maco-cursor[data-state] {
   width: 44px;
   height: 44px;
   margin-left: -22px;
   margin-top: -22px;
+}
+
+/* Eleventh-pass preview: `?v2=cursor` — semantic per-state sizes, painted
+   from `var(--text)` (the cursor's own `data-ground` copy resolves it, see
+   cursor.tsx) instead of a fixed white diff-blend, so the ring reads as
+   MaCo's ink on whichever ground/theme it's actually over. Higher
+   specificity than the two rules above, so it overrides them cleanly
+   without needing `!important`; drops `mix-blend-mode` back to normal
+   since the token IS the correct colour now, nothing to invert. */
+html[data-v2~="cursor"] .maco-cursor {
+  background: transparent;
+  border: 1.5px solid var(--text);
+  mix-blend-mode: normal;
+}
+html[data-v2~="cursor"] .maco-cursor[data-state="link"] {
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-top: -4px;
+  background: var(--text);
+  border-color: transparent;
+}
+html[data-v2~="cursor"] .maco-cursor[data-state="action"] {
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  margin-top: -22px;
+  background: color-mix(in oklab, var(--text) 12%, transparent);
+}
+html[data-v2~="cursor"] .maco-cursor[data-state="media"] {
+  width: 64px;
+  height: 64px;
+  margin-left: -32px;
+  margin-top: -32px;
+  background: color-mix(in oklab, var(--text) 8%, transparent);
+}
+
+/* Eleventh-pass preview: `?v2=torch` — the footer wordmark zone
+   (`data-cursor="torch"` in chrome.tsx's Footer) turns the cursor itself
+   into the light source, rather than a highlight moving across the text.
+   Works standalone (without the `cursor` flag above) since it's scoped to
+   one explicit state, not the general state system — higher specificity
+   than either unflagged rule, so it applies regardless of `?v2=cursor`.
+   `--sweep-light` is the same signature light token `.light-pass` already
+   uses (near-white on Obsidian, warm on Cobalt) — not a new colour.
+   `screen` blend is what makes a soft radial actually read as cast light
+   rather than a painted circle; the torch zone is always `data-ground=
+   "deep"` (chrome.tsx), so it never has to also work against paper. */
+html[data-v2~="torch"] .maco-cursor[data-state="torch"] {
+  width: 22rem;
+  height: 22rem;
+  margin-left: -11rem;
+  margin-top: -11rem;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--sweep-light) 42%, transparent) 0%,
+    color-mix(in oklab, var(--sweep-light) 14%, transparent) 38%,
+    transparent 70%
+  );
+  border-color: transparent;
+  mix-blend-mode: screen;
+}
+
+/* The OS pointer only disappears inside the torch zone itself, and only
+   once a real cursor element is mounted (`data-cursor-active`, set/removed
+   by cursor.tsx's effect) — never on touch or reduced motion, where that
+   attribute is never written and the real pointer is the only pointer. */
+html[data-cursor-active="1"][data-v2~="torch"] [data-cursor="torch"] {
+  cursor: none;
+}
+
+/* Optional: dims the rest of the footer while the torch is lit, so the
+   wordmark reads as the only thing catching light. `:has()` keeps this a
+   one-rule, no-JS effect — cut if it reads as fussy rather than
+   atmospheric once seen live. */
+html[data-v2~="torch"] footer:has([data-cursor="torch"]:hover) .shell:not(:last-child) {
+  opacity: 0.6;
+  transition: opacity 0.3s var(--ease-standard);
 }
 
 /* Footer giant wordmark — cursor-following gradient reveal, studied from
@@ -852,12 +935,12 @@ html.lenis:has(:target) {
    onto the element; that resting value is the correct static composition,
    so there's no separate reduced-motion or touch branch to write.
    background-clip:text needs color:transparent on the same element (set
-   inline by the Footer caller, winning over this class). */
+   inline by the Footer caller, winning over this class). Radius is
+   viewport-relative (`22vw`), not element-relative despite what an
+   earlier version of this comment claimed — kept as-is for the unflagged
+   default; `?v2=torch` below matches it to the torch cursor's own radius
+   instead, so the lit letters and the cast light read as one light. */
 .wordmark-trace {
-  /* Radius scales with the element (clamp(4.5rem,15vw,12rem) font-size
-     below) rather than a fixed value, so the sweep stays proportional to
-     the text instead of drowning it at one viewport and pinpricking it
-     at another. */
   --wordmark-grad: radial-gradient(
     circle 22vw at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
     var(--text),
@@ -879,6 +962,33 @@ html.lenis:has(:target) {
   font-size: clamp(4.5rem, 15vw, 12rem);
   white-space: nowrap;
   color: transparent;
+}
+
+/* Eleventh-pass preview: `?v2=torch` — centred and substantially larger,
+   pairing with the torch cursor above. Weight is per-theme, not shared:
+   Unbounded (Obsidian) is a loaded `wght@200..900` variable axis, so 800
+   costs nothing extra; Michroma (Cobalt) is single-static-weight (AGENTS.md
+   §13) and would fake-bold if forced, so Cobalt gets mass from size and
+   tighter tracking instead. `circle 14rem` matches the torch cursor's own
+   radius (styles.css's `[data-state="torch"]` rule) so the trace gradient
+   and the cast light share one falloff instead of reading as two effects. */
+html[data-v2~="torch"] .wordmark-trace {
+  --wordmark-grad: radial-gradient(
+    circle 14rem at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
+    var(--text),
+    color-mix(in oklab, var(--text) 10%, transparent)
+  );
+}
+html[data-v2~="torch"] .footer-giant-mark {
+  text-align: center;
+  font-size: clamp(5rem, 22vw, 20rem);
+}
+html[data-v2~="torch"][data-theme="obsidian"] .footer-giant-mark {
+  font-weight: 800;
+}
+html[data-v2~="torch"][data-theme="cobalt"] .footer-giant-mark {
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
 /* currentColor mask marks (the logo, client brand glyphs) — Windows

@@ -544,7 +544,7 @@ export function Footer() {
   const giantMarkRef = usePointerField<HTMLDivElement>();
 
   return (
-    <footer className="section-inverted rule-t pb-28 lg:pb-12">
+    <footer data-ground="deep" className="section-inverted rule-t pb-28 lg:pb-12">
       <div className="shell">
         {/* pt-24, not the previous mt-32-on-<footer>: margin sits OUTSIDE
             both this section's background and whatever section precedes
@@ -601,9 +601,18 @@ export function Footer() {
           footer wordmark (scale + cursor-following gradient), never their
           literal crop-off-the-edge composition: MaCo is a 4-letter word,
           so it's sized to fill the shell width on its own without needing
-          to bleed past it to read as large. */}
+          to bleed past it to read as large.
+          `data-cursor="torch"` is inert without a `?v2=` preview flag —
+          cursor.tsx's selector only matches `[data-cursor]` at all once
+          some `data-v2` flag is present, so this attribute alone changes
+          nothing for an unflagged visitor. See that file's `selectorFor`. */}
       <div className="shell overflow-hidden">
-        <div ref={giantMarkRef} className="footer-giant-mark wordmark-trace" aria-hidden="true">
+        <div
+          ref={giantMarkRef}
+          data-cursor="torch"
+          className="footer-giant-mark wordmark-trace"
+          aria-hidden="true"
+        >
           MaCo
         </div>
       </div>
