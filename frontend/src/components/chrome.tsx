@@ -559,7 +559,7 @@ export function Header() {
         className="header-scroll chrome-adaptive fixed inset-x-0 top-0 z-[42] rule-b"
       >
         <div className="shell flex h-20 items-center justify-between gap-6 md:h-24">
-          <div className="flex items-center gap-4">
+          <div className="header-brand-group flex items-center gap-4">
             <LayoutNavTrigger nav={layoutNav} className="layout-hamburger-left" />
             <Link to="/" className="transition-opacity hover:opacity-70" aria-label="MaCo — home">
               <Wordmark />
@@ -583,7 +583,7 @@ export function Header() {
             })}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="header-control-cluster flex items-center gap-3">
             <LayoutSwitch />
             <ThemeSwitch />
             <LayoutNavTrigger nav={layoutNav} className="layout-hamburger-right" />

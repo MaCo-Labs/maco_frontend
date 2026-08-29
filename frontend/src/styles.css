@@ -1488,6 +1488,89 @@ html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-lead {
   max-width: 40rem;
 }
 
+/* Eleventh-pass preview (`?v2=nav3`, item 5): mode 3 rebuilt to match
+   what it was actually studied from — Minh Pham / by-kin's nav split to
+   both screen edges, hero centred between them — replacing the default
+   hamburger-only version above (which, unflagged, is unchanged). Rails
+   are a desktop composition; below `lg` this flagged mode 3 falls back
+   to mode 1's own chrome (wordmark + the bottom pill nav, already
+   focus-trapped and tested) rather than the default hamburger, since a
+   390px phone has no room for two vertical rails. Every selector here
+   carries both `[data-v2~="nav3"]` and `[data-layout="3"]`, which is
+   strictly more specific than the unflagged mode-3 rules above (one
+   extra attribute selector), so these override them cleanly without
+   `!important` and without touching the default mode-3 behaviour at all
+   when the flag is absent. */
+html[data-v2~="nav3"][data-layout="3"] .layout-hamburger-right {
+  display: none;
+}
+@media (max-width: 63.999rem) {
+  html[data-v2~="nav3"][data-layout="3"] [data-mobile-pill-nav] {
+    display: flex;
+  }
+}
+@media (min-width: 64rem) {
+  html[data-v2~="nav3"][data-layout="3"] header.chrome-adaptive {
+    height: 100vh;
+    /* The header itself no longer eats clicks on the page beneath a
+       100vh box that's mostly empty space — only its actual interactive
+       children (brand group, rails, control cluster) opt back in below. */
+    pointer-events: none;
+    background: transparent;
+    backdrop-filter: none;
+    border-bottom: 0;
+  }
+  html[data-v2~="nav3"][data-layout="3"] header.chrome-adaptive .shell {
+    height: 100%;
+    align-items: stretch;
+    position: relative;
+  }
+  html[data-v2~="nav3"][data-layout="3"] .header-brand-group {
+    flex-direction: column;
+    align-items: flex-start;
+    pointer-events: auto;
+  }
+  html[data-v2~="nav3"][data-layout="3"] .header-nav-row {
+    display: flex;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+    pointer-events: auto;
+  }
+  html[data-v2~="nav3"][data-layout="3"] .header-control-cluster {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
+    pointer-events: auto;
+  }
+  /* header-cta stays hidden here (the shared mode-2/3 rule above already
+     does that) -- restoring it duplicated the hero's own CTA at the
+     bottom-right, confirmed live: the two collided at 1024, and
+     TopHead's nav rail already lists "Contact" as a link, so a second
+     persistent CTA button was redundant as well as broken. */
+  /* Hero clears both rails — tuned live against the rail widths above,
+     not a fixed design-time guess. */
+  html[data-v2~="nav3"][data-layout="3"] section[aria-label="Introduction"] .cb-tophead {
+    min-height: 100vh;
+    justify-content: center;
+    padding-inline: 13rem;
+  }
+}
+@media (min-width: 64rem) and (max-width: 74.999rem) {
+  /* Narrower desktop widths (1024-ish) need less left padding than 1440
+     to leave the centred hero enough room, since the rails themselves
+     don't shrink -- but still enough to clear the rail text, confirmed
+     against the rail's own measured width live (9rem read as visibly
+     tight at 1024, letters nearly touching). */
+  html[data-v2~="nav3"][data-layout="3"] section[aria-label="Introduction"] .cb-tophead {
+    padding-inline: 10.5rem;
+  }
+}
+
 /* ============================================================
    REDUCED MOTION — deliberate static compositions, not frozen film
    ============================================================ */
