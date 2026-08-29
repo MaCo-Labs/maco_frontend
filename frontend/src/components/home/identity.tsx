@@ -1,4 +1,5 @@
 import { useRef, type CSSProperties } from "react";
+import { nameScripts } from "@/content/maco";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 import { usePointerField } from "@/hooks/use-pointer-field";
@@ -34,23 +35,12 @@ import { usePointerField } from "@/hooks/use-pointer-field";
  * ScrollTrigger ever created, every span's `calc()` resolves exactly as
  * if `--t` were 0 — English centred, neighbours dimmed either side. That
  * IS the composed at-rest state, not a frozen frame of an animation.
+ *
+ * The script list itself lives in content/maco.ts (`nameScripts`) — the
+ * footer's compact strip (chrome.tsx) reads the same array, so the two
+ * can't drift apart the way they had before.
  */
-const SCRIPTS: readonly { text: string; lang: string; code: string; dir?: "rtl" }[] = [
-  { text: "MaCo", lang: "English", code: "en" },
-  { text: "മാകോ", lang: "Malayalam", code: "ml" },
-  { text: "மாகோ", lang: "Tamil", code: "ta" },
-  { text: "మాకో", lang: "Telugu", code: "te" },
-  { text: "ಮಾಕೋ", lang: "Kannada", code: "kn" },
-  { text: "माको", lang: "Hindi", code: "hi" },
-  { text: "માકો", lang: "Gujarati", code: "gu" },
-  { text: "ਮਾਕੋ", lang: "Punjabi", code: "pa" },
-  { text: "মাকো", lang: "Bengali", code: "bn" },
-  { text: "ମାକୋ", lang: "Odia", code: "or" },
-  { text: "ماكو", lang: "Arabic", code: "ar", dir: "rtl" },
-  { text: "ماکو", lang: "Persian", code: "fa", dir: "rtl" },
-  { text: "מאקו", lang: "Hebrew", code: "he", dir: "rtl" },
-];
-
+const SCRIPTS = nameScripts;
 const N = SCRIPTS.length;
 
 export function Identity() {

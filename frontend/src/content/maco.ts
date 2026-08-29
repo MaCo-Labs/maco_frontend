@@ -111,6 +111,43 @@ export const site = {
 } as const;
 
 /**
+ * MaCo's name transliterated into other scripts — the single source for
+ * both the IDENTITY section's pinned scroll-dial (identity.tsx) and the
+ * footer's compact strip (chrome.tsx), so the two can never drift apart
+ * the way they had before this list existed (footer previously hand-wrote
+ * its own 7-script subset that didn't match Identity's 13 and included
+ * Cyrillic, which matches no client market MaCo serves).
+ *
+ * Curated 2026-08-29 to MaCo's actual footprint (India + the Gulf, per
+ * the OVERVIEW section's own copy) plus a small, deliberately short set of
+ * non-Indian scripts that render cleanly at display size — fewer, more
+ * intentional scripts, not an exhaustive list. Dropped from the prior
+ * 13-script set: Gujarati, Punjabi, Bengali, Odia (India, but outside
+ * MaCo's stated Kerala/Gulf footprint), Persian (Arabic already covers
+ * the Gulf). Added: Japanese, Korean — both already in
+ * `--font-script-fallback` (styles.css), so no new font request.
+ */
+export interface NameScript {
+  text: string;
+  lang: string;
+  code: string;
+  dir?: "rtl";
+}
+
+export const nameScripts: readonly NameScript[] = [
+  { text: "MaCo", lang: "English", code: "en" },
+  { text: "മാകോ", lang: "Malayalam", code: "ml" },
+  { text: "மாகோ", lang: "Tamil", code: "ta" },
+  { text: "మాకో", lang: "Telugu", code: "te" },
+  { text: "ಮಾಕೋ", lang: "Kannada", code: "kn" },
+  { text: "माको", lang: "Hindi", code: "hi" },
+  { text: "マコ", lang: "Japanese", code: "ja" },
+  { text: "마코", lang: "Korean", code: "ko" },
+  { text: "ماكو", lang: "Arabic", code: "ar", dir: "rtl" },
+  { text: "מאקו", lang: "Hebrew", code: "he", dir: "rtl" },
+] as const;
+
+/**
  * The hero's cycling taglines (top-head.tsx, 2026-08-29 masked-video-hero
  * pass) — four lines, all lifted verbatim from copy already approved
  * elsewhere on the site, nothing invented for this rotation specifically:
