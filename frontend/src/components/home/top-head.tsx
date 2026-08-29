@@ -90,9 +90,9 @@ export function TopHead() {
       <div aria-hidden="true" className="hero-backlight" />
       <div aria-hidden="true" className="hero-grain" />
       <div className="shell cb-tophead relative">
-        <p className="label">{site.category}</p>
+        <p className="cb-tophead-eyebrow label">{site.category}</p>
 
-        <div className="mt-6 flex items-center gap-4">
+        <div className="cb-tophead-brand mt-6 flex items-center gap-4">
           <Mark size={44} />
           <SplitReveal
             text={site.name}
@@ -105,19 +105,19 @@ export function TopHead() {
         {showMasked && bridge?.media?.video ? (
           <MaskedHeading
             text={heroLines[lineIndex] ?? site.tagline}
-            className="display-hero mt-12 max-w-[16ch] md:mt-16"
+            className="cb-tophead-headline display-hero mt-12 max-w-[16ch] md:mt-16"
             videoWebm={bridge.media.video.webm}
             videoMp4={bridge.media.video.mp4}
             poster={bridge.media.poster}
           />
         ) : (
-          <h1 className="display-hero display-glow hero-reveal mt-12 max-w-[16ch] md:mt-16">
+          <h1 className="cb-tophead-headline display-hero display-glow hero-reveal mt-12 max-w-[16ch] md:mt-16">
             {site.tagline}
           </h1>
         )}
 
-        <div className="mt-10 flex flex-col gap-8 md:mt-14 md:flex-row md:items-end md:justify-between">
-          <p className="lead max-w-xl">{site.statement}</p>
+        <div className="cb-tophead-cta mt-10 flex flex-col gap-8 md:mt-14 md:flex-row md:items-end md:justify-between">
+          <p className="cb-tophead-lead lead max-w-xl">{site.statement}</p>
 
           <Magnetic>
             <Link to="/contact" className="btn-solid shrink-0">

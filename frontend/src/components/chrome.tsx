@@ -4,11 +4,13 @@ import { useEffect, useId, useRef, useState } from "react";
 import { nameScripts, site } from "@/content/maco";
 import { Mark, Wordmark } from "./mark";
 import { useTheme } from "./theme";
+import { useLayout, type LayoutMode } from "./layout-mode";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
 import { usePointerField } from "@/hooks/use-pointer-field";
+import { useOverlayMenu } from "@/hooks/use-overlay-menu";
 import { Magnetic } from "@/components/motion/magnetic";
-import { getLiveScrollRuntime, getScrollRuntime } from "@/lib/scroll-runtime";
+import { getScrollRuntime } from "@/lib/scroll-runtime";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 
 function ThemeSwitch() {
@@ -39,6 +41,42 @@ function ThemeSwitch() {
   );
 }
 
+const LAYOUT_MODES: readonly LayoutMode[] = ["1", "2", "3"];
+
+/**
+ * Small numbered layout switcher, studied from by-kin.com's own LAYOUT 1/2
+ * toggle — MaCo's own type/tokens throughout, three modes instead of two.
+ * Always visible (every mode, every viewport) since it's the only way back
+ * out of modes 2/3 once chosen. Persists via `setLayout` (localStorage +
+ * the pre-paint script in __root.tsx), same anti-FOUC shape as ThemeSwitch.
+ */
+function LayoutSwitch() {
+  const { layout, setLayout } = useLayout();
+  return (
+    <div role="group" aria-label="Layout" className="label flex items-center border border-line">
+      {LAYOUT_MODES.map((mode) => {
+        const active = layout === mode;
+        return (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setLayout(mode)}
+            aria-pressed={active}
+            aria-label={`Layout ${mode}`}
+            className="flex h-8 w-8 items-center justify-center border-r border-line transition-colors last:border-r-0 hover:text-text"
+            style={{
+              background: active ? "var(--text)" : "transparent",
+              color: active ? "var(--bg)" : "var(--muted)",
+            }}
+          >
+            {mode}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * Mobile floating pill — MaCo-native (React Bits Pill Nav evaluated;
  * custom kept for brand fit, with focus + escape + safe-area).
@@ -50,6 +88,7 @@ function MobilePillNav() {
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const reduced = useReducedMotion();
+  useOverlayMenu({ open, setOpen, panelRef, triggerRef: buttonRef });
   // Mirrors --ease-emphasis (styles.css) — the sheet used to enter via the
   // `maco-rise` keyframe but had no exit, snapping out of existence
   // (motion audit, PHASE-2-MOTION-PLAN.md item 1). AnimatePresence needs
@@ -57,62 +96,6 @@ function MobilePillNav() {
   const easeEmphasis = [0.16, 1, 0.3, 1] as const;
   const enterTransition = reduced ? { duration: 0 } : { duration: 0.45, ease: easeEmphasis };
   const exitTransition = reduced ? { duration: 0 } : { duration: 0.3, ease: easeEmphasis };
-
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (!open) return;
-    const focusable = () =>
-      Array.from(
-        panelRef.current?.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ) ?? [],
-      );
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        buttonRef.current?.focus();
-        return;
-      }
-      if (e.key !== "Tab") return;
-      const items = focusable();
-      if (items.length === 0) return;
-      const first = items[0]!;
-      const last = items[items.length - 1]!;
-      const active = document.activeElement;
-      // Keep focus inside the panel — wrap at either end instead of letting
-      // Tab escape into the page behind the scrim.
-      if (e.shiftKey && active === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    // Lenis intercepts wheel/touch directly rather than relying on native
-    // overflow, so `body { overflow: hidden }` alone doesn't reliably stop
-    // it — the page can keep smooth-scrolling under an open panel. Stop
-    // Lenis explicitly, and keep the overflow lock too as the fallback for
-    // when Lenis isn't running (reduced motion, blocked dynamic import).
-    const rt = getLiveScrollRuntime();
-    rt?.lenis.stop();
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    // Focus first link
-    requestAnimationFrame(() => {
-      const first = panelRef.current?.querySelector<HTMLElement>("a");
-      first?.focus();
-    });
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      rt?.lenis.start();
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
 
   return (
     <>
@@ -235,6 +218,168 @@ function MobilePillNav() {
   );
 }
 
+const LAYOUT_NAV_CLOSED = "polygon(0% 0%, 0% 0%, -30% 100%, -30% 100%)";
+const LAYOUT_NAV_OPEN = "polygon(0% 0%, 130% 0%, 100% 100%, -30% 100%)";
+
+/**
+ * Layout modes 2 and 3's shared full-screen menu state — trigger and panel
+ * are two separate pieces (below) because they need to sit in two different
+ * places in the DOM: the trigger inside the header's flex row (for
+ * positioning), the panel as a SIBLING of `<header>`, never a descendant.
+ * Nesting the panel inside `<header>` was tried first and broke live: the
+ * header carries `.chrome-adaptive[data-over]`, which remaps `--accent`
+ * locally to whatever ground the header is currently tracking (deep, on
+ * this homepage) — so `background: var(--accent)` resolved to
+ * `--accent-inverted` (near-white in both themes) instead of each theme's
+ * real accent, inverting the whole panel. Rendering the panel as a header
+ * sibling keeps it at true :root scope, where `--accent` is what it's
+ * actually supposed to be.
+ */
+function useLayoutNavState() {
+  const [open, setOpen] = useState(false);
+  const menuId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const reduced = useReducedMotion();
+  useOverlayMenu({ open, setOpen, panelRef, triggerRef });
+
+  return {
+    open,
+    setOpen,
+    menuId,
+    panelRef,
+    triggerRef,
+    enterTransition: reduced
+      ? { duration: 0 }
+      : ({ duration: 0.6, ease: [0.16, 1, 0.3, 1] } as const),
+    exitTransition: reduced
+      ? { duration: 0 }
+      : ({ duration: 0.4, ease: [0.4, 0, 0.2, 1] } as const),
+  };
+}
+
+type LayoutNavState = ReturnType<typeof useLayoutNavState>;
+
+/**
+ * Renders once per header-side placement (`layout-hamburger-left` for mode
+ * 2's top-left position, `layout-hamburger-right` for mode 3's top-right
+ * one) — CSS shows exactly one instance per mode, but BOTH are always in
+ * the DOM, since mode 2's slot lives in a different flex container than
+ * mode 3's (grouped with Wordmark vs. grouped with ThemeSwitch), and CSS
+ * `order` can only reorder within one shared parent, not move an element
+ * between two. `triggerRef` is written imperatively on click rather than
+ * attached via the `ref` prop, since two DOM buttons can share readable
+ * state but not one `ref` attachment — this way Escape always returns
+ * focus to whichever instance was actually clicked.
+ */
+function LayoutNavTrigger({ nav, className }: { nav: LayoutNavState; className: string }) {
+  const { open, setOpen, menuId, triggerRef } = nav;
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        triggerRef.current = e.currentTarget;
+        setOpen(!open);
+      }}
+      aria-expanded={open}
+      aria-controls={open ? menuId : undefined}
+      aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+      className={`layout-hamburger flex h-10 w-10 flex-col items-center justify-center gap-[5px] ${className}`}
+    >
+      <span
+        aria-hidden="true"
+        className="block h-px w-5 transition-transform duration-300"
+        style={{
+          background: "var(--text)",
+          transform: open ? "translateY(3px) rotate(45deg)" : "none",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        className="block h-px w-5 transition-transform duration-300"
+        style={{
+          background: "var(--text)",
+          transform: open ? "translateY(-3px) rotate(-45deg)" : "none",
+        }}
+      />
+    </button>
+  );
+}
+
+/**
+ * `polygon()` interpolation needs matching point counts on both ends, which
+ * is why LAYOUT_NAV_CLOSED/OPEN above are both 4-point quads — a
+ * circle-to-quad or 3-to-4-point mismatch is undefined behavior for the
+ * browser's own clip-path interpolation, not just Motion's.
+ *
+ * Panel color reads `var(--accent)`/`var(--accent-ink)` directly (each
+ * theme's own accent — Obsidian near-black, Cobalt blue), never Iventions'
+ * yellow-green — see the doc comment on useLayoutNavState for why this
+ * component MUST render outside `<header>`'s DOM subtree for that to
+ * actually hold.
+ */
+function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { open, menuId, panelRef, enterTransition, exitTransition } = nav;
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          key="fullscreen-nav"
+          id={menuId}
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Site navigation"
+          className="fixed inset-0 z-[46] flex flex-col justify-center"
+          style={{ background: "var(--accent)", color: "var(--accent-ink)" }}
+          initial={{ clipPath: LAYOUT_NAV_CLOSED }}
+          animate={{ clipPath: LAYOUT_NAV_OPEN, transition: enterTransition }}
+          exit={{ clipPath: LAYOUT_NAV_CLOSED, transition: exitTransition }}
+        >
+          <nav
+            aria-label="Primary"
+            data-lenis-prevent
+            className="shell flex max-h-full flex-col overflow-y-auto"
+          >
+            <Link
+              to="/"
+              className="py-3 font-display text-4xl md:text-6xl"
+              style={{ opacity: pathname === "/" ? 1 : 0.6 }}
+            >
+              Home
+            </Link>
+            {site.nav.map((item) => {
+              const active = pathname === item.to || pathname.startsWith(item.to + "/");
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="border-t py-3 font-display text-4xl md:text-6xl"
+                  style={{
+                    opacity: active ? 1 : 0.6,
+                    borderColor: "color-mix(in oklab, var(--accent-ink) 20%, transparent)",
+                  }}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+            <Link
+              to="/contact"
+              className="btn-solid mt-8 w-fit"
+              style={{ background: "var(--accent-ink)", color: "var(--accent)" }}
+            >
+              Start a project
+            </Link>
+          </nav>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 /**
  * Transparent-over-the-hero, solid-once-scrolled-past, AND ground-adaptive
  * header — three independent ScrollTrigger-driven properties, never React
@@ -251,6 +396,7 @@ function MobilePillNav() {
 export function Header() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const headerRef = useRef<HTMLElement>(null);
+  const layoutNav = useLayoutNavState();
 
   useScrollScene((rt) => {
     const header = headerRef.current;
@@ -347,11 +493,14 @@ export function Header() {
         className="header-scroll chrome-adaptive fixed inset-x-0 top-0 z-[42] rule-b"
       >
         <div className="shell flex h-20 items-center justify-between gap-6 md:h-24">
-          <Link to="/" className="transition-opacity hover:opacity-70" aria-label="MaCo — home">
-            <Wordmark />
-          </Link>
+          <div className="flex items-center gap-4">
+            <LayoutNavTrigger nav={layoutNav} className="layout-hamburger-left" />
+            <Link to="/" className="transition-opacity hover:opacity-70" aria-label="MaCo — home">
+              <Wordmark />
+            </Link>
+          </div>
 
-          <nav className="hidden items-center gap-7 lg:flex" aria-label="Primary">
+          <nav className="header-nav-row hidden items-center gap-7 lg:flex" aria-label="Primary">
             {site.nav.map((item) => {
               const active = pathname === item.to || pathname.startsWith(item.to + "/");
               return (
@@ -369,8 +518,10 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
+            <LayoutSwitch />
             <ThemeSwitch />
-            <Magnetic className="hidden lg:inline-flex">
+            <LayoutNavTrigger nav={layoutNav} className="layout-hamburger-right" />
+            <Magnetic className="header-cta hidden lg:inline-flex">
               <Link to="/contact" className="btn-solid !px-4 !py-2.5">
                 Start a project
               </Link>
@@ -378,6 +529,10 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      {/* Sibling of <header>, not a descendant — see useLayoutNavState's
+          doc comment for why that placement is load-bearing. */}
+      <LayoutNavPanel nav={layoutNav} />
 
       <MobilePillNav />
     </>

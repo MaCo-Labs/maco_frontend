@@ -1309,6 +1309,76 @@ html.lenis:has(:target) {
 }
 
 /* ============================================================
+   LAYOUT MODES — a small numbered switcher (chrome.tsx), studied
+   from by-kin.com's own LAYOUT 1/2 toggle. Mode 1 is the site as
+   built above and needs no rules of its own. Modes 2 and 3 both
+   replace the chrome's desktop link row + CTA with the hamburger ->
+   full-screen overlay (chrome.tsx's FullScreenNav) — that swap is
+   site-wide, since Header/MobilePillNav mount once in __root.tsx
+   above every route. Mode 3 additionally recomposes TOPHEAD's copy
+   to centred — scoped to `[aria-label="Introduction"]` only, since
+   the plan's own boundary keeps the hero treatment homepage-only.
+   ============================================================ */
+html[data-layout="2"] .header-nav-row,
+html[data-layout="3"] .header-nav-row,
+html[data-layout="2"] .header-cta,
+html[data-layout="3"] .header-cta {
+  display: none;
+}
+
+/* The top hamburger (either instance) already covers every viewport,
+   mode 1's mobile-only bottom pill would otherwise sit alongside it —
+   two different ways to open navigation on the same page, at the same
+   time, opening two different overlays. */
+html[data-layout="2"] [data-mobile-pill-nav],
+html[data-layout="3"] [data-mobile-pill-nav] {
+  display: none;
+}
+
+/* Two trigger instances exist (chrome.tsx's LayoutNavTrigger doc comment
+   explains why an `order` swap alone can't do this: the two placements
+   live in different flex containers). Default: both hidden (mode 1). */
+.layout-hamburger-left,
+.layout-hamburger-right {
+  display: none;
+}
+/* Mode 2 — hamburger leads, grouped with Wordmark at the header's start
+   (Iventions' own placement: top-left, replacing the nav row). */
+html[data-layout="2"] .layout-hamburger-left {
+  display: flex;
+}
+/* Mode 3 — hamburger trails, grouped with ThemeSwitch at the header's end
+   (top-right corner — by-kin.com's "minor decorative elements at the
+   screen edges instead of a full nav row"). */
+html[data-layout="3"] .layout-hamburger-right {
+  display: flex;
+}
+
+html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-brand,
+html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-headline,
+html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-cta {
+  margin-inline: auto;
+}
+html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-headline {
+  max-width: 20ch;
+}
+html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-cta {
+  max-width: 40rem;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-lead {
+  max-width: 40rem;
+}
+
+/* ============================================================
    REDUCED MOTION — deliberate static compositions, not frozen film
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {

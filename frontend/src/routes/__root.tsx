@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { ThemeProvider } from "@/components/theme";
+import { LayoutProvider } from "@/components/layout-mode";
 import { Header, Footer } from "@/components/chrome";
 import { Cursor } from "@/components/motion/cursor";
 import { Preloader } from "@/components/preloader";
@@ -107,22 +108,25 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
         {/* Runs before paint — reads the stored theme so Cobalt users never
-            see an Obsidian flash before hydration corrects it. Also decides
-            whether the preloader should skip itself (reduced motion, or
-            already shown once this session) — matchMedia only, not the full
-            ?motion= override resolver (lib/motion.ts): the asymmetric risk
-            of the two ways this heuristic can be wrong favors the simpler
-            check. Worst case with matchMedia-only is the loader silently
-            not showing when the full resolver would have allowed it — the
-            page just loads instantly, which is harmless. The other
-            direction (animating for someone who explicitly wants reduced
-            motion) is the one that actually matters, and matchMedia alone
-            already catches it. If sessionStorage itself is blocked, skip
-            outright rather than risk a loader that can never confirm it's
-            already run. */}
+            see an Obsidian flash before hydration corrects it. Also stamps
+            the stored (or `?layout=` preview-overridden) layout mode, so a
+            layout-2/3 visitor never sees a layout-1 chrome flash either —
+            same anti-FOUC shape as theme, see layout-mode.tsx.
+            Last, decides whether the preloader should skip itself (reduced
+            motion, or already shown once this session) — matchMedia only,
+            not the full ?motion= override resolver (lib/motion.ts): the
+            asymmetric risk of the two ways this heuristic can be wrong
+            favors the simpler check. Worst case with matchMedia-only is the
+            loader silently not showing when the full resolver would have
+            allowed it — the page just loads instantly, which is harmless.
+            The other direction (animating for someone who explicitly wants
+            reduced motion) is the one that actually matters, and matchMedia
+            alone already catches it. If sessionStorage itself is blocked,
+            skip outright rather than risk a loader that can never confirm
+            it's already run. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("maco-theme");if(t==="obsidian"||t==="cobalt"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}try{var r=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;var s=sessionStorage.getItem("maco-preloaded");if(r||s){document.documentElement.setAttribute("data-preload","skip");}}catch(e){document.documentElement.setAttribute("data-preload","skip");}})();`,
+            __html: `(function(){try{var t=localStorage.getItem("maco-theme");if(t==="obsidian"||t==="cobalt"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}try{var lp=new URLSearchParams(window.location.search).get("layout");var l=(lp==="1"||lp==="2"||lp==="3")?lp:localStorage.getItem("maco-layout");if(l==="1"||l==="2"||l==="3"){document.documentElement.setAttribute("data-layout",l);}}catch(e){}try{var r=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;var s=sessionStorage.getItem("maco-preloaded");if(r||s){document.documentElement.setAttribute("data-preload","skip");}}catch(e){document.documentElement.setAttribute("data-preload","skip");}})();`,
           }}
         />
         {/* Runs before hydration — kills hijacking Workbox SWs from other localhost:5173 apps */}
@@ -151,21 +155,23 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <ScrollRuntimeProvider />
-        <Preloader />
-        <a
-          href="#main"
-          onClick={skipToMain}
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-surface focus:px-4 focus:py-2"
-        >
-          Skip to content
-        </a>
-        <Cursor />
-        <Header />
-        <main id="main">
-          <Outlet />
-        </main>
-        <Footer />
+        <LayoutProvider>
+          <ScrollRuntimeProvider />
+          <Preloader />
+          <a
+            href="#main"
+            onClick={skipToMain}
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-surface focus:px-4 focus:py-2"
+          >
+            Skip to content
+          </a>
+          <Cursor />
+          <Header />
+          <main id="main">
+            <Outlet />
+          </main>
+          <Footer />
+        </LayoutProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
