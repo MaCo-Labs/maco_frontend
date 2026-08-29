@@ -1,7 +1,7 @@
 # MaCo Website — CONTEXT
 
 Complete project context for developers and AI agents.
-Last updated: 2026-08-29 (tenth pass — first-paint preloader, layout-mode switcher, IDENTITY script curation; see the new subsection under §10 and `AI_HANDOFF.md`'s tenth-pass entry). §11 below still documents the 2026-08-21 cleanup pass.
+Last updated: 2026-08-30 (eleventh pass — `/about` SSR fix, semantic per-state cursor + footer torch, layout modes 2/3 rebuilt to match their references; see §4's adopt/reject log, the layout-modes subsection under §10, and `AI_HANDOFF.md`'s eleventh-pass entry). §11 below still documents the 2026-08-21 cleanup pass.
 
 ---
 
@@ -126,9 +126,11 @@ Frontend and backend are only linked through the contact form (`VITE_API_BASE_UR
 - React-Three-Fiber — both `three` consumers use the raw API directly
 - `zod`, `react-hook-form`, any Radix/shadcn primitive — removed 2026-08-21, see §11
 
-### React Bits concept adopt/reject log (2026-08-29 dark-first pass)
+### React Bits concept adopt/reject log
 
-Per AGENTS.md §222 — recorded here, not scattered across other docs.
+Per AGENTS.md §29 — recorded here, not scattered across other docs.
+
+**2026-08-29, dark-first pass:**
 
 - **Adopted — "Masked Heading" (video-in-text via SVG clipPath).**
   Reimplemented as `components/motion/masked-heading.tsx`: GSAP through
@@ -157,6 +159,39 @@ Per AGENTS.md §222 — recorded here, not scattered across other docs.
   `cb-cursor` swaps in a media/text preview per hovered element).
   `docs/references/cuberto/NOTES.md` already flags the FULL contextual-
   cursor system as out of scope; this pass's cursor stays a plain ring.
+
+**2026-08-30, eleventh pass:**
+
+- **Adopted — semantic per-state cursor hooks**, generalizing the ninth
+  pass's single-ring cursor per ROADMAP item 6 / `PHASE-2-MOTION-PLAN.md`
+  item 2d, this pass's `AI_HANDOFF.md` #8 go/no-go. Studied from
+  `docs/references/minhpham/NOTES.md`'s finding that a semantic
+  class/attribute hook (one controller reads `.js-cursor-contract`/
+  `-extend` off whatever's hovered) is "the most maintainable of the three
+  cursor approaches" captured across the four reference sites. Implemented
+  as a `data-cursor` attribute + resolved `data-state`
+  (link/action/media/torch) in `components/motion/cursor.tsx`, painted
+  from `var(--text)` (theme/ground-aware via the existing `[data-ground]`
+  remap) instead of the old fixed `mix-blend-mode: difference`. **Ships
+  behind `?v2=cursor` — not yet flipped to default.**
+- **Adopted, narrow — footer torch.** `data-cursor="torch"` on the footer
+  wordmark turns the cursor into the light source over that one zone — a
+  radial gradient from `--sweep-light` (the existing signature light-pass
+  token) in a `screen` blend, OS pointer hidden only inside the zone.
+  Studied from iventions.com's footer wordmark treatment (the earlier
+  cursor-following gradient trace was that study's first pass; this is
+  the second, making the light source visibly the cursor itself, not just
+  a moving highlight on the text). **Ships behind `?v2=torch`.**
+- **Adopted — leading beam on layout mode 2's wipe**, studied from
+  Iventions' own diagonal-wipe hamburger reveal (`docs/references/
+  iventions/NOTES.md`). A skewed `--sweep-light` gradient band leads the
+  existing clip-path wipe; Motion-variant staggered link entrance follows
+  it. **Ships behind `?v2=nav2`.**
+- **Adopted — layout mode 3 rebuilt as split edge rails**, correcting a
+  prior build that used the same hamburger-overlay pattern as mode 2 —
+  the opposite of by-kin.com / Minh Pham's actual "minor decorative
+  elements at the screen edges instead of a full nav row." **Ships behind
+  `?v2=nav3`**, desktop-only; falls back to mode 1's chrome below `lg`.
 
 ---
 
@@ -369,7 +404,16 @@ Both mount in `__root.tsx`, both site-wide (not homepage-specific), both follow 
 
 **Preloader** — a percentage ring around `<Mark>`, `data-ground="deep"` always (the page opens dark), progress on `--focus` rather than `--accent` (near-white on deep ground in both themes — same reasoning as the hero utilities in §10). A GSAP proxy tween runs toward a 92 ceiling (not 100 — see `preloader.tsx`'s own comment for why a tween that reaches 100 on its own schedule breaks the illusion once real loading outruns it) over ~1.6s; once web fonts and the hero's poster image actually resolve, the remainder snaps to 100 in 0.25s. Skips itself (via the pre-paint script's `data-preload="skip"`) under reduced motion or once already shown this session (`sessionStorage`).
 
-**Layout modes** — a `data-layout="1"|"2"|"3"` switcher (`LayoutProvider`/`useLayout`, small numbered control in `chrome.tsx`'s header), persisted via `localStorage["maco-layout"]`, with a non-persisting `?layout=` URL override for previews. Mode 1 is the site as built above. Mode 2 (Iventions' hamburger + diagonal wipe) and mode 3 (Minh Pham / by-kin.com's centred hero + corner nav) both replace the header's desktop link row and CTA with a hamburger → full-screen overlay (`FullScreenNav`'s trigger/panel split in `chrome.tsx`, `[data-layout]`-scoped CSS in `styles.css`) — chrome-wide; mode 3 additionally recomposes `TopHead` to centred, scoped to `[aria-label="Introduction"]` only. The overlay panel must render as a `<header>` sibling, never a descendant — nesting it inside `<header>` was tried first and inherited the header's own `.chrome-adaptive[data-over]` ground-remap, inverting each theme's accent colour.
+**Layout modes** — a `data-layout="1"|"2"|"3"` switcher (`LayoutProvider`/`useLayout`, small numbered control in `chrome.tsx`'s header), persisted via `localStorage["maco-layout"]`, with a non-persisting `?layout=` URL override for previews. Mode 1 is the site as built above. Both modes 2 and 3 replace the header's desktop link row and CTA with a hamburger → full-screen overlay (`FullScreenNav`'s trigger/panel split in `chrome.tsx`, `[data-layout]`-scoped CSS in `styles.css`) — chrome-wide. The overlay panel must render as a `<header>` sibling, never a descendant — nesting it inside `<header>` was tried first and inherited the header's own `.chrome-adaptive[data-over]` ground-remap, inverting each theme's accent colour.
+
+Mode 2 (Iventions' hamburger + diagonal wipe) and mode 3 (Minh Pham / by-kin.com) were both rebuilt 2026-08-30 (eleventh pass) — see `AI_HANDOFF.md`'s eleventh-pass entry and `docs/references/{iventions,minhpham}/NOTES.md`:
+
+- **Mode 2** gains a leading light beam (`--sweep-light`, skewed, `Motion`'s own `skewX` style value — a raw CSS `transform` string is silently dropped once Motion is also animating `x` on the same element) and staggered link entrance, on top of the diagonal clip-path wipe that already worked. **Behind `?v2=nav2`.**
+- **Mode 3** was rebuilt from scratch — it previously used the same hamburger-overlay pattern as mode 2, the opposite of its own reference. Now splits nav content to both screen edges (`.header-nav-row` as a left rail, `.header-control-cluster` as a right rail — two stable classNames added to the header's JSX for this, not `:first-child`/`:last-child`) with `TopHead` centred between, desktop (`lg+`) only. Below `lg` it falls back to mode 1's own chrome (wordmark + the existing bottom pill nav) rather than a hamburger, since two vertical rails don't fit a 390px phone. **Behind `?v2=nav3`.**
+
+Both remain behind the `?v2=` preview flag (same non-persisting URL-override shape as `?layout=`/`?motion=`, added to the same pre-paint script in `__root.tsx`) as of this writing — not yet flipped to default. Mode 1 and the un-rebuilt structure of modes 2/3 (hamburger + overlay, minus the beam/rails) are unaffected by the flag either way.
+
+**Cursor** (`components/motion/cursor.tsx`) also gained a semantic per-state system this same pass — see §4's adopt/reject log above for the full writeup. Ships behind `?v2=cursor`/`?v2=torch`.
 
 ### `system-field.tsx`
 

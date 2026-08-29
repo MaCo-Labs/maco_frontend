@@ -8,13 +8,17 @@ the seventh-pass entry below), refined the same day (eighth pass: EVIDENCE
 crop fix, dead-code sweep, hero treatment, client consolidation, adaptive
 navbar), pushed further 2026-08-29 (ninth pass: dark-first ground
 sequence, a Capabilities dark-panel accordion, a masked video-in-text hero,
-a restrained custom cursor), and again the same day (tenth pass: reel
+a restrained custom cursor), again the same day (tenth pass: reel
 geometry fix, Lenis retune, IDENTITY script curation, a first-paint
 preloader, a full-width footer wordmark, and a three-mode layout
-switcher — see below). A full dead-code/dependency cleanup pass ran
-2026-08-21 (see `CONTEXT.md` §11). Build/lint are clean. One known,
-pre-existing, out-of-scope issue: `/about` falls back to client-only
-rendering ("window is not defined" during SSR) — see the tenth-pass entry.
+switcher), and again 2026-08-30 (eleventh pass: the `/about` SSR bug fixed
+for real, the cursor generalized into a semantic per-state/theme/ground-
+aware system with a footer torch effect, layout modes 2 and 3 rebuilt to
+match their actual references, and a 15-unit premium/interactivity audit —
+see below). A full dead-code/dependency cleanup pass ran 2026-08-21 (see
+`CONTEXT.md` §11). Build/lint are clean. The `/about` SSR issue is
+resolved. The eleventh pass's cursor/torch/nav2/nav3 work ships behind
+`?v2=` preview flags only, not yet flipped to default — see that entry.
 
 ## 2026-08-27 session — re-audit + 2 confirmed bugs fixed
 
@@ -585,6 +589,125 @@ layout switcher clicked through end-to-end (persistence across reload,
 keyboard activation, no mobile overflow) and five other routes
 smoke-tested for regressions from the header/footer changes, which
 mount globally.
+
+## 2026-08-30, eleventh pass — /about SSR fix, cursor system, layout modes 2/3, premium audit
+
+Six items, owner-requested against a written plan (this pass carried forward
+non-negotiables from the tenth pass: MaCo's own fonts/colors only, reference
+sites as technique sources only per AGENTS.md §14/§19). Each item verified
+live in a real browser against a production build (`bun run preview`), not
+just `tsc`/`eslint`/`build`, before being committed. Two premise corrections
+made before building: the owner's brief assumed layout mode 2's diagonal
+wipe was missing entirely — it already worked, confirmed live before adding
+anything to it; and assumed the `/about` SSR bug was in `MaCoGlobe.tsx`
+itself — it's a module-scope `window.THREE` read three layers down the
+`react-globe.gl` → `globe.gl` → `three-globe` import chain, which
+`React.lazy` cannot prevent from running during streaming SSR (React error
+#419).
+
+1. **`/about` SSR fix** (ROADMAP item 8, closed this pass). Root cause: not
+   `MaCoGlobe.tsx` — `three-globe`'s own modules read `window.THREE` at
+   module scope, reached through a fully static import chain. `React.lazy`
+   still runs its factory's dynamic `import()` server-side to resolve a
+   Suspense boundary, so the `window` read throws regardless of the lazy
+   wrapper. Fixed with a `mounted` gate on `globe-section.tsx`'s `<Suspense>`
+   (same pattern `top-head.tsx`'s masked-heading swap already established),
+   so the dynamic import never runs on the server at all. Confirmed via the
+   server HTML (shell fallback present, zero "window is not defined", zero
+   #419 markers) and live hydration in both themes.
+2. **`?v2=` preview flag.** Added to `__root.tsx`'s existing pre-paint
+   script, same non-persisting-URL-override shape as `?layout=`/`?motion=`.
+   Everything below that changes shipped interaction ships behind it —
+   **as of this entry, none of items 3-5 below have been flipped to
+   default.** No flag reproduces today's site exactly; see each item's own
+   flag name to preview it.
+3. **Cursor system — semantic per-state hooks, theme/ground-aware paint,
+   footer torch** (`?v2=cursor,torch`). Replaced the old binary
+   `is-active` class with a resolved `data-state` (link/action/media/torch),
+   the semantic-class-hook shape `docs/references/minhpham/NOTES.md`
+   recommended generalizing WORK's cursor-follow into (ROADMAP item 6).
+   Ground-awareness reuses the existing `[data-ground]` token remap — the
+   cursor copies whatever ground the hovered element sits under onto
+   itself, so `var(--text)` resolves correctly at the cursor's own
+   position. Footer now carries `data-ground="deep"` (previously relied
+   only on the legacy `.section-inverted` class, which the adaptive header
+   sampler couldn't see — a second bug fixed for free). Torch:
+   `data-cursor="torch"` on the footer wordmark turns the cursor into the
+   light source over that zone — a radial gradient from `--sweep-light`
+   in a `screen` blend, OS pointer hidden only inside the zone. Wordmark
+   centers and grows, weight split per theme since Michroma has no weight
+   axis (800 on Obsidian's variable-weight Unbounded, 400 + tighter
+   tracking on Cobalt). Two real bugs caught live: button-styled links
+   (`.btn-solid`/`.btn-line`, which TanStack Router renders as `<a>`) were
+   resolving to the tiny "link" dot instead of "action" — fixed by
+   checking those classes, not just tag name; and the ring used to
+   collapse/re-grow moving between a button's child spans — fixed by
+   checking `relatedTarget` before clearing state. **This is the rule #8
+   go/no-go entry point** for the custom cursor shipped ninth pass — this
+   pass generalizes it, doesn't replace the caution.
+4. **Layout mode 2 — leading beam + staggered links** (`?v2=nav2`). The
+   diagonal clip-path wipe already worked (confirmed live before touching
+   anything). Added a skewed `--sweep-light` gradient band leading the
+   reveal and Motion-variant staggered link entrance. Real bug caught
+   live: a raw CSS `transform: "skewX(-18deg)"` string in the `style` prop
+   was silently dropped — Motion owns the `transform` property once it's
+   animating `x` and doesn't compose with a hand-written transform string
+   in the same object. Fixed via Motion's own `skewX` style value.
+5. **Layout mode 3 — rebuilt as split edge rails** (`?v2=nav3`). Mode 3 was
+   built as the same hamburger-overlay pattern as mode 2 — the opposite of
+   its actual reference. Rebuilt so nav splits to both screen edges with
+   the hero centred between, via two new stable classNames
+   (`header-brand-group`/`header-control-cluster`) rather than
+   `:first-child`/`:last-child`. Desktop (`lg+`) only; below `lg` this
+   flagged mode falls back to mode 1's own chrome (wordmark + the existing
+   bottom pill nav) rather than the hamburger, since rails don't fit a
+   390px phone. Two real bugs caught live: restoring the header's own CTA
+   at the control cluster's bottom edge duplicated the hero's own CTA
+   (TopHead's nav rail already lists Contact as a link too) — cut the
+   duplicate; and rail-to-hero clearance needed different padding at 1024
+   vs 1440 (measured via `getBoundingClientRect`, not guessed — 9rem read
+   as visibly tight at 1024, bumped to 10.5rem there, 13rem at 1440).
+6. **Premium/interactivity audit** (items 6 + 7b, proposal only — nothing
+   from this item is implemented). Fifteen units checked directly against
+   source: the homepage's 11 sections plus `/about`, `/work/$slug`,
+   `/products/$slug`, `/contact`. Written up in `docs/PREMIUM-AUDIT.md`
+   plus a published, filterable artifact. Headline findings: all four
+   non-homepage routes are on the deprecated `MotionSection` instead of
+   the homepage's actual motion vocabulary (`ScrubReveal`/`Stagger`) and
+   carry no `data-ground`/`aria-label`, so the adaptive chrome can't see
+   them; `/products/$slug` has a hardcoded `scrollProgress={0.45}`
+   freezing what should be a scroll-reactive field (a correctness bug, not
+   a taste one); `/work/$slug` has no imagery anywhere despite every
+   project already having real media in `content/maco.ts`. Four homepage
+   sections (IDENTITY, RECORD, OUTRO, and — narrowly — PREVIEW) are marked
+   "leave alone" deliberately, and one idea (an OVERVIEW figure count-up
+   tween) was considered and rejected as a generic-SaaS trope.
+
+**Found, confirmed pre-existing, not fixed this pass:** layout mode 2's
+trigger button can't be clicked to close once the panel is open — the
+full-screen panel's `z-[46]` sits above the header's `position:fixed`
+`z-[42]` stacking context, which no descendant z-index can escape.
+Confirmed pre-existing via `git stash` against a clean baseline (same
+z-index values on both sides of the stash). Escape and link-navigation both
+close it correctly — not broken, only incomplete. Logged in
+`docs/PREMIUM-AUDIT.md`'s cross-cutting findings rather than fixed here: the
+real fix means moving where the trigger renders, bigger than this pass's
+nav-chrome scope.
+
+**Still open, deliberately:** items 3-5 above ship behind `?v2=` flags only
+— `cursor,torch`, `nav2`, `nav3`. None have been flipped to default yet.
+Next session (or this one, later): review live, then flip approved items to
+default and delete the flag scaffolding for those, per the plan's own
+sequencing.
+
+Verified this pass: `bun run build`/`bun run lint`/`bunx tsc --noEmit`
+clean after every item (only the pre-existing `MaCoGlobe.tsx` `react-globe.gl`
+ref-type error, unchanged, confirmed identical on the clean baseline via
+`git stash`); live checks against a production build across both themes at
+1440/1024/390 per item; the no-flag path re-verified after each `?v2=`
+addition to confirm zero behavior change (0 console diffs); reduced-motion
+and coarse-pointer branches confirmed to render no cursor element at all,
+not just a hidden one.
 
 ## Read this first
 
