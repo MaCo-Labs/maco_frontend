@@ -148,6 +148,7 @@ export function EvidenceExpand() {
       <div
         ref={frameRef}
         data-cursor="media"
+        data-cursor-label="View"
         className="absolute left-1/2 top-1/2 overflow-hidden"
         style={{
           width: "36vw",

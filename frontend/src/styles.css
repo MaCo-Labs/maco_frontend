@@ -861,6 +861,28 @@ html.lenis:has(:target) {
   background: color-mix(in oklab, var(--text) 8%, transparent);
 }
 
+/* Short word/phrase inside the ring (§15-19's "VIEW"/"EXPLORE") — `content:
+   attr()` reads the value straight off the element's own `data-label`
+   (cursor.tsx writes it, never a second copy of the text in CSS). No
+   `overflow: hidden` on `.maco-cursor` itself, so a label wider than the
+   64px "media" ring it's paired with is free to spill past the ring's
+   edge rather than clip — acceptable since this is a decorative,
+   aria-hidden layer, never the actual link text. */
+.maco-cursor[data-label]::after {
+  content: attr(data-label);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
+}
+
 /* The footer wordmark zone (`data-cursor="torch"` in chrome.tsx's Footer)
    turns the cursor itself into the light source, rather than a highlight
    moving across the text. `--sweep-light` is the same signature light
@@ -1196,77 +1218,6 @@ html[data-theme="cobalt"] .footer-giant-mark {
   }
 }
 
-/* TOPHEAD's schematic annotation marks (top-head.tsx) — a corner register
-   mark drawing itself in (stroke-dashoffset), then a dashed leader fading
-   in just after. `both` fill keeps each at its end state before/after the
-   animation runs so there's no flash of the wrong pose. Both anchor to
-   `.cb-tophead`'s own top-right corner rather than tracking the headline's
-   text-driven width (which varies as `heroLines` cycles) — the headline
-   is left-aligned and capped at `16ch`, so this corner is empty space at
-   every width the marks are shown at (`md` and up only). */
-.hero-annot-corner {
-  position: absolute;
-  /* `.cb-tophead`'s own `md:` padding-top (11.25rem) clears the fixed
-     header - these marks only ever render at `md` and up (`hidden
-     md:block` in the markup), so anchoring to that same value lines
-     them up with the eyebrow instead of hiding behind the header. */
-  top: 11.25rem;
-  right: 0;
-  opacity: 0;
-  animation: hero-annot-draw 0.5s var(--ease-emphasis) 1.3s both;
-}
-.hero-annot-corner path {
-  stroke-dasharray: 27;
-  stroke-dashoffset: 27;
-  animation: hero-annot-line-draw 0.5s var(--ease-emphasis) 1.3s both;
-}
-.hero-annot-leader {
-  position: absolute;
-  top: 14.25rem;
-  right: 0;
-  opacity: 0;
-  transform: translateX(8px);
-  animation: hero-annot-fade 0.5s var(--ease-emphasis) 1.6s both;
-}
-@keyframes hero-annot-draw {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.55;
-  }
-}
-@keyframes hero-annot-line-draw {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-@keyframes hero-annot-fade {
-  from {
-    opacity: 0;
-    transform: translateX(8px);
-  }
-  to {
-    opacity: 0.4;
-    transform: translateX(0);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .hero-annot-corner {
-    animation: none;
-    opacity: 0.55;
-  }
-  .hero-annot-corner path {
-    animation: none;
-    stroke-dashoffset: 0;
-  }
-  .hero-annot-leader {
-    animation: none;
-    opacity: 0.4;
-    transform: none;
-  }
-}
-
 /* MaskedHeading's video layer (masked-heading.tsx) — the only real
    footage on the site is Bridge's 1024x576 capture; at hero-headline
    scale that would upscale into legible UI fragments rather than read
@@ -1550,20 +1501,20 @@ html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-lead {
     align-items: flex-start;
     pointer-events: auto;
   }
+  /* `<nav>` itself becomes a passthrough box so its two rail children (each
+     `display: contents` in modes 1/2 — see chrome.tsx's NavLink comment) can
+     position independently against `.shell` below, rather than as one flex
+     row. */
   html[data-layout="3"] .header-nav-row {
+    display: contents;
+  }
+  html[data-layout="3"] .header-rail-left,
+  html[data-layout="3"] .header-rail-right {
     display: flex;
     position: absolute;
-    /* Matches `.shell`'s own padding-inline at this breakpoint. An
-       absolutely-positioned child escapes its containing block's padding
-       entirely, so `left: 0` sat flush at the true viewport edge on any
-       width narrower than the shell's own 88rem cap (everything below
-       ~1440px) — confirmed live: uppercase glyphs with heavy left strokes
-       (W, P) read as clipped there, not just tight. */
-    left: 2.5rem;
     top: 50%;
     transform: translateY(-50%);
     flex-direction: column;
-    align-items: flex-start;
     gap: 0.9rem;
     pointer-events: auto;
     /* The rail is fixed for the whole page (`header.chrome-adaptive` is
@@ -1582,9 +1533,35 @@ html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-lead {
     border-radius: 1rem;
     border: 1px solid var(--line);
   }
-  html[data-layout="3"] .header-control-cluster {
-    flex-direction: column;
+  html[data-layout="3"] .header-rail-left {
+    /* Matches `.shell`'s own padding-inline at this breakpoint. An
+       absolutely-positioned child escapes its containing block's padding
+       entirely, so `left: 0` sat flush at the true viewport edge on any
+       width narrower than the shell's own 88rem cap (everything below
+       ~1440px) — confirmed live: uppercase glyphs with heavy left strokes
+       (W, P) read as clipped there, not just tight. */
+    left: 2.5rem;
+    align-items: flex-start;
+  }
+  html[data-layout="3"] .header-rail-right {
+    right: 2.5rem;
     align-items: flex-end;
+    text-align: right;
+  }
+  /* Layout + theme switches move off the header's own top-right corner to
+     a fixed bottom-left cluster (owner's call) — `.header-control-cluster`
+     was previously a column at the end of the header's flex row, which
+     read as top-right once that row stretched to the header's full
+     100vh height. `position: fixed` here, same move the rails already
+     make, decouples it from that column and its now-vacated corner. */
+  html[data-layout="3"] .header-control-cluster {
+    position: fixed;
+    left: 2.5rem;
+    right: auto;
+    top: auto;
+    bottom: 2rem;
+    flex-direction: row;
+    align-items: center;
     gap: 0.75rem;
     pointer-events: auto;
   }
@@ -1600,19 +1577,22 @@ html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-lead {
     justify-content: center;
     padding-inline: 13rem;
   }
-  /* The rail is `top: 50%` inside a `height: 100vh` fixed header, so it
-     stays dead-centre in the viewport for the ENTIRE page, not just the
-     hero — every section below TOPHEAD scrolls straight underneath it.
-     TOPHEAD already reserves 13rem/10.5rem above for its own spacious
-     hero composition; every OTHER section needs at least enough left
-     clearance to stay out from behind the rail's own pill (measured live
-     at ~5.2rem wide from a 2.5rem inset — 10rem leaves real margin).
-     Scoped to `section .shell` so it never touches the header's own
-     `.shell` (that one's positioning is what the rail rules above
-     already own) — confirmed live: without this, layout 3 read as
-     broken rather than merely minimal past the first screen. */
-  html[data-layout="3"] section .shell {
-    padding-left: 10rem;
+  /* Both rails are `top: 50%` inside a `height: 100vh` fixed header, so
+     they stay dead-centre in the viewport for the ENTIRE page, not just
+     the hero — every section below TOPHEAD scrolls straight underneath
+     them. TOPHEAD already reserves 13rem above for its own spacious hero
+     composition; every OTHER section needs at least enough clearance on
+     BOTH edges now that a second rail sits opposite the first (measured
+     live at ~5.2rem wide from a 2.5rem inset — 10rem leaves real margin
+     each side). `footer .shell` is included alongside `section .shell`:
+     `<footer>` isn't a `<section>` so the selector wouldn't otherwise
+     reach it, and the footer's own Index/Contact columns sit exactly as
+     flush-left as any section's copy would. Confirmed live: without this,
+     layout 3 read as broken rather than merely minimal past the first
+     screen. */
+  html[data-layout="3"] section .shell,
+  html[data-layout="3"] footer .shell {
+    padding-inline: 10rem;
   }
 }
 /* This used to give 1024-1200 its own smaller padding-inline (10.5rem)

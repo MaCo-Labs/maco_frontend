@@ -1,8 +1,10 @@
+import type { CSSProperties } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getService, getProject, getProduct, services, type Service } from "@/content/maco";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
-import { MotionSection } from "@/components/motion-section";
+import { ScrubReveal } from "@/components/motion/scrub-reveal";
+import { Stagger } from "@/components/motion/stagger";
 
 export const Route = createFileRoute("/services/$slug")({
   loader: ({ params }) => {
@@ -38,7 +40,7 @@ function ServiceDetail() {
 
   return (
     <>
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Introduction" className="rule-b">
         <div className="shell grid gap-8 py-16 lg:grid-cols-12 lg:py-24">
           <div className="lg:col-span-3">
             <p className="label">Service / {service.index}</p>
@@ -53,32 +55,38 @@ function ServiceDetail() {
             <LineReveal as="h1" className="display-lg">
               {service.title}
             </LineReveal>
-            <p className="mt-8 max-w-2xl text-lg leading-snug">{service.description}</p>
+            <ScrubReveal as="p" hold className="mt-8 max-w-2xl text-lg leading-snug">
+              {service.description}
+            </ScrubReveal>
           </div>
         </div>
       </section>
 
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Capabilities" className="rule-b">
         <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
           <p className="label lg:col-span-3">Capabilities</p>
           <div className="lg:col-span-9">
-            {service.capabilities.map((c, i) => (
-              <MotionSection
-                key={c.title}
-                delay={i * 70}
-                className="rule-t grid gap-2 py-6 md:grid-cols-12 md:gap-6"
-              >
-                <span className="label md:col-span-1">{String(i + 1).padStart(2, "0")}</span>
-                <h2 className="font-display text-xl tracking-[-0.03em] md:col-span-4">{c.title}</h2>
-                <p className="max-w-xl text-sm text-muted md:col-span-7">{c.description}</p>
-              </MotionSection>
-            ))}
+            <Stagger as="div" gap={0.1} band={0.35}>
+              {service.capabilities.map((c, i) => (
+                <div
+                  key={c.title}
+                  className="stagger-item rule-t grid gap-2 py-6 md:grid-cols-12 md:gap-6"
+                  style={{ "--i": i } as CSSProperties}
+                >
+                  <span className="label md:col-span-1">{String(i + 1).padStart(2, "0")}</span>
+                  <h2 className="font-display text-xl tracking-[-0.03em] md:col-span-4">
+                    {c.title}
+                  </h2>
+                  <p className="max-w-xl text-sm text-muted md:col-span-7">{c.description}</p>
+                </div>
+              ))}
+            </Stagger>
             <div className="rule-t" />
           </div>
         </div>
       </section>
 
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Evidence" className="rule-b">
         <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
           <p className="label lg:col-span-3">Evidence</p>
           <div
@@ -128,7 +136,7 @@ function ServiceDetail() {
         </div>
       </section>
 
-      <section>
+      <section data-ground="paper" aria-label="Next service">
         <div className="shell flex flex-col gap-4 py-14 sm:flex-row sm:items-end sm:justify-between lg:py-20">
           <div>
             <p className="label">Next service</p>

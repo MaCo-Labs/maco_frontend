@@ -12,6 +12,7 @@ import { useOverlayMenu } from "@/hooks/use-overlay-menu";
 import { Magnetic } from "@/components/motion/magnetic";
 import { getScrollRuntime } from "@/lib/scroll-runtime";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
+import { DUR, EASE_EMPHASIS, EASE_EXIT } from "@/lib/motion";
 
 function ThemeSwitch() {
   const { theme, setTheme } = useTheme();
@@ -93,9 +94,8 @@ function MobilePillNav() {
   // `maco-rise` keyframe but had no exit, snapping out of existence
   // (motion audit, PHASE-2-MOTION-PLAN.md item 1). AnimatePresence needs
   // the values as JS so exit gets the same easing as enter.
-  const easeEmphasis = [0.16, 1, 0.3, 1] as const;
-  const enterTransition = reduced ? { duration: 0 } : { duration: 0.45, ease: easeEmphasis };
-  const exitTransition = reduced ? { duration: 0 } : { duration: 0.3, ease: easeEmphasis };
+  const enterTransition = reduced ? { duration: 0 } : { duration: 0.45, ease: EASE_EMPHASIS };
+  const exitTransition = reduced ? { duration: 0 } : { duration: 0.3, ease: EASE_EMPHASIS };
 
   return (
     <>
@@ -250,12 +250,8 @@ function useLayoutNavState() {
     panelRef,
     triggerRef,
     reduced,
-    enterTransition: reduced
-      ? { duration: 0 }
-      : ({ duration: 0.6, ease: [0.16, 1, 0.3, 1] } as const),
-    exitTransition: reduced
-      ? { duration: 0 }
-      : ({ duration: 0.4, ease: [0.4, 0, 0.2, 1] } as const),
+    enterTransition: reduced ? { duration: 0 } : ({ duration: 0.6, ease: EASE_EMPHASIS } as const),
+    exitTransition: reduced ? { duration: 0 } : ({ duration: DUR.ui, ease: EASE_EXIT } as const),
   };
 }
 
@@ -322,6 +318,17 @@ function LayoutNavTrigger({ nav, className }: { nav: LayoutNavState; className: 
  * A leading light beam and a staggered link entrance, layered on TOP of
  * the wipe above — the wipe itself is the base mechanism, this is polish
  * on top of it.
+ *
+ * Background is `var(--accent)` at 92%, not solid — the owner's own
+ * screen recording of the reference mechanic (§0.6) shows the page
+ * content staying dimly visible through/around the wipe, not disappearing
+ * behind an opaque block. `backdrop-filter: blur` keeps whatever shows
+ * through soft rather than legible, so it reads as depth/atmosphere behind
+ * the panel rather than a competing layer of text. 92% (not lower) is a
+ * contrast floor, not a taste choice: `--accent-ink` is near-white in both
+ * themes, and Cobalt's `--accent` is a mid-lightness blue rather than
+ * Obsidian's near-black — a more transparent panel risks a light section
+ * bleeding enough luminance through to weaken that pairing under AA.
  */
 function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -338,7 +345,7 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
     visible: {
       opacity: 1,
       y: 0,
-      transition: reduced ? { duration: 0 } : { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
+      transition: reduced ? { duration: 0 } : { duration: DUR.ui, ease: EASE_EMPHASIS },
     },
   };
 
@@ -352,8 +359,11 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
           role="dialog"
           aria-modal="true"
           aria-label="Site navigation"
-          className="fixed inset-0 z-[46] flex flex-col justify-center overflow-hidden"
-          style={{ background: "var(--accent)", color: "var(--accent-ink)" }}
+          className="fixed inset-0 z-[46] flex flex-col justify-center overflow-hidden backdrop-blur-xl"
+          style={{
+            background: "color-mix(in oklab, var(--accent) 92%, transparent)",
+            color: "var(--accent-ink)",
+          }}
           initial={{ clipPath: LAYOUT_NAV_CLOSED }}
           animate={{ clipPath: LAYOUT_NAV_OPEN, transition: enterTransition }}
           exit={{ clipPath: LAYOUT_NAV_CLOSED, transition: exitTransition }}
@@ -379,7 +389,7 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
             }}
             initial={{ x: "-140%" }}
             animate={{ x: "140%" }}
-            transition={reduced ? { duration: 0 } : { duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+            transition={reduced ? { duration: 0 } : { duration: 0.75, ease: EASE_EMPHASIS }}
           />
 
           <motion.nav
@@ -431,6 +441,29 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/** One desktop nav link, factored out of the header's `<nav>` so it can be
+ *  rendered twice — once per rail (§7) — without duplicating the
+ *  active-state logic. */
+function NavLink({
+  item,
+  pathname,
+}: {
+  item: { to: (typeof site.nav)[number]["to"]; label: string };
+  pathname: string;
+}) {
+  const active = pathname === item.to || pathname.startsWith(item.to + "/");
+  return (
+    <Link
+      to={item.to}
+      className="label link-draw transition-colors"
+      style={{ color: active ? "var(--text)" : "var(--muted)" }}
+      aria-current={active ? "page" : undefined}
+    >
+      {item.label}
+    </Link>
   );
 }
 
@@ -561,20 +594,26 @@ export function Header() {
           </div>
 
           <nav className="header-nav-row hidden items-center gap-7 lg:flex" aria-label="Primary">
-            {site.nav.map((item) => {
-              const active = pathname === item.to || pathname.startsWith(item.to + "/");
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className="label link-draw transition-colors"
-                  style={{ color: active ? "var(--text)" : "var(--muted)" }}
-                  aria-current={active ? "page" : undefined}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+            {/* `display: contents` in modes 1/2 (styles.css default) so
+                these two groups are invisible to the flex row above — all
+                six links lay out as one flat list, left-then-right in
+                `site.nav`'s own order, unchanged from before this split.
+                Mode 3 gives each group its own box and positions them as
+                the two edge rails (§0.5/§7) instead. */}
+            <div className="header-rail-left contents">
+              {site.nav
+                .filter((item) => item.rail === "left")
+                .map((item) => (
+                  <NavLink key={item.to} item={item} pathname={pathname} />
+                ))}
+            </div>
+            <div className="header-rail-right contents">
+              {site.nav
+                .filter((item) => item.rail === "right")
+                .map((item) => (
+                  <NavLink key={item.to} item={item} pathname={pathname} />
+                ))}
+            </div>
           </nav>
 
           <div className="header-control-cluster flex items-center gap-3">

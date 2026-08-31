@@ -138,6 +138,7 @@ function SummaryCard({
   title,
   caption,
   meta,
+  cursorLabel,
 }: {
   i: number;
   to: string;
@@ -147,6 +148,7 @@ function SummaryCard({
   title: string;
   caption: string;
   meta: string;
+  cursorLabel: string;
 }) {
   return (
     <article className="stagger-item" style={{ "--i": i } as CSSProperties}>
@@ -154,6 +156,7 @@ function SummaryCard({
         to={to}
         params={params}
         data-cursor="media"
+        data-cursor-label={cursorLabel}
         className="group block transition-transform duration-500 hover:-translate-y-1.5"
       >
         <CardMedia media={media} brand={brand} title={title} />
@@ -196,6 +199,7 @@ export function FeaturedWork() {
             title={p.title}
             caption={p.short_description}
             meta={p.index}
+            cursorLabel="View →"
           />
         ))}
       </Stagger>
@@ -228,6 +232,7 @@ export function ProductSummary() {
             title={p.title}
             caption={p.short_description}
             meta={p.kind}
+            cursorLabel="Explore"
           />
         ))}
       </Stagger>

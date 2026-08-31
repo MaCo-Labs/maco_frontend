@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { getProduct } from "@/content/maco";
 import { Mark } from "@/components/mark";
+import { Magnetic } from "@/components/motion/magnetic";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { getLiveScrollRuntime, getScrollRuntime } from "@/lib/scroll-runtime";
+import { DUR, EASE_EMPHASIS } from "@/lib/motion";
 
 const RADIUS = 54;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const EASE_EMPHASIS = [0.16, 1, 0.3, 1] as const;
 
 /**
  * First-paint loader: a percentage ring around MaCo's mark, on `deep`
@@ -26,6 +27,18 @@ const EASE_EMPHASIS = [0.16, 1, 0.3, 1] as const;
  * through URL-param overrides the pre-paint script doesn't know about) —
  * it exists to unmount cleanly and skip the scroll lock, not to hide
  * anything the CSS rule hasn't already hidden.
+ *
+ * Two states past the skip check, not one: `ready` (the counter reached
+ * 100) and `done` (the visitor clicked through). Motion/nav pass §35 —
+ * the loader used to call both at once (auto-transitioning the instant
+ * progress finished), which reads as the page yanking the visitor in
+ * rather than inviting them. `ready` reveals a real "Enter" action instead
+ * and holds there; only that click sets `done`, which is what actually
+ * unmounts the overlay and releases the scroll lock. The skip branch
+ * (reduced motion / same-session repeat) still sets `done` directly — an
+ * Enter click has nothing to add for a visitor who's already told the
+ * site they don't want the ceremony, or has already sat through it once
+ * this session.
  *
  * Progress is a proxy tween, not byte-accounted.
  * ponytail: time-based illusion, swap for real resource tracking only if
@@ -46,10 +59,15 @@ const EASE_EMPHASIS = [0.16, 1, 0.3, 1] as const;
  */
 export function Preloader() {
   const reduced = useReducedMotion();
+  const [ready, setReady] = useState(false);
   const [done, setDone] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const circleRef = useRef<SVGCircleElement>(null);
   const numeralRef = useRef<HTMLSpanElement>(null);
+  // Captured once at lock time, read back by `enterSite` on click — the
+  // effect's own cleanup (below) only ever fires on unmount/dep-change,
+  // never as a result of that click, so the unlock can't live there.
+  const prevOverflowRef = useRef("");
 
   useEffect(() => {
     if (document.documentElement.dataset["preload"] === "skip" || reduced) {
@@ -65,7 +83,7 @@ export function Preloader() {
 
     const rt0 = getLiveScrollRuntime();
     rt0?.lenis.stop();
-    const prevOverflow = document.body.style.overflow;
+    prevOverflowRef.current = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     let cancelled = false;
@@ -79,18 +97,19 @@ export function Preloader() {
       containerRef.current?.setAttribute("aria-valuenow", String(Math.round(clamped)));
     };
 
-    const finish = () => {
+    const showEnter = () => {
       if (cancelled) return;
       write(100);
-      setDone(true);
+      setReady(true);
     };
 
     getScrollRuntime().then((rt) => {
       if (cancelled) return;
       if (!rt) {
-        // Blocked dynamic import (offline, extension, CSP) — finish rather
-        // than leave the page stuck behind a loader that can never animate.
-        finish();
+        // Blocked dynamic import (offline, extension, CSP) — still gate on
+        // a click rather than leave the page stuck, just skip straight to
+        // the ring's finished state.
+        showEnter();
         return;
       }
       rt.lenis.stop();
@@ -133,7 +152,7 @@ export function Preloader() {
           duration: 0.25,
           ease: "power2.out",
           onUpdate: () => write(proxy.v),
-          onComplete: finish,
+          onComplete: showEnter,
         });
       });
     });
@@ -141,9 +160,24 @@ export function Preloader() {
     return () => {
       cancelled = true;
       getLiveScrollRuntime()?.lenis.start();
-      document.body.style.overflow = prevOverflow;
+      document.body.style.overflow = prevOverflowRef.current;
     };
   }, [reduced]);
+
+  const enterSite = () => {
+    getLiveScrollRuntime()?.lenis.start();
+    document.body.style.overflow = prevOverflowRef.current;
+    setDone(true);
+  };
+
+  const enterButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    // The preloader is the only interactive surface on screen while it's
+    // up (scroll is locked) — move focus to the one action that exists
+    // the moment it appears, rather than leaving a keyboard visitor to
+    // hunt for it.
+    if (ready) enterButtonRef.current?.focus();
+  }, [ready]);
 
   return (
     <AnimatePresence>
@@ -165,38 +199,72 @@ export function Preloader() {
             transition: reduced ? { duration: 0 } : { duration: 0.7, ease: EASE_EMPHASIS },
           }}
         >
-          <div className="relative flex items-center justify-center">
-            <svg width={128} height={128} viewBox="0 0 128 128" className="-rotate-90">
-              <circle
-                cx={64}
-                cy={64}
-                r={RADIUS}
-                fill="none"
-                stroke="var(--line-inverted)"
-                strokeWidth={2}
-              />
-              <circle
-                ref={circleRef}
-                cx={64}
-                cy={64}
-                r={RADIUS}
-                fill="none"
-                stroke="var(--focus)"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeDasharray={CIRCUMFERENCE}
-                strokeDashoffset={CIRCUMFERENCE}
-              />
-            </svg>
-            <Mark size={32} className="absolute" />
-            <span
-              ref={numeralRef}
-              className="label absolute -bottom-9"
-              style={{ color: "var(--muted-inverted)" }}
-              aria-hidden="true"
-            >
-              0
-            </span>
+          <div className="flex flex-col items-center gap-10">
+            <div className="relative flex items-center justify-center">
+              <svg width={128} height={128} viewBox="0 0 128 128" className="-rotate-90">
+                <circle
+                  cx={64}
+                  cy={64}
+                  r={RADIUS}
+                  fill="none"
+                  stroke="var(--line-inverted)"
+                  strokeWidth={2}
+                />
+                <circle
+                  ref={circleRef}
+                  cx={64}
+                  cy={64}
+                  r={RADIUS}
+                  fill="none"
+                  stroke="var(--focus)"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeDasharray={CIRCUMFERENCE}
+                  strokeDashoffset={CIRCUMFERENCE}
+                />
+              </svg>
+              <Mark size={32} className="absolute" />
+              <span
+                ref={numeralRef}
+                className="label absolute -bottom-9"
+                style={{ color: "var(--muted-inverted)" }}
+                aria-hidden="true"
+              >
+                0
+              </span>
+            </div>
+
+            {/* §35 — a deliberate "Enter" beat rather than auto-transitioning
+                the moment loading finishes. `.btn-solid` resolves through
+                this container's own `data-ground="deep"` remap (styles.css),
+                same as every other themed control on the site — no override
+                needed for it to read correctly against `--surface-inverted`. */}
+            <AnimatePresence>
+              {ready && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    transition: reduced
+                      ? { duration: 0 }
+                      : { duration: DUR.ui, ease: EASE_EMPHASIS },
+                  }}
+                  exit={{ opacity: 0, transition: { duration: 0.2 } }}
+                >
+                  <Magnetic>
+                    <button
+                      ref={enterButtonRef}
+                      type="button"
+                      onClick={enterSite}
+                      className="btn-solid"
+                    >
+                      Enter <span aria-hidden="true">→</span>
+                    </button>
+                  </Magnetic>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
       )}

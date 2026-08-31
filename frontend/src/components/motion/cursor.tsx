@@ -127,6 +127,12 @@ export function Cursor() {
         const ground = hit.closest("[data-ground]")?.getAttribute("data-ground");
         if (ground) el.dataset["ground"] = ground;
         else delete el.dataset["ground"];
+        // Optional short word/phrase (§15-19's "VIEW" / "EXPLORE") — read
+        // straight off the hit target rather than a second lookup table, CSS
+        // renders it via `content: attr(data-label)` (styles.css).
+        const label = hit.getAttribute("data-cursor-label");
+        if (label) el.dataset["label"] = label;
+        else delete el.dataset["label"];
       };
       const onOut = (e: PointerEvent) => {
         const selector = CURSOR_SELECTOR;
@@ -142,6 +148,7 @@ export function Cursor() {
         if (next === hit) return;
         delete el.dataset["state"];
         delete el.dataset["ground"];
+        delete el.dataset["label"];
       };
       const onLeaveWindow = () => {
         el.style.opacity = "0";

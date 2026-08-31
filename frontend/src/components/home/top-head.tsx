@@ -91,50 +91,11 @@ export function TopHead() {
       <div aria-hidden="true" className="hero-backlight" />
       <div aria-hidden="true" className="hero-grain" />
       <div className="shell cb-tophead relative">
-        {/* Schematic annotation marks — a corner register mark and a
-            dashed leader, the kind of precision-drawing device that
-            reads "this was measured, not guessed." Studied from
-            Sharplink's hero (a dark, serious B2B site — the closest
-            register to MaCo of the reference set checked this pass),
-            which pairs a 3D wireframe with exactly this vocabulary;
-            reimplemented here in plain SVG/CSS with MaCo's own tokens,
-            no 3D and no new dependency. `--line`/`--muted` resolve
-            through this section's `[data-ground="deep"]` remap same as
-            everywhere else. Desktop-only (`hidden md:block`): at hero
-            scale on a phone there's no spare margin for a decoration
-            that isn't the headline itself. Reveals just after
-            `SplitReveal`'s brand-row settle (~1.2s), not simultaneously
-            with it, so it reads as a second, quieter beat rather than
-            competing for the same first glance. */}
-        <svg
-          aria-hidden="true"
-          className="hero-annot-corner hidden md:block"
-          width="40"
-          height="40"
-          viewBox="0 0 40 40"
-          fill="none"
-        >
-          <path d="M1 14V1H14" stroke="var(--line-strong)" strokeWidth="1" />
-        </svg>
-        <svg
-          aria-hidden="true"
-          className="hero-annot-leader hidden md:block"
-          width="88"
-          height="2"
-          viewBox="0 0 88 2"
-          fill="none"
-        >
-          <line
-            x1="0"
-            y1="1"
-            x2="76"
-            y2="1"
-            stroke="var(--muted)"
-            strokeWidth="1"
-            strokeDasharray="3 4"
-          />
-          <circle cx="84" cy="1" r="2.5" fill="none" stroke="var(--muted)" strokeWidth="1" />
-        </svg>
+        {/* The corner register mark + dashed leader that lived here
+            (studied from Sharplink's hero) are removed per the owner's
+            own annotated screenshots (motion/nav pass §10) — decorative,
+            purposeless floating boxes in both themes, not part of the
+            intended hero composition. */}
 
         <ScrubReveal as="p" hold className="cb-tophead-eyebrow label">
           {site.category}

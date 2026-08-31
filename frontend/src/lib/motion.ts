@@ -26,6 +26,30 @@ export const rubberband = (overshoot: number, dimension: number, constant = 0.55
 export const SPRING_MOMENTUM = { type: "spring", bounce: 0.2, duration: 0.4 } as const;
 
 /**
+ * House easing curves — numerically identical to `--ease-emphasis` /
+ * `--ease-standard` in styles.css (that pair is CSS's copy for
+ * transition/animation properties; these are the same curves as JS arrays
+ * for GSAP/Motion, which can't read a custom property into a tween config).
+ * Previously duplicated as inline literals in chrome.tsx (x4) and
+ * preloader.tsx — centralized here per the "one source, not scattered
+ * magic numbers" rule.
+ */
+export const EASE_EMPHASIS = [0.16, 1, 0.3, 1] as const;
+export const EASE_EXIT = [0.4, 0, 0.2, 1] as const;
+
+/**
+ * Duration bands, tuned by feel not treated as exact (motion-and-navigation
+ * pass, §9): micro interactions, general UI state changes, and full section
+ * transitions each read differently at a glance even before the easing is
+ * considered.
+ */
+export const DUR = {
+  micro: 0.2,
+  ui: 0.4,
+  section: 0.9,
+} as const;
+
+/**
  * Motion preference resolution — the single source of truth read by BOTH
  * `useReducedMotion()` and `getScrollRuntime()`, so they can never disagree
  * (previously two independent `matchMedia` calls).
