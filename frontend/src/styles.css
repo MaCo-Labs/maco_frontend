@@ -809,19 +809,13 @@ html.lenis:has(:target) {
   }
 }
 
-/* Custom cursor (components/motion/cursor.tsx) — position written by GSAP
+/* Custom cursor (components/motion/cursor.tsx) - position written by GSAP
    quickSetter every frame (see that file's own comment for why),
-   everything else here is CSS. Default paint (no `?v2=` flag): one ring,
-   `background: white` + `mix-blend-mode: difference` — the standard
-   technique for a cursor guaranteed visible against ANY backdrop, so it
-   never needs a --text/--bg lookup. white is the same token-free mix
-   target .maco-shine above already uses, not a new colour.
-   `[data-state]` (any value) is written whenever the pointer is over
-   something hoverable — renamed from a plain `.is-active` class so the
-   same attribute also carries which state (cursor.tsx's `resolveState`),
-   for the flagged rules below to key off. The bare presence check here
-   keeps default (no-flag) behaviour identical to the old class: every
-   hoverable enlarges the same ring, regardless of which state it is. */
+   everything else here is CSS. Semantic per-state sizes, painted from
+   var(--text) (the cursor's own data-ground copy resolves it, see
+   cursor.tsx) so the ring reads as MaCo's ink on whichever ground/theme
+   it's actually over. mix-blend-mode stays normal since the token IS the
+   correct colour, nothing to invert against an unknown backdrop. */
 .maco-cursor {
   position: fixed;
   top: 0;
@@ -831,8 +825,8 @@ html.lenis:has(:target) {
   margin-left: -9px;
   margin-top: -9px;
   border-radius: 999px;
-  background: white;
-  mix-blend-mode: difference;
+  background: transparent;
+  border: 1.5px solid var(--text);
   pointer-events: none;
   z-index: 60;
   transition:
@@ -843,26 +837,8 @@ html.lenis:has(:target) {
     background-color 0.25s var(--ease-emphasis),
     border-color 0.25s var(--ease-emphasis);
 }
-.maco-cursor[data-state] {
-  width: 44px;
-  height: 44px;
-  margin-left: -22px;
-  margin-top: -22px;
-}
 
-/* Eleventh-pass preview: `?v2=cursor` — semantic per-state sizes, painted
-   from `var(--text)` (the cursor's own `data-ground` copy resolves it, see
-   cursor.tsx) instead of a fixed white diff-blend, so the ring reads as
-   MaCo's ink on whichever ground/theme it's actually over. Higher
-   specificity than the two rules above, so it overrides them cleanly
-   without needing `!important`; drops `mix-blend-mode` back to normal
-   since the token IS the correct colour now, nothing to invert. */
-html[data-v2~="cursor"] .maco-cursor {
-  background: transparent;
-  border: 1.5px solid var(--text);
-  mix-blend-mode: normal;
-}
-html[data-v2~="cursor"] .maco-cursor[data-state="link"] {
+.maco-cursor[data-state="link"] {
   width: 8px;
   height: 8px;
   margin-left: -4px;
@@ -870,14 +846,14 @@ html[data-v2~="cursor"] .maco-cursor[data-state="link"] {
   background: var(--text);
   border-color: transparent;
 }
-html[data-v2~="cursor"] .maco-cursor[data-state="action"] {
+.maco-cursor[data-state="action"] {
   width: 44px;
   height: 44px;
   margin-left: -22px;
   margin-top: -22px;
   background: color-mix(in oklab, var(--text) 12%, transparent);
 }
-html[data-v2~="cursor"] .maco-cursor[data-state="media"] {
+.maco-cursor[data-state="media"] {
   width: 64px;
   height: 64px;
   margin-left: -32px;
@@ -885,18 +861,15 @@ html[data-v2~="cursor"] .maco-cursor[data-state="media"] {
   background: color-mix(in oklab, var(--text) 8%, transparent);
 }
 
-/* Eleventh-pass preview: `?v2=torch` — the footer wordmark zone
-   (`data-cursor="torch"` in chrome.tsx's Footer) turns the cursor itself
-   into the light source, rather than a highlight moving across the text.
-   Works standalone (without the `cursor` flag above) since it's scoped to
-   one explicit state, not the general state system — higher specificity
-   than either unflagged rule, so it applies regardless of `?v2=cursor`.
-   `--sweep-light` is the same signature light token `.light-pass` already
-   uses (near-white on Obsidian, warm on Cobalt) — not a new colour.
-   `screen` blend is what makes a soft radial actually read as cast light
-   rather than a painted circle; the torch zone is always `data-ground=
-   "deep"` (chrome.tsx), so it never has to also work against paper. */
-html[data-v2~="torch"] .maco-cursor[data-state="torch"] {
+/* The footer wordmark zone (`data-cursor="torch"` in chrome.tsx's Footer)
+   turns the cursor itself into the light source, rather than a highlight
+   moving across the text. `--sweep-light` is the same signature light
+   token `.light-pass` already uses (near-white on Obsidian, warm on
+   Cobalt) - not a new colour. `screen` blend is what makes a soft radial
+   actually read as cast light rather than a painted circle; the torch
+   zone is always `data-ground="deep"` (chrome.tsx), so it never has to
+   also work against paper. */
+.maco-cursor[data-state="torch"] {
   width: 22rem;
   height: 22rem;
   margin-left: -11rem;
@@ -915,15 +888,14 @@ html[data-v2~="torch"] .maco-cursor[data-state="torch"] {
    once a real cursor element is mounted (`data-cursor-active`, set/removed
    by cursor.tsx's effect) — never on touch or reduced motion, where that
    attribute is never written and the real pointer is the only pointer. */
-html[data-cursor-active="1"][data-v2~="torch"] [data-cursor="torch"] {
+html[data-cursor-active="1"] [data-cursor="torch"] {
   cursor: none;
 }
 
-/* Optional: dims the rest of the footer while the torch is lit, so the
-   wordmark reads as the only thing catching light. `:has()` keeps this a
-   one-rule, no-JS effect — cut if it reads as fussy rather than
-   atmospheric once seen live. */
-html[data-v2~="torch"] footer:has([data-cursor="torch"]:hover) .shell:not(:last-child) {
+/* Dims the rest of the footer while the torch is lit, so the wordmark
+   reads as the only thing catching light. `:has()` keeps this a one-rule,
+   no-JS effect. */
+footer:has([data-cursor="torch"]:hover) .shell:not(:last-child) {
   opacity: 0.6;
   transition: opacity 0.3s var(--ease-standard);
 }
@@ -935,14 +907,13 @@ html[data-v2~="torch"] footer:has([data-cursor="torch"]:hover) .shell:not(:last-
    onto the element; that resting value is the correct static composition,
    so there's no separate reduced-motion or touch branch to write.
    background-clip:text needs color:transparent on the same element (set
-   inline by the Footer caller, winning over this class). Radius is
-   viewport-relative (`22vw`), not element-relative despite what an
-   earlier version of this comment claimed — kept as-is for the unflagged
-   default; `?v2=torch` below matches it to the torch cursor's own radius
-   instead, so the lit letters and the cast light read as one light. */
+   inline by the Footer caller, winning over this class). `circle 14rem`
+   matches the torch cursor's own radius (this file's `[data-state="torch"]`
+   rule above) so the trace gradient and the cast light share one falloff
+   instead of reading as two effects. */
 .wordmark-trace {
   --wordmark-grad: radial-gradient(
-    circle 22vw at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
+    circle 14rem at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
     var(--text),
     color-mix(in oklab, var(--text) 10%, transparent)
   );
@@ -951,6 +922,11 @@ html[data-v2~="torch"] footer:has([data-cursor="torch"]:hover) .shell:not(:last-
   -webkit-background-clip: text;
 }
 
+/* Centred, pairing with the torch cursor above. Weight is per-theme, not
+   shared: Unbounded (Obsidian) is a loaded `wght@200..900` variable axis,
+   so 800 costs nothing extra; Michroma (Cobalt) is single-static-weight
+   (AGENTS.md §13) and would fake-bold if forced, so Cobalt gets mass from
+   size and tighter tracking instead. */
 .footer-giant-mark {
   display: block;
   width: 100%;
@@ -959,34 +935,15 @@ html[data-v2~="torch"] footer:has([data-cursor="torch"]:hover) .shell:not(:last-
   font-weight: 400;
   line-height: 0.82;
   letter-spacing: -0.03em;
-  font-size: clamp(4.5rem, 15vw, 12rem);
+  text-align: center;
+  font-size: clamp(5rem, 22vw, 20rem);
   white-space: nowrap;
   color: transparent;
 }
-
-/* Eleventh-pass preview: `?v2=torch` — centred and substantially larger,
-   pairing with the torch cursor above. Weight is per-theme, not shared:
-   Unbounded (Obsidian) is a loaded `wght@200..900` variable axis, so 800
-   costs nothing extra; Michroma (Cobalt) is single-static-weight (AGENTS.md
-   §13) and would fake-bold if forced, so Cobalt gets mass from size and
-   tighter tracking instead. `circle 14rem` matches the torch cursor's own
-   radius (styles.css's `[data-state="torch"]` rule) so the trace gradient
-   and the cast light share one falloff instead of reading as two effects. */
-html[data-v2~="torch"] .wordmark-trace {
-  --wordmark-grad: radial-gradient(
-    circle 14rem at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
-    var(--text),
-    color-mix(in oklab, var(--text) 10%, transparent)
-  );
-}
-html[data-v2~="torch"] .footer-giant-mark {
-  text-align: center;
-  font-size: clamp(5rem, 22vw, 20rem);
-}
-html[data-v2~="torch"][data-theme="obsidian"] .footer-giant-mark {
+html[data-theme="obsidian"] .footer-giant-mark {
   font-weight: 800;
 }
-html[data-v2~="torch"][data-theme="cobalt"] .footer-giant-mark {
+html[data-theme="cobalt"] .footer-giant-mark {
   font-weight: 400;
   letter-spacing: -0.01em;
 }
@@ -1239,6 +1196,77 @@ html[data-v2~="torch"][data-theme="cobalt"] .footer-giant-mark {
   }
 }
 
+/* TOPHEAD's schematic annotation marks (top-head.tsx) — a corner register
+   mark drawing itself in (stroke-dashoffset), then a dashed leader fading
+   in just after. `both` fill keeps each at its end state before/after the
+   animation runs so there's no flash of the wrong pose. Both anchor to
+   `.cb-tophead`'s own top-right corner rather than tracking the headline's
+   text-driven width (which varies as `heroLines` cycles) — the headline
+   is left-aligned and capped at `16ch`, so this corner is empty space at
+   every width the marks are shown at (`md` and up only). */
+.hero-annot-corner {
+  position: absolute;
+  /* `.cb-tophead`'s own `md:` padding-top (11.25rem) clears the fixed
+     header - these marks only ever render at `md` and up (`hidden
+     md:block` in the markup), so anchoring to that same value lines
+     them up with the eyebrow instead of hiding behind the header. */
+  top: 11.25rem;
+  right: 0;
+  opacity: 0;
+  animation: hero-annot-draw 0.5s var(--ease-emphasis) 1.3s both;
+}
+.hero-annot-corner path {
+  stroke-dasharray: 27;
+  stroke-dashoffset: 27;
+  animation: hero-annot-line-draw 0.5s var(--ease-emphasis) 1.3s both;
+}
+.hero-annot-leader {
+  position: absolute;
+  top: 14.25rem;
+  right: 0;
+  opacity: 0;
+  transform: translateX(8px);
+  animation: hero-annot-fade 0.5s var(--ease-emphasis) 1.6s both;
+}
+@keyframes hero-annot-draw {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.55;
+  }
+}
+@keyframes hero-annot-line-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes hero-annot-fade {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 0.4;
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-annot-corner {
+    animation: none;
+    opacity: 0.55;
+  }
+  .hero-annot-corner path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .hero-annot-leader {
+    animation: none;
+    opacity: 0.4;
+    transform: none;
+  }
+}
+
 /* MaskedHeading's video layer (masked-heading.tsx) — the only real
    footage on the site is Bridge's 1024x576 capture; at hero-headline
    scale that would upscale into legible UI fragments rather than read
@@ -1397,6 +1425,14 @@ html[data-v2~="torch"][data-theme="cobalt"] .footer-giant-mark {
   }
 }
 
+/* Pauses the drift under a pointer trying to read or click a specific
+   logo - standard convenience for any auto-scrolling row of clickable
+   items. `:focus-within` covers keyboard nav through the same row. */
+.cb-reel-mask:hover .cb-reel,
+.cb-reel-mask:focus-within .cb-reel {
+  animation-play-state: paused;
+}
+
 .cb-reel-mask {
   /* Half-track is 4 x 312px = 1248px (w-72 + mx-3, border-box). The two-copy
      -50% loop only reads as seamless while the window is NARROWER than one
@@ -1421,13 +1457,15 @@ html[data-v2~="torch"][data-theme="cobalt"] .footer-giant-mark {
 /* ============================================================
    LAYOUT MODES — a small numbered switcher (chrome.tsx), studied
    from by-kin.com's own LAYOUT 1/2 toggle. Mode 1 is the site as
-   built above and needs no rules of its own. Modes 2 and 3 both
-   replace the chrome's desktop link row + CTA with the hamburger ->
-   full-screen overlay (chrome.tsx's FullScreenNav) — that swap is
-   site-wide, since Header/MobilePillNav mount once in __root.tsx
-   above every route. Mode 3 additionally recomposes TOPHEAD's copy
-   to centred — scoped to `[aria-label="Introduction"]` only, since
-   the plan's own boundary keeps the hero treatment homepage-only.
+   built above and needs no rules of its own. Mode 2 replaces the
+   chrome's desktop link row + CTA with a hamburger -> full-screen
+   overlay (chrome.tsx's LayoutNavPanel) — that swap is site-wide,
+   since Header/MobilePillNav mount once in __root.tsx above every
+   route. Mode 3 splits nav to both screen edges as two rails at
+   `lg` and up (falling back to mode 1's own mobile chrome below
+   that), and recomposes TOPHEAD's copy to centred — scoped to
+   `[aria-label="Introduction"]` only, since the plan's own boundary
+   keeps the hero treatment homepage-only.
    ============================================================ */
 html[data-layout="2"] .header-nav-row,
 html[data-layout="3"] .header-nav-row,
@@ -1457,13 +1495,6 @@ html[data-layout="3"] [data-mobile-pill-nav] {
 html[data-layout="2"] .layout-hamburger-left {
   display: flex;
 }
-/* Mode 3 — hamburger trails, grouped with ThemeSwitch at the header's end
-   (top-right corner — by-kin.com's "minor decorative elements at the
-   screen edges instead of a full nav row"). */
-html[data-layout="3"] .layout-hamburger-right {
-  display: flex;
-}
-
 html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead {
   display: flex;
   flex-direction: column;
@@ -1488,29 +1519,18 @@ html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-lead {
   max-width: 40rem;
 }
 
-/* Eleventh-pass preview (`?v2=nav3`, item 5): mode 3 rebuilt to match
-   what it was actually studied from — Minh Pham / by-kin's nav split to
-   both screen edges, hero centred between them — replacing the default
-   hamburger-only version above (which, unflagged, is unchanged). Rails
-   are a desktop composition; below `lg` this flagged mode 3 falls back
-   to mode 1's own chrome (wordmark + the bottom pill nav, already
-   focus-trapped and tested) rather than the default hamburger, since a
-   390px phone has no room for two vertical rails. Every selector here
-   carries both `[data-v2~="nav3"]` and `[data-layout="3"]`, which is
-   strictly more specific than the unflagged mode-3 rules above (one
-   extra attribute selector), so these override them cleanly without
-   `!important` and without touching the default mode-3 behaviour at all
-   when the flag is absent. */
-html[data-v2~="nav3"][data-layout="3"] .layout-hamburger-right {
-  display: none;
-}
+/* Mode 3: nav splits to both screen edges, studied from Minh Pham / by-kin
+   (hero centred between the two rails). Rails are a desktop composition;
+   below `lg` it falls back to mode 1's own chrome (wordmark + the bottom
+   pill nav, already focus-trapped and tested) rather than a hamburger,
+   since a 390px phone has no room for two vertical rails. */
 @media (max-width: 63.999rem) {
-  html[data-v2~="nav3"][data-layout="3"] [data-mobile-pill-nav] {
+  html[data-layout="3"] [data-mobile-pill-nav] {
     display: flex;
   }
 }
 @media (min-width: 64rem) {
-  html[data-v2~="nav3"][data-layout="3"] header.chrome-adaptive {
+  html[data-layout="3"] header.chrome-adaptive {
     height: 100vh;
     /* The header itself no longer eats clicks on the page beneath a
        100vh box that's mostly empty space — only its actual interactive
@@ -1520,28 +1540,49 @@ html[data-v2~="nav3"][data-layout="3"] .layout-hamburger-right {
     backdrop-filter: none;
     border-bottom: 0;
   }
-  html[data-v2~="nav3"][data-layout="3"] header.chrome-adaptive .shell {
+  html[data-layout="3"] header.chrome-adaptive .shell {
     height: 100%;
     align-items: stretch;
     position: relative;
   }
-  html[data-v2~="nav3"][data-layout="3"] .header-brand-group {
+  html[data-layout="3"] .header-brand-group {
     flex-direction: column;
     align-items: flex-start;
     pointer-events: auto;
   }
-  html[data-v2~="nav3"][data-layout="3"] .header-nav-row {
+  html[data-layout="3"] .header-nav-row {
     display: flex;
     position: absolute;
-    left: 0;
+    /* Matches `.shell`'s own padding-inline at this breakpoint. An
+       absolutely-positioned child escapes its containing block's padding
+       entirely, so `left: 0` sat flush at the true viewport edge on any
+       width narrower than the shell's own 88rem cap (everything below
+       ~1440px) — confirmed live: uppercase glyphs with heavy left strokes
+       (W, P) read as clipped there, not just tight. */
+    left: 2.5rem;
     top: 50%;
     transform: translateY(-50%);
     flex-direction: column;
     align-items: flex-start;
     gap: 0.9rem;
     pointer-events: auto;
+    /* The rail is fixed for the whole page (`header.chrome-adaptive` is
+       `height: 100vh` below), not just the hero — confirmed live: with no
+       backdrop of its own, it visually collided with every section's own
+       copy the moment you scrolled past TOPHEAD (its padding-inline is
+       the only section tuned to clear the rail; nothing after it is).
+       `--bg`/`--text`/`--line` here read the HEADER's own ground remap
+       (`.chrome-adaptive[data-over]`, synced to whichever section is
+       actually at y=48 by chrome.tsx's ground-tracking effect), not the
+       section literally behind the rail pixel-for-pixel — close enough to
+       read as intentional chrome rather than a floating collision. */
+    background: color-mix(in oklab, var(--bg) 78%, transparent);
+    backdrop-filter: blur(14px);
+    padding: 1rem 1.1rem;
+    border-radius: 1rem;
+    border: 1px solid var(--line);
   }
-  html[data-v2~="nav3"][data-layout="3"] .header-control-cluster {
+  html[data-layout="3"] .header-control-cluster {
     flex-direction: column;
     align-items: flex-end;
     gap: 0.75rem;
@@ -1554,22 +1595,36 @@ html[data-v2~="nav3"][data-layout="3"] .layout-hamburger-right {
      persistent CTA button was redundant as well as broken. */
   /* Hero clears both rails — tuned live against the rail widths above,
      not a fixed design-time guess. */
-  html[data-v2~="nav3"][data-layout="3"] section[aria-label="Introduction"] .cb-tophead {
+  html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead {
     min-height: 100vh;
     justify-content: center;
     padding-inline: 13rem;
   }
-}
-@media (min-width: 64rem) and (max-width: 74.999rem) {
-  /* Narrower desktop widths (1024-ish) need less left padding than 1440
-     to leave the centred hero enough room, since the rails themselves
-     don't shrink -- but still enough to clear the rail text, confirmed
-     against the rail's own measured width live (9rem read as visibly
-     tight at 1024, letters nearly touching). */
-  html[data-v2~="nav3"][data-layout="3"] section[aria-label="Introduction"] .cb-tophead {
-    padding-inline: 10.5rem;
+  /* The rail is `top: 50%` inside a `height: 100vh` fixed header, so it
+     stays dead-centre in the viewport for the ENTIRE page, not just the
+     hero — every section below TOPHEAD scrolls straight underneath it.
+     TOPHEAD already reserves 13rem/10.5rem above for its own spacious
+     hero composition; every OTHER section needs at least enough left
+     clearance to stay out from behind the rail's own pill (measured live
+     at ~5.2rem wide from a 2.5rem inset — 10rem leaves real margin).
+     Scoped to `section .shell` so it never touches the header's own
+     `.shell` (that one's positioning is what the rail rules above
+     already own) — confirmed live: without this, layout 3 read as
+     broken rather than merely minimal past the first screen. */
+  html[data-layout="3"] section .shell {
+    padding-left: 10rem;
   }
 }
+/* This used to give 1024-1200 its own smaller padding-inline (10.5rem)
+   than the 13rem above, on the theory that a narrower desktop needed the
+   extra hero width more than the extra clearance. That held only while
+   the rail was bare text; now that it carries its own backdrop pill
+   (measured ~5.2rem wide from its 2.5rem inset), 10.5rem is no longer
+   enough — confirmed live: the centred headline's "IT solutions for"
+   line touches the pill's edge at 1024 with reduced motion (no video-mask
+   flicker to hide behind). Simplest correct fix is to stop giving this
+   range less clearance than everything above it — the 13rem block covers
+   1024 and up uniformly now. */
 
 /* ============================================================
    REDUCED MOTION — deliberate static compositions, not frozen film

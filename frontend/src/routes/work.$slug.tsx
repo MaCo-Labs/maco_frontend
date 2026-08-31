@@ -1,8 +1,11 @@
+import type { CSSProperties } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getProject, getService, projects, type Project } from "@/content/maco";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
-import { MotionSection } from "@/components/motion-section";
+import { ScrubReveal } from "@/components/motion/scrub-reveal";
+import { Stagger } from "@/components/motion/stagger";
+import { CardMedia } from "@/components/home/summary";
 
 export const Route = createFileRoute("/work/$slug")({
   loader: ({ params }) => {
@@ -43,7 +46,7 @@ function WorkDetail() {
 
   return (
     <>
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Case study introduction" className="rule-b">
         <div className="shell py-16 lg:py-24">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p className="label">Case study / {p.index}</p>
@@ -54,26 +57,40 @@ function WorkDetail() {
           <LineReveal as="h1" className="display-hero mt-8 -ml-[0.04em]">
             {p.title}
           </LineReveal>
-          <dl
-            className="mt-12 grid gap-px sm:grid-cols-2 lg:grid-cols-4"
+          <CardMedia
+            media={p.media}
+            brand={p.brand}
+            title={p.title}
+            aspect="16 / 9"
+            className="mt-10"
+          />
+          <Stagger
+            as="dl"
+            className="mt-10 grid gap-px sm:grid-cols-2 lg:grid-cols-4"
             style={{ background: "var(--line)" }}
+            gap={0.1}
+            band={0.35}
           >
             {[
               ["Client", p.client],
               ["Sector", p.sector],
               ["Type", "Client project"],
               ["Live", "Public"],
-            ].map(([k, v]) => (
-              <div key={k} className="px-5 py-5" style={{ background: "var(--bg)" }}>
+            ].map(([k, v], i) => (
+              <div
+                key={k}
+                className="stagger-item px-5 py-5"
+                style={{ background: "var(--bg)", "--i": i } as CSSProperties}
+              >
                 <dt className="label">{k}</dt>
                 <dd className="mt-2 text-sm">{v}</dd>
               </div>
             ))}
-          </dl>
+          </Stagger>
         </div>
       </section>
 
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Summary" className="rule-b">
         <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
           <p className="label lg:col-span-3">Summary</p>
           <p className="display-md max-w-3xl lg:col-span-9">{p.short_description}</p>
@@ -81,17 +98,21 @@ function WorkDetail() {
       </section>
 
       {blocks.map(([title, body], i) => (
-        <MotionSection key={title} as="section" delay={i * 70} className="rule-b">
-          <div className="shell grid gap-6 py-12 lg:grid-cols-12 lg:gap-10 lg:py-16">
+        <section key={title} data-ground="paper" aria-label={title} className="rule-b">
+          <ScrubReveal
+            hold
+            as="div"
+            className="shell grid gap-6 py-12 lg:grid-cols-12 lg:gap-10 lg:py-16"
+          >
             <p className="label lg:col-span-3">
               {String(i + 1).padStart(2, "0")} — {title}
             </p>
             <p className="max-w-2xl text-lg leading-snug text-muted lg:col-span-8">{body}</p>
-          </div>
-        </MotionSection>
+          </ScrubReveal>
+        </section>
       ))}
 
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Services applied" className="rule-b">
         <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
           <p className="label lg:col-span-3">Services applied</p>
           <div className="lg:col-span-9">
@@ -120,7 +141,7 @@ function WorkDetail() {
         </div>
       </section>
 
-      <section>
+      <section data-ground="paper" aria-label="Next case study">
         <div className="shell py-14 lg:py-20">
           <p className="label">Next case study</p>
           <Link

@@ -61,3 +61,6 @@ frontend/src/assets/Bridge Demo.mp4
 *.njsproj
 *.sln
 *.sw?
+
+# Visual-QA screenshots (root-level scratch, never committed)
+/*.png

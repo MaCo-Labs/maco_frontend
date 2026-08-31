@@ -1,10 +1,11 @@
+import type { CSSProperties } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { site, process, services } from "@/content/maco";
+import { site, process, principles, services } from "@/content/maco";
 import { SystemField } from "@/components/mark";
 import { GlobeSection } from "@/components/globe-section";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
-import { MotionSection } from "@/components/motion-section";
+import { Stagger } from "@/components/motion/stagger";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/about")({
 function AboutPage() {
   return (
     <>
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Introduction" className="rule-b">
         <div className="shell grid gap-10 py-16 lg:grid-cols-12 lg:py-24">
           <div className="lg:col-span-8">
             <p className="label">Index / About</p>
@@ -51,53 +52,53 @@ function AboutPage() {
         </div>
       </section>
 
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Method" className="rule-b">
         <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
           <p className="label lg:col-span-3">Method</p>
-          <div
+          <Stagger
+            as="div"
             className="grid gap-px lg:col-span-9 sm:grid-cols-2"
             style={{ background: "var(--line)" }}
+            gap={0.1}
+            band={0.35}
           >
             {process.map((p, i) => (
-              <MotionSection
+              <div
                 key={p.step}
-                delay={i * 80}
-                className="p-8"
-                style={{ background: "var(--bg)" }}
+                className="stagger-item p-8"
+                style={{ background: "var(--bg)", "--i": i } as CSSProperties}
               >
                 <span className="font-display text-4xl" style={{ color: "var(--accent)" }}>
                   {p.step}
                 </span>
                 <h2 className="mt-5 font-display text-xl">{p.title}</h2>
                 <p className="mt-3 text-sm text-muted">{p.body}</p>
-              </MotionSection>
+              </div>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Principles" className="rule-b">
         <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
           <p className="label lg:col-span-3">Principles</p>
-          <ul className="lg:col-span-9">
-            {[
-              "Model the data before designing the screen.",
-              "Ship an admin the client's own team can operate.",
-              "No invented metrics, no invented clients, no invented testimonials.",
-              "Small releases beat annual rewrites.",
-              "Accessibility and reduced motion are requirements, not polish.",
-            ].map((line, i) => (
-              <MotionSection key={line} as="li" delay={i * 60} className="rule-t flex gap-6 py-5">
+          <Stagger as="ul" className="lg:col-span-9" gap={0.1} band={0.35}>
+            {principles.map((line, i) => (
+              <li
+                key={line}
+                className="stagger-item rule-t flex gap-6 py-5"
+                style={{ "--i": i } as CSSProperties}
+              >
                 <span className="label pt-1">{String(i + 1).padStart(2, "0")}</span>
                 <span className="max-w-2xl text-lg leading-snug">{line}</span>
-              </MotionSection>
+              </li>
             ))}
             <li className="rule-t" />
-          </ul>
+          </Stagger>
         </div>
       </section>
 
-      <section>
+      <section data-ground="paper" aria-label="Contact MaCo">
         <div className="shell grid gap-10 py-14 lg:grid-cols-12 lg:items-center lg:py-20">
           <div className="lg:col-span-5">
             <p className="label">Where we are</p>

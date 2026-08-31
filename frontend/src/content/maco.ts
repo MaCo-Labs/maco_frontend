@@ -510,6 +510,17 @@ export const process = [
   },
 ];
 
+/** /about's "Principles" list — moved here from being hardcoded directly
+ *  in the route (the only page-level copy that wasn't sourced from this
+ *  file), per AGENTS.md §3's source-of-truth order. */
+export const principles = [
+  "Model the data before designing the screen.",
+  "Ship an admin the client's own team can operate.",
+  "No invented metrics, no invented clients, no invented testimonials.",
+  "Small releases beat annual rewrites.",
+  "Accessibility and reduced motion are requirements, not polish.",
+];
+
 export const getService = (slug: string) => services.find((s) => s.slug === slug);
 export const getProject = (slug: string) => projects.find((p) => p.slug === slug);
 export const getProduct = (slug: string) => products.find((p) => p.slug === slug);

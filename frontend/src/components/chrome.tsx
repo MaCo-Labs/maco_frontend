@@ -319,32 +319,22 @@ function LayoutNavTrigger({ nav, className }: { nav: LayoutNavState; className: 
  * component MUST render outside `<header>`'s DOM subtree for that to
  * actually hold.
  *
- * Eleventh-pass preview (`?v2=nav2`, item 4): a leading light beam and a
- * staggered link entrance, layered on TOP of the wipe above — the wipe
- * itself already works and isn't being replaced. `hasNav2` is read
- * directly from `document` rather than through a hook: this component's
- * animated content only ever renders once `open` is true, which can only
- * happen after a click, which can only happen post-hydration — there is
- * no SSR/first-paint render of this branch to mismatch against. Parent/
- * item `variants` collapse to a no-op transform when the flag is absent
- * (`hidden` === `visible`, no stagger timing), so an unflagged visitor's
- * links still appear immediately, unchanged.
+ * A leading light beam and a staggered link entrance, layered on TOP of
+ * the wipe above — the wipe itself is the base mechanism, this is polish
+ * on top of it.
  */
 function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { open, menuId, panelRef, enterTransition, exitTransition, reduced } = nav;
-  const hasNav2 =
-    typeof document !== "undefined" &&
-    (document.documentElement.dataset["v2"]?.split(" ").includes("nav2") ?? false);
 
   const navVariants = {
     hidden: {},
-    visible: hasNav2
-      ? { transition: { staggerChildren: reduced ? 0 : 0.06, delayChildren: reduced ? 0 : 0.22 } }
-      : {},
+    visible: {
+      transition: { staggerChildren: reduced ? 0 : 0.06, delayChildren: reduced ? 0 : 0.22 },
+    },
   };
   const itemVariants = {
-    hidden: hasNav2 ? { opacity: 0, y: 24 } : { opacity: 1, y: 0 },
+    hidden: { opacity: 0, y: 24 },
     visible: {
       opacity: 1,
       y: 0,
@@ -379,20 +369,18 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
               `transform` in the same `style` object rather than composing
               with it (confirmed live: the beam rendered as a straight
               vertical band with the raw-string version, not diagonal). */}
-          {hasNav2 && (
-            <motion.div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 w-1/3"
-              style={{
-                background:
-                  "linear-gradient(90deg, transparent, color-mix(in oklab, var(--sweep-light) 55%, transparent), transparent)",
-                skewX: -18,
-              }}
-              initial={{ x: "-140%" }}
-              animate={{ x: "140%" }}
-              transition={reduced ? { duration: 0 } : { duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-            />
-          )}
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 w-1/3"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, color-mix(in oklab, var(--sweep-light) 55%, transparent), transparent)",
+              skewX: -18,
+            }}
+            initial={{ x: "-140%" }}
+            animate={{ x: "140%" }}
+            transition={reduced ? { duration: 0 } : { duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+          />
 
           <motion.nav
             aria-label="Primary"
@@ -486,14 +474,15 @@ export function Header() {
     }
   }, []);
 
-  // Adaptive ground: the header and mobile pill nav are both `position:
-  // fixed`, mounted in __root.tsx outside every section's DOM subtree, so
-  // neither naturally inherits a [data-ground] remap the way an in-flow
-  // descendant would. This reads `data-over` on both to match whichever
-  // [data-ground] section is currently behind them — CSS half is
-  // `.chrome-adaptive[data-over]` in styles.css. No-op on every non-home
-  // route (empty `grounds`): both elements keep their default
-  // `data-over="paper"` from the JSX.
+  // Adaptive ground: the header, mobile pill nav, and layout-nav trigger
+  // overlay are all `position: fixed`, mounted in __root.tsx (or, for the
+  // trigger overlay, as a header sibling — see item 10's fix above) outside
+  // every section's DOM subtree, so none of them naturally inherit a
+  // [data-ground] remap the way an in-flow descendant would. This reads
+  // `data-over` on all three to match whichever [data-ground] section is
+  // currently behind them — CSS half is `.chrome-adaptive[data-over]` in
+  // styles.css. No-op on every non-home route (empty `grounds`): all three
+  // elements keep their default `data-over="paper"` from the JSX.
   //
   // Two earlier approaches here both went stale mid-scroll: a ScrollTrigger
   // (one per section, then a single whole-document one) reads the WRONG
@@ -518,6 +507,7 @@ export function Header() {
     getScrollRuntime().then((rt) => {
       if (cancelled || !rt) return;
       const mobileNav = document.querySelector<HTMLElement>("[data-mobile-pill-nav]");
+      const triggerOverlay = document.querySelector<HTMLElement>("[data-nav-trigger-overlay]");
       const grounds = [...document.querySelectorAll<HTMLElement>("[data-ground]")];
       if (grounds.length === 0) return;
 
@@ -532,6 +522,7 @@ export function Header() {
         const header = headerRef.current;
         if (header) header.dataset["over"] = ground;
         if (mobileNav) mobileNav.dataset["over"] = ground;
+        if (triggerOverlay) triggerOverlay.dataset["over"] = ground;
         // Same sample reused for `<body>`'s own backdrop
         // (html[data-ground-now] in styles.css) — a coarse safety net, not
         // pixel-precise, for anything that ever exposes body's background:
@@ -560,7 +551,10 @@ export function Header() {
       >
         <div className="shell flex h-20 items-center justify-between gap-6 md:h-24">
           <div className="header-brand-group flex items-center gap-4">
-            <LayoutNavTrigger nav={layoutNav} className="layout-hamburger-left" />
+            {/* Reserves the trigger's old flex slot so the wordmark doesn't
+                shift left into where the real (now sibling-rendered, see
+                below) trigger visually sits. */}
+            <span aria-hidden="true" className="layout-hamburger-left h-10 w-10 shrink-0" />
             <Link to="/" className="transition-opacity hover:opacity-70" aria-label="MaCo — home">
               <Wordmark />
             </Link>
@@ -586,7 +580,9 @@ export function Header() {
           <div className="header-control-cluster flex items-center gap-3">
             <LayoutSwitch />
             <ThemeSwitch />
-            <LayoutNavTrigger nav={layoutNav} className="layout-hamburger-right" />
+            {/* Same reservation as the brand-group spacer above, for the
+                mode-3 (top-right) trigger placement. */}
+            <span aria-hidden="true" className="layout-hamburger-right h-10 w-10 shrink-0" />
             <Magnetic className="header-cta hidden lg:inline-flex">
               <Link to="/contact" className="btn-solid !px-4 !py-2.5">
                 Start a project
@@ -595,6 +591,43 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      {/* Item 10 fix: the trigger used to render inside `<header>`, whose
+          `position:fixed` + `z-[42]` makes it a stacking context of its
+          own — a descendant's z-index can only win against its *siblings*
+          inside that context, it can never out-rank a context that sits
+          higher at the root (the panel below, z-[46], is a root-level
+          `<header>` sibling). So once the panel opened, its own content
+          painted over the entire header layer regardless of the button's
+          local z-index, and clicks landed on the panel's first link
+          instead of the button underneath it. Fix: render the trigger as
+          a root-level sibling too (same move `LayoutNavPanel` already
+          made, for the same reason), at `z-[47]` — above the panel,
+          always clickable. `pointer-events-none` on this wrapper keeps it
+          from stealing clicks meant for the header's own wordmark/theme
+          switch/CTA in the space where no button actually is; the two
+          buttons opt back in with `pointer-events-auto`. Reuses `.shell`
+          so it lines up with the header's own padding without repeating
+          the breakpoint math. `chrome-adaptive` + `data-over` mirrors the
+          same ground-adaptive text-color remap `<header>` gets — without
+          it the icon reads `--text` from :root instead of the current
+          ground, and goes invisible over a dark hero (confirmed live: it
+          rendered pitch black on Obsidian). `data-nav-trigger-overlay` is
+          the hook the ground-tracking effect above uses to keep it synced,
+          same way it already syncs `[data-mobile-pill-nav]`. */}
+      <div
+        data-nav-trigger-overlay
+        data-over="paper"
+        className="chrome-adaptive pointer-events-none fixed inset-x-0 top-0 z-[47]"
+      >
+        <div className="shell flex h-20 items-center md:h-24">
+          <LayoutNavTrigger nav={layoutNav} className="layout-hamburger-left pointer-events-auto" />
+          <LayoutNavTrigger
+            nav={layoutNav}
+            className="layout-hamburger-right pointer-events-auto ml-auto"
+          />
+        </div>
+      </div>
 
       {/* Sibling of <header>, not a descendant — see useLayoutNavState's
           doc comment for why that placement is load-bearing. */}
@@ -667,11 +700,10 @@ export function Footer() {
           footer wordmark (scale + cursor-following gradient), never their
           literal crop-off-the-edge composition: MaCo is a 4-letter word,
           so it's sized to fill the shell width on its own without needing
-          to bleed past it to read as large.
-          `data-cursor="torch"` is inert without a `?v2=` preview flag —
-          cursor.tsx's selector only matches `[data-cursor]` at all once
-          some `data-v2` flag is present, so this attribute alone changes
-          nothing for an unflagged visitor. See that file's `selectorFor`. */}
+          to bleed past it to read as large. `data-cursor="torch"` turns
+          the custom cursor into the light source while hovering here —
+          see cursor.tsx's CURSOR_SELECTOR and styles.css's
+          `[data-state="torch"]` rule. */}
       <div className="shell overflow-hidden">
         <div
           ref={giantMarkRef}

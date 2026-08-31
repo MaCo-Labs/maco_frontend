@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
@@ -48,6 +48,7 @@ export function MaskedHeading({
   poster,
 }: MaskedHeadingProps) {
   const reduced = useReducedMotion();
+  const [ready, setReady] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const revealRef = useRef<HTMLSpanElement>(null);
@@ -81,10 +82,35 @@ export function MaskedHeading({
     sync();
     const root = rootRef.current;
     if (!root) return;
+    let cancelled = false;
     const ro = new ResizeObserver(sync);
     ro.observe(root);
-    document.fonts?.ready.then(sync).catch(() => {});
-    return () => ro.disconnect();
+    // The immediate `sync()` above measures against whatever font is
+    // painted at that instant — the fallback, if `--font-display` hasn't
+    // loaded yet. Glyph positions set from fallback metrics land in the
+    // wrong place for the real face, and since the video-mask layer below
+    // defaults to fully open (deliberately, for SSR/no-JS/reduced-motion —
+    // see this component's own doc comment), that wrong shape is visible
+    // immediately, not just measured: confirmed live as a several-hundred-
+    // ms flash of clipped-looking fragments before this promise resolves
+    // and `sync()` re-runs with correct metrics. `ready` keeps that layer
+    // invisible (not the accessible measuring text, which never depends on
+    // this) until a sync has actually happened with the real font. Already-
+    // resolved on every call after the first real one, so a tagline swap
+    // later never re-introduces this delay.
+    document.fonts?.ready
+      .then(() => {
+        if (cancelled) return;
+        sync();
+        setReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setReady(true);
+      });
+    return () => {
+      cancelled = true;
+      ro.disconnect();
+    };
     // `words` isn't read inside the effect body, but a tagline swap
     // changes how many <span>/<text> refs exist below — re-sync against
     // the new set.
@@ -170,7 +196,11 @@ export function MaskedHeading({
         ref={revealRef}
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
-        style={{ clipPath: "inset(0 0% 0 0)" }}
+        style={{
+          clipPath: "inset(0 0% 0 0)",
+          opacity: ready ? 1 : 0,
+          transition: "opacity 0.3s var(--ease-standard)",
+        }}
       >
         <span
           className="hero-mask-media pointer-events-none absolute inset-0 block"

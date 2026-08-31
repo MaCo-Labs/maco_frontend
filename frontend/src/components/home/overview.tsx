@@ -4,6 +4,7 @@ import { services, projects, products, clients } from "@/content/maco";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
+import { Magnetic } from "@/components/motion/magnetic";
 
 /** Counted from the content model rather than typed as literals, so the
  *  numbers can never drift out of step with what the page below shows. */
@@ -75,9 +76,11 @@ export function Overview() {
               ))}
             </Stagger>
 
-            <Link to="/about" className="btn-line mt-10">
-              About MaCo <span aria-hidden="true">→</span>
-            </Link>
+            <Magnetic className="mt-10">
+              <Link to="/about" className="btn-line">
+                About MaCo <span aria-hidden="true">→</span>
+              </Link>
+            </Magnetic>
           </div>
         </div>
       </div>

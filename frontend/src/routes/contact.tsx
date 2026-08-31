@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 import { site, services } from "@/content/maco";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
+import { Stagger } from "@/components/motion/stagger";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -97,7 +98,7 @@ function ContactPage() {
 
   return (
     <>
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Introduction" className="rule-b">
         <div className="shell grid gap-8 py-16 lg:grid-cols-12 lg:py-24">
           <p className="label lg:col-span-3">Index / Contact</p>
           <div className="lg:col-span-9">
@@ -112,7 +113,7 @@ function ContactPage() {
         </div>
       </section>
 
-      <section>
+      <section data-ground="paper" aria-label="Contact form">
         <div className="shell grid gap-14 py-14 lg:grid-cols-12 lg:gap-10 lg:py-20">
           <div className="lg:col-span-4">
             <p className="label">Direct</p>
@@ -136,8 +137,8 @@ function ContactPage() {
             className="relative lg:col-span-7 lg:col-start-6"
             noValidate={false}
           >
-            <div className="grid gap-8 sm:grid-cols-2">
-              <label className="block">
+            <Stagger as="div" className="grid gap-8 sm:grid-cols-2" gap={0.1} band={0.35}>
+              <label className="stagger-item block" style={{ "--i": 0 } as CSSProperties}>
                 <span className="label">Name *</span>
                 <input
                   required
@@ -147,7 +148,7 @@ function ContactPage() {
                   placeholder="Your name"
                 />
               </label>
-              <label className="block">
+              <label className="stagger-item block" style={{ "--i": 1 } as CSSProperties}>
                 <span className="label">Email *</span>
                 <input
                   required
@@ -158,7 +159,7 @@ function ContactPage() {
                   placeholder="you@company.com"
                 />
               </label>
-              <label className="block">
+              <label className="stagger-item block" style={{ "--i": 2 } as CSSProperties}>
                 <span className="label">Company</span>
                 <input
                   name="company"
@@ -167,11 +168,11 @@ function ContactPage() {
                   placeholder="Organisation"
                 />
               </label>
-              <label className="block">
+              <label className="stagger-item block" style={{ "--i": 3 } as CSSProperties}>
                 <span className="label">Phone</span>
                 <input name="phone" autoComplete="tel" className={field} placeholder="+91" />
               </label>
-              <label className="block">
+              <label className="stagger-item block" style={{ "--i": 4 } as CSSProperties}>
                 <span className="label">Service interest</span>
                 <select
                   name="service_interest"
@@ -189,7 +190,7 @@ function ContactPage() {
                   ))}
                 </select>
               </label>
-              <label className="block">
+              <label className="stagger-item block" style={{ "--i": 5 } as CSSProperties}>
                 <span className="label">Budget range</span>
                 <select
                   name="budget_range"
@@ -207,7 +208,7 @@ function ContactPage() {
                   ))}
                 </select>
               </label>
-            </div>
+            </Stagger>
 
             <label className="mt-8 block">
               <span className="label">Message *</span>

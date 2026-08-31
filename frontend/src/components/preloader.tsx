@@ -161,7 +161,8 @@ export function Preloader() {
           style={{ background: "var(--surface-inverted)", color: "var(--text-inverted)" }}
           exit={{
             opacity: 0,
-            transition: reduced ? { duration: 0 } : { duration: 0.5, ease: EASE_EMPHASIS },
+            scale: reduced ? 1 : 1.06,
+            transition: reduced ? { duration: 0 } : { duration: 0.7, ease: EASE_EMPHASIS },
           }}
         >
           <div className="relative flex items-center justify-center">

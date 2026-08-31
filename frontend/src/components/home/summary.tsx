@@ -71,20 +71,30 @@ function Summary({
  *  plate when it doesn't. Never a generic placeholder image — per
  *  AGENTS.md, a stand-in must not read as the real thing, which is why
  *  the brand-plate fallback looks deliberately unlike a screenshot. */
-function CardMedia({
+/** Exported for reuse on `/work/$slug` (item 7b's "no imagery anywhere"
+ *  gap) — same fallback chain, same data shape, no duplicated logic.
+ *  `aspect` defaults to the card grid's own portrait ratio so every
+ *  existing call site is unaffected; the case-study page passes a wide
+ *  ratio instead, since a full-shell-width hero has no business being
+ *  608-tall. */
+export function CardMedia({
   media,
   brand,
   title,
+  aspect = "450 / 608",
+  className = "",
 }: {
   media?: Media | undefined;
   brand?: Brand | undefined;
   title: string;
+  aspect?: string;
+  className?: string;
 }) {
   return (
     <div
-      className="relative overflow-hidden"
+      className={`relative overflow-hidden ${className}`}
       style={{
-        aspectRatio: "450 / 608",
+        aspectRatio: aspect,
         borderRadius: "var(--radius-card)",
         background: "var(--surface-2)",
       }}
@@ -143,6 +153,7 @@ function SummaryCard({
       <Link
         to={to}
         params={params}
+        data-cursor="media"
         className="group block transition-transform duration-500 hover:-translate-y-1.5"
       >
         <CardMedia media={media} brand={brand} title={title} />

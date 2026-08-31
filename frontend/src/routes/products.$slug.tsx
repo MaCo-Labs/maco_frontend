@@ -1,9 +1,46 @@
+import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getProduct, products, type Product } from "@/content/maco";
 import { MaCoSystemField } from "@/components/system-field";
-import { MotionSection } from "@/components/motion-section";
+import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
+import { useScrollScene } from "@/hooks/use-scroll-scene";
+
+/** Wires MaCoSystemField to how far its own panel has travelled through
+ *  the viewport, the same live-progress pattern every pinned homepage
+ *  section already uses (identity.tsx's `onUpdate`) — replacing the
+ *  hardcoded `scrollProgress={0.45}` that left the field frozen at a
+ *  fixed pose regardless of scroll. Progress is rounded to 2% steps
+ *  before it reaches `setState`: MaCoSystemField recomputes 48 cells'
+ *  worth of inline style from this prop on every change, so a plain
+ *  per-frame `self.progress` would re-render far more often than the
+ *  field visibly needs to redraw. */
+function SystemFieldPanel() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0.45);
+
+  useScrollScene((rt) => {
+    if (!ref.current) return;
+    rt.ScrollTrigger.create({
+      trigger: ref.current,
+      start: "top bottom",
+      end: "bottom top",
+      scrub: true,
+      onUpdate: (self) => setProgress(Math.round(self.progress * 50) / 50),
+    });
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/3 opacity-40 lg:block"
+      aria-hidden="true"
+    >
+      <MaCoSystemField className="h-full border-l border-line" scrollProgress={progress} />
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/products/$slug")({
   loader: ({ params }) => {
@@ -37,15 +74,12 @@ function ProductDetail() {
 
   return (
     <>
-      <section className={`rule-b ${isBridge ? "" : "grid-field"} relative overflow-hidden`}>
-        {isBridge && (
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/3 opacity-40 lg:block"
-            aria-hidden="true"
-          >
-            <MaCoSystemField className="h-full border-l border-line" scrollProgress={0.45} />
-          </div>
-        )}
+      <section
+        data-ground="paper"
+        aria-label="Introduction"
+        className={`rule-b ${isBridge ? "" : "grid-field"} relative overflow-hidden`}
+      >
+        {isBridge && <SystemFieldPanel />}
         <div className="shell relative z-10 py-16 lg:py-24">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p className="label">
@@ -76,7 +110,7 @@ function ProductDetail() {
         </div>
       </section>
 
-      <section className="rule-b">
+      <section data-ground="paper" aria-label="Product details" className="rule-b">
         <div
           className="shell grid gap-px py-0 sm:grid-cols-2 lg:grid-cols-4"
           style={{ background: "var(--line)" }}
@@ -95,8 +129,8 @@ function ProductDetail() {
         </div>
       </section>
 
-      <MotionSection as="section" className="rule-b">
-        <div className="shell grid gap-10 py-14 lg:grid-cols-12 lg:py-20">
+      <section data-ground="paper" aria-label="Problem and solution" className="rule-b">
+        <ScrubReveal hold as="div" className="shell grid gap-10 py-14 lg:grid-cols-12 lg:py-20">
           <div className="lg:col-span-6">
             <p className="label">01 — Problem</p>
             <p className="mt-5 text-lg leading-snug text-muted">{p.problem}</p>
@@ -105,11 +139,11 @@ function ProductDetail() {
             <p className="label">02 — Solution</p>
             <p className="mt-5 text-lg leading-snug">{p.solution}</p>
           </div>
-        </div>
-      </MotionSection>
+        </ScrubReveal>
+      </section>
 
-      <MotionSection as="section" className="rule-b" delay={40}>
-        <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
+      <section data-ground="paper" aria-label="Capabilities" className="rule-b">
+        <ScrubReveal hold as="div" className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
           <p className="label lg:col-span-3">03 — Capabilities</p>
           <div
             className={`lg:col-span-9 ${isBridge ? "grid gap-px sm:grid-cols-2" : ""}`}
@@ -134,12 +168,16 @@ function ProductDetail() {
                 ))}
             {!isBridge && <div className="rule-t" />}
           </div>
-        </div>
-      </MotionSection>
+        </ScrubReveal>
+      </section>
 
       {isBridge && (
-        <MotionSection as="section" className="rule-b" delay={60}>
-          <div className="shell py-14 lg:grid lg:grid-cols-12 lg:gap-10 lg:py-20">
+        <section data-ground="paper" aria-label="The Bridge system" className="rule-b">
+          <ScrubReveal
+            hold
+            as="div"
+            className="shell py-14 lg:grid lg:grid-cols-12 lg:gap-10 lg:py-20"
+          >
             <div className="lg:col-span-4">
               <p className="label">04 — System</p>
               <h2 className="display-md mt-4">
@@ -170,11 +208,11 @@ function ProductDetail() {
                 </Magnetic>
               </div>
             </div>
-          </div>
-        </MotionSection>
+          </ScrubReveal>
+        </section>
       )}
 
-      <section>
+      <section data-ground="paper" aria-label="Other product">
         <div className="shell py-14 lg:py-20">
           <p className="label">Other product</p>
           <Link

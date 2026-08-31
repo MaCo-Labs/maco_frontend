@@ -3,31 +3,12 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { getScrollRuntime } from "@/lib/scroll-runtime";
 
-/** The set `Magnetic` also gates on — unchanged, and still what's used
- *  with no `?v2=` preview flag present, so an unflagged visitor's cursor
- *  behaves byte-for-byte like before this pass. */
-const LEGACY_SELECTOR = "a, button, [role='button'], input, textarea, select";
-
-/** Adds an explicit `data-cursor` escape hatch for elements that need a
- *  specific state (`"media"`, `"torch"`) the tag alone can't express.
- *  `.closest()` finds whichever of these is nearest, so an explicit
- *  `data-cursor` on an outer wrapper wins over a plain `<a>`/`<button>`
- *  inside it. Only used once a `?v2=` preview flag is present (see
- *  `selectorFor` below) — the footer wordmark carries `data-cursor="torch"`
- *  unconditionally in markup, and gating the SELECTOR rather than the
- *  markup is what keeps that attribute inert with no flag set, matching
- *  `AI_HANDOFF.md` #8's "no flag = today's site, byte for byte" rule. */
-const CURSOR_SELECTOR = `${LEGACY_SELECTOR}, [data-cursor]`;
-
-/** No `?v2=` param at all -> old selector, `[data-cursor]` never
- *  matches, `resolveState`'s explicit branch is unreachable. Any `?v2=`
- *  flag -> the extended selector; which specific flag controls how a
- *  resolved state actually PAINTS is left entirely to CSS (styles.css's
- *  `[data-v2~="cursor"]` / `[data-v2~="torch"]` blocks), not decided
- *  here — this only decides what counts as "hoverable" at all. */
-function selectorFor(): string {
-  return document.documentElement.hasAttribute("data-v2") ? CURSOR_SELECTOR : LEGACY_SELECTOR;
-}
+/** The set `Magnetic` also gates on. Extended with an explicit
+ *  `data-cursor` escape hatch for elements that need a specific state
+ *  (`"media"`, `"torch"`) the tag alone can't express — `.closest()` finds
+ *  whichever of these is nearest, so an explicit `data-cursor` on an outer
+ *  wrapper wins over a plain `<a>`/`<button>` inside it. */
+const CURSOR_SELECTOR = "a, button, [role='button'], input, textarea, select, [data-cursor]";
 
 /** Resolve a delegated-event target to one of the cursor's states. Adding
  *  a new hoverable state is a `data-cursor="…"` attribute on that
@@ -140,7 +121,7 @@ export function Cursor() {
         setY(py);
       };
       const onOver = (e: PointerEvent) => {
-        const hit = e.target instanceof Element ? e.target.closest(selectorFor()) : null;
+        const hit = e.target instanceof Element ? e.target.closest(CURSOR_SELECTOR) : null;
         if (!hit) return;
         el.dataset["state"] = resolveState(hit);
         const ground = hit.closest("[data-ground]")?.getAttribute("data-ground");
@@ -148,7 +129,7 @@ export function Cursor() {
         else delete el.dataset["ground"];
       };
       const onOut = (e: PointerEvent) => {
-        const selector = selectorFor();
+        const selector = CURSOR_SELECTOR;
         const hit = e.target instanceof Element ? e.target.closest(selector) : null;
         if (!hit) return;
         // Moving between two children of the SAME hoverable (e.g. a

@@ -112,15 +112,6 @@ function RootShell({ children }: { children: ReactNode }) {
             the stored (or `?layout=` preview-overridden) layout mode, so a
             layout-2/3 visitor never sees a layout-1 chrome flash either —
             same anti-FOUC shape as theme, see layout-mode.tsx.
-            Also stamps a non-persisting `?v2=` preview flag as space-
-            separated tokens on `data-v2` (e.g. `?v2=cursor,torch` ->
-            `data-v2="cursor torch"`), so CSS can key off `[data-v2~="x"]`
-            and JS can read `document.documentElement.dataset.v2` — this is
-            the eleventh-pass A/B mechanism for items under go/no-go review
-            (cursor states, footer torch, layout-2 beam, layout-3 rails).
-            No localStorage, no persistence: omit the param and the site is
-            exactly what ships today. Delete this clause once every `?v2=`
-            item has been approved and its old path removed.
             Last, decides whether the preloader should skip itself (reduced
             motion, or already shown once this session) — matchMedia only,
             not the full ?motion= override resolver (lib/motion.ts): the
@@ -135,7 +126,7 @@ function RootShell({ children }: { children: ReactNode }) {
             it's already run. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("maco-theme");if(t==="obsidian"||t==="cobalt"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}try{var lp=new URLSearchParams(window.location.search).get("layout");var l=(lp==="1"||lp==="2"||lp==="3")?lp:localStorage.getItem("maco-layout");if(l==="1"||l==="2"||l==="3"){document.documentElement.setAttribute("data-layout",l);}}catch(e){}try{var v=new URLSearchParams(window.location.search).get("v2");if(v){document.documentElement.setAttribute("data-v2",v.split(",").join(" "));}}catch(e){}try{var r=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;var s=sessionStorage.getItem("maco-preloaded");if(r||s){document.documentElement.setAttribute("data-preload","skip");}}catch(e){document.documentElement.setAttribute("data-preload","skip");}})();`,
+            __html: `(function(){try{var t=localStorage.getItem("maco-theme");if(t==="obsidian"||t==="cobalt"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}try{var lp=new URLSearchParams(window.location.search).get("layout");var l=(lp==="1"||lp==="2"||lp==="3")?lp:localStorage.getItem("maco-layout");if(l==="1"||l==="2"||l==="3"){document.documentElement.setAttribute("data-layout",l);}}catch(e){}try{var r=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;var s=sessionStorage.getItem("maco-preloaded");if(r||s){document.documentElement.setAttribute("data-preload","skip");}}catch(e){document.documentElement.setAttribute("data-preload","skip");}})();`,
           }}
         />
         {/* Runs before hydration — kills hijacking Workbox SWs from other localhost:5173 apps */}
