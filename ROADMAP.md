@@ -1,6 +1,6 @@
 # MaCo Website — Roadmap
 
-Last updated: 2026-09-03 — item 13 (chrome/motion/reveal pass) got two 2026-09-02 follow-ups (FEATURE reveal pacing/layout fixes, then a separate six-item pass: dynamic panel tone, logo crop, layout 3 mobile hygiene) and a 2026-09-03 fix pass (FEATURE reverted to hover accordion, `groundAt()` fallback fix). See `AI_HANDOFF.md`'s dated entries. **Nothing from 2026-09-01 onward is committed to git yet** — see `AI_HANDOFF.md`'s "What's uncommitted" note; committing that backlog is effectively item 0 below.
+Last updated: 2026-09-03, later — the 2026-09-01-through-09-03 backlog (item 0 below) is now committed, and a new homepage premium pass landed on top: 4 UI bugs fixed, the two "About" sections merged into one (homepage 11→10 sections), GroundHandoff's transitions rebuilt. See `AI_HANDOFF.md`'s newest entry. **Top priority now: live-browser-verify this pass** — see item 0 below, which replaces the old commit-the-backlog item now that it's done.
 
 The homepage creative reset (`HOMEPAGE_REDESIGN_PLAN.md`, historical) is
 **implemented and shipped** — current architecture is `CONTEXT.md` §10, not
@@ -17,13 +17,23 @@ See `CONTEXT.md` §10 for the full per-section table (ground, file, pin behavior
 
 ## What's left, roughly in order
 
-0. **Commit the 2026-09-01 through 2026-09-03 working-tree backlog.** ~1,700
-   lines across 17 files, all live-verified pass by pass (see
-   `AI_HANDOFF.md`), none of it committed — including two files
-   (`components/nav/edge-nav.tsx`, `lib/ground.ts`) that don't exist in git
-   history at all yet. Split roughly one commit per dated pass rather than
-   one giant commit, so `git log`/`git blame` stay useful the way this
-   project's own docs lean on them (`AI_HANDOFF.md`'s "third pass" note).
+0. **Live-browser-verify the 2026-09-03 homepage premium pass.** (Was:
+   "commit the backlog" — done, see `git log`.) Preloader numeral/button
+   fix, both Layout-2-mobile fixes, footer wordmark line-height, and
+   especially the rebuilt GroundHandoff transitions (opacity-only fades on
+   8 boundaries, real rounded overlap on 2) were only verified structurally
+   this session — SSR HTML + compiled CSS/JS bundle inspection, never
+   actually rendered. Both `agent-browser` and the `playwright` MCP server
+   failed to connect all session (not a config issue found — just
+   unavailable); try them again first. If still broken, `bun run dev` +
+   manual eyeballing is the fallback. Specifically check: the rounded
+   overlap at Preview→Overview and Identity→Faq reads as a deliberate,
+   premium arrival (not too subtle, not janky); no gap/flash at any
+   same-ground boundary, especially the old trouble spots
+   (Overview→Feature, Identity→Faq); Layout 2 mobile with the panel open
+   has no overlap between the CTA and the (now-hidden) control cluster;
+   footer "MaCo" isn't clipped in either theme at a narrow and a wide
+   viewport.
 1. **Decide a deployment target and add its config.** Nothing is committed yet — no CI workflow, no platform config. `AGENTS.md` previously named Amplify/Vercel/Netlify (frontend) and EC2/Railway/Render (backend) as candidates; none chosen.
 2. **Run and verify `seed_content` against a real Postgres instance** — confirm the seeded catalog matches `frontend/src/content/maco.ts` exactly (they should mirror each other but haven't been diffed).
 3. **Full responsive + accessibility verification pass** — real devices, `forced-colors`, screen reader, Lighthouse numbers. See `PROJECT_STATUS.md` "Not yet verified".
@@ -108,6 +118,30 @@ See `CONTEXT.md` §10 for the full per-section table (ground, file, pin behavior
     paper at momentary gaps between two `deep` sections (most visible at
     the RECORD -> FAQ / "About MaCo" -> "How MaCo works" boundary). See
     `AI_HANDOFF.md`'s three dated entries for full detail.
+
+15. **Homepage premium pass** (owner brief, 2026-09-03: 4 UI bugs + merge
+    the two "About" sections + rebuild the section transitions to be
+    "seamless"/"premium," with a real rounded-corner effect at color
+    changes like cuberto.com's). Four bugs fixed: preloader's numeral/
+    Enter-button collision (numeral moved inside the ring, button given a
+    permanently-reserved slot); Layout 2 mobile's brand chip now actually
+    hidden when closed (was being repositioned into the row instead);
+    Layout 2 mobile's open-panel CTA no longer overlaps the fixed layout/
+    theme control cluster (cluster now hides while the panel is open);
+    footer wordmark's `line-height` raised from a too-tight 0.82 to 1.15,
+    fixing real ascender/cap-height clipping. Record ("About MaCo")
+    merged into Overview and deleted — homepage is 10 sections, was 11;
+    see `CONTEXT.md` §10. GroundHandoff rebuilt: every same-ground
+    boundary is now opacity-only (no `yPercent`/`scale`, which could open
+    a visible dip at the seam — this is also the fix for the reported
+    Overview→Feature "empty gap"); the two ground-flip boundaries
+    (Preview→Overview, Identity→Faq) get a new `.ground-sheet` utility —
+    a permanent rounded-overlap CSS rest state, with GSAP only growing
+    the radius in from 0 as the section scrolls into place, replacing the
+    old clip-path that animated AWAY from rounded (toward square), which
+    is why the rounded effect had all but disappeared. Full detail in
+    `AI_HANDOFF.md`'s newest entry. **Not yet live-browser-verified — see
+    item 0 above, top priority for next session.**
 
 The `removeChild`/`NotFoundError` route-transition bug (item 6, listed here
 2026-08-27) is fixed — see `AI_HANDOFF.md`'s "third pass" entry.

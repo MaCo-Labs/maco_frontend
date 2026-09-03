@@ -1,17 +1,15 @@
 # MaCo Website — CONTEXT
 
 Complete project context for developers and AI agents.
-Last updated: 2026-09-03. Since the 2026-09-01 chrome/motion/reveal pass:
-two 2026-09-02 follow-ups (FEATURE pacing/Layout 2/mobile fixes, then a
-separate six-item pass — dynamic Layout 2 panel tone, the logo mark
-cropped to its real content, Layout 3 mobile hygiene) and a 2026-09-03 fix
-pass (FEATURE reverted from a scroll-driven reveal back to a hover
-accordion; `groundAt()` gained a `fallback` param, fixing a ground-tone
-flash at deep-to-deep section seams). Full narrative in `AI_HANDOFF.md`'s
-dated entries; this file reflects the resulting current state only. **Note:
-every pass from 2026-09-01 onward, including this doc update, is
-uncommitted** — see `AI_HANDOFF.md`'s "What's uncommitted" note. §11 below
-still documents the 2026-08-21 cleanup pass.
+Last updated: 2026-09-03 (homepage premium pass — 4 UI bugs fixed, the two
+"About" sections merged into one, GroundHandoff's transitions rebuilt as
+opacity-only fades + real rounded overlaps at ground flips; homepage is
+now 10 sections, was 11). Everything through the 2026-09-01 chrome/motion/
+reveal pass, two 2026-09-02 follow-ups, and an earlier 2026-09-03 fix pass
+(FEATURE reverted to a hover accordion, `groundAt()` gained a `fallback`
+param) is committed — see `git log --oneline` and `AI_HANDOFF.md`'s dated
+entries for full narrative. §11 below still documents the 2026-08-21
+cleanup pass.
 
 ---
 
@@ -357,13 +355,13 @@ Loaded via one combined Google Fonts request in `__root.tsx`. Michroma, Tenor Sa
 
 ---
 
-## 10. The homepage — 11 sections, Cuberto-parity structure
+## 10. The homepage — 10 sections, Cuberto-parity structure
 
 Composed in `routes/index.tsx`, built under `components/home/`, plus `<GroundHandoff>` (renders nothing — cross-section continuity, see below).
 
 Rebuilt 2026-08-28 (plan "Cuberto-parity homepage rebuild") at the owner's explicit direction: a full structural clone of cuberto.com's homepage — section inventory, order, spacing/grid rhythm, hero shape and component layouts — wearing MaCo's Obsidian/Cobalt tokens, MaCo's six typefaces, and `content/maco.ts`'s real copy. Cuberto's own colour values, typefaces and copy were never used, not even temporarily — see the "CUBERTO-PARITY STRUCTURE" block at the top of `styles.css` and `docs/references/cuberto/skillui/`. This overrides the "don't rebuild the homepage" / "reference sites are technique-only" rules that stood in `AGENTS.md`, `ROADMAP.md` and every `docs/references/*/NOTES.md` before this date — see the dated entry in `AI_HANDOFF.md` for the full reasoning and what still doesn't override.
 
-The eleven `aria-label`s are unchanged from the previous (pre-2026-08-28) architecture — same labels, new order, new component behind each one. `scripts/shoot.mjs`'s `SECTIONS` list reflects the new order.
+The ten `aria-label`s are unchanged from the previous (pre-2026-08-28) architecture minus one — Record ("About MaCo") was merged into Overview 2026-09-03 (see "What each section does" below) and its label retired along with the file. `scripts/shoot.mjs`'s `SECTIONS` list reflects the current order/count.
 
 | # | Section | Cuberto source | Ground | File | `aria-label` | Pin? |
 |---|---|---|---|---|---|---|
@@ -375,9 +373,8 @@ The eleven `aria-label`s are unchanged from the previous (pre-2026-08-28) archit
 | 6 | SUMMARY (inverse) | `cb-summary.-inverse` | paper | `summary.tsx` (`FeaturedWork`) | Selected client work | no |
 | 7 | SUMMARY | `cb-summary` | paper | `summary.tsx` (`ProductSummary`) | Products | no |
 | 8 | OVERVIEW (2nd) | `cb-overview` | paper | `identity.tsx` | MaCo, in one name and many scripts | yes |
-| 9 | SUMMARY (inverse) | `cb-summary.-inverse` | deep | `record.tsx` | About MaCo | no |
-| 10 | FAQ (inverse) | `cb-faq.-inverse` | deep | `faq.tsx` | How MaCo works | no |
-| 11 | OUTRO | `cb-outro` | deep | `outro.tsx` | Start a project | no |
+| 9 | FAQ (inverse) | `cb-faq.-inverse` | deep | `faq.tsx` | How MaCo works | no |
+| 10 | OUTRO | `cb-outro` | deep | `outro.tsx` | Start a project | no |
 
 Ground sequence: **deep deep · paper × 6 · deep deep deep**, footer also
 deep — a three-act shape (dark open, paper middle, dark close), not
@@ -395,27 +392,33 @@ without the transform-on-a-pin hazard a recede would hit there).
 
 Only two sections pin: PREVIEW (`evidence-expand.tsx`, pins its own `<section>`) and the 2nd OVERVIEW / IDENTITY (`identity.tsx`, same). Everything else is pin-free — a deliberate drop from the previous architecture's four pins (the retired `ServicesConvergence`, `ProductShowcase`-as-sticky-but-effectively-staged, and `MethodLine` are gone), which is also why the page is roughly one pinned viewport shorter than before.
 
+**2026-09-03: Record merged into Overview, homepage down to 10 sections.** Record (`aria-label="About MaCo"`, slot 9, `deep` ground) duplicated Overview's own "About" framing — Overview already opened with an "About" eyebrow, a headline, counted stats and an `/about` CTA; Record added nothing but `site.statement` restated (which ALSO already ran verbatim as `TopHead`'s hero subtext, so it was on the page three times over) plus one location line. `record.tsx` is deleted; Overview absorbed that one location line verbatim (`{site.category}, based in {site.location}. Working with clients across India and the Gulf.`, unchanged copy, just relocated) as a new paragraph after its CTA. The ground-flip pair that used to target Record (Identity → About MaCo, paper → deep) now targets Faq directly (Identity → How MaCo works) — same flip, one section earlier; the three-act ground shape (`deep deep · paper×6 · deep deep`, footer deep) is otherwise unchanged.
+
 Cuberto's measured rhythm, adopted as the `cb-*` utilities in `styles.css`: **108px (6.75rem)** section padding unit (`@utility cb-section`), **180px (11.25rem)** hero-only lead-in (`@utility cb-tophead`), radius scale `7.2px` / `1.6rem` / `2rem` / `1000px` (`--radius-chip/card/plate/pill`), and the accordion open/close transition taken verbatim off their stylesheet (`grid-template-rows .3s ease-out, opacity .4s ease-out` — `@utility cb-panel`).
 
 ### What each section does
 
 - **TOPHEAD** (`top-head.tsx`) — Cuberto's actual opening shape: brand row, one large left-aligned `<h1>` (`site.tagline`), short subtext (`site.statement`) and the entry CTA, under `<RakingSurface>`. Replaces the previous full-viewport centred-logo OPEN section — the page now starts reading immediately instead of resolving to a brand lockup first. The brand row is the mark alone as of 2026-09-01 (`<Mark size={72} />` + `site.name` in `sr-only`, no spelled-out text) — the header's own `<Wordmark>` already spells "MaCo" out ~120px above this row, so a second instance directly under it doubled up for no reason; this dropped `<SplitReveal>` from TOPHEAD's own render path (the component still exists but currently has zero call sites anywhere in the app — a cleanup candidate, see `ROADMAP.md`).
 - **PREVIEW** (`evidence-expand.tsx`, unchanged) — the page's one pinned cinematic set-piece: a clip-path frame locked to the video's real 16:9, grows to ~88vw on `ScrollTrigger` pin+scrub.
-- **OVERVIEW** (`overview.tsx`) — Cuberto's `cb-overview` 2-col flex: positioning statement left, a counted `<dl>` of real figures (service/client/project/product counts, derived from `content/maco.ts` — never invented) plus a route to `/about` right.
+- **OVERVIEW** (`overview.tsx`) — Cuberto's `cb-overview` 2-col flex: positioning statement left, a counted `<dl>` of real figures (service/client/project/product counts, derived from `content/maco.ts` — never invented) plus a route to `/about` right. **This is now the page's ONE About section** (2026-09-03) — it absorbed Record's location/category line (`{site.category}, based in {site.location}. Working with clients across India and the Gulf.`, verbatim, unreworded) as a paragraph after its CTA when `record.tsx` was deleted. Carries `className="ground-sheet"` (see GroundHandoff below) — it's the incoming side of the page's first ground flip.
 - **FEATURE** (`feature-accordion.tsx`) — every capability across both service lines, numbered rows. Replaces the previous two-card `ServicesConvergence` pin — Cuberto's homepage states its full capability range as one list, not two headline cards. Rendered through the shared `<Accordion>` (`components/home/accordion.tsx`, also FAQ's mechanism below) in `panel="inverted"` mode with `hoverToOpen`: real mouse/fine-pointer hover opens a row (gated to `(hover: hover) and (pointer: fine)`), click always works, touch never depends on hover — one open at a time, first row open by default. (A 2026-09-01 scroll-driven variant, `FeatureScroll`, briefly replaced this for full-motion visitors — rows expanded in sequence as the section crossed the viewport, no click. Reverted 2026-09-03: `ScrollTrigger`'s `scrub` lags real scroll position enough that a normal scroll or trackpad flick could blow past a row's open window before it registered. See §4's adopt/reject log.)
 - **LOGOREEL** (`logo-reel.tsx`) — continuous CSS-only horizontal drift of client logo cards (`@utility cb-reel`, radius `--radius-chip`, edge-masked), the track duplicated and translated -50% for a seamless loop, `aria-hidden` on the duplicate half. Replaces the previous scroll-scrubbed scatter field (`client-field.tsx`) — a reel reads correctly at every viewport width with no separate mobile branch.
 - **SUMMARY / FeaturedWork** (`summary.tsx`) — client platforms as a `cb-cards` grid (Cuberto's measured `450×608`-ish portrait plates), on deep ground. One `<Summary>` component, two call sites (here and PRODUCTS below) — matching Cuberto's own reuse of `cb-summary` twice.
 - **SUMMARY / ProductSummary** (`summary.tsx`) — MaCo's own two products, same card shape, paper ground.
 - **IDENTITY** (`identity.tsx`) — "One name. Many scripts." — a pinned, fully scroll-driven script dial, glyph position is pure CSS `calc(--i - --t)`, zero re-renders, correct `lang` per script. Ground flipped `deep` → `paper` in this pass to match Cuberto's own alternation. Script list curated from 13 to 10 in the 2026-08-29 tenth pass (English, Malayalam, Tamil, Telugu, Kannada, Hindi, Japanese, Korean, Arabic, Hebrew) and moved to `content/maco.ts` as `nameScripts` — the footer's compact strip (`chrome.tsx`) reads the same array, so the two can no longer drift apart the way the footer's old hand-written 7-item copy (which included Cyrillic, matching no client market) had.
-- **RECORD** (`record.tsx`) — the page's one rest beat, About-only since 2026-08-28 (its client logo wall was consolidated into LOGOREEL, the single client display). Ground flipped `paper` → `deep` in this pass.
-- **FAQ** (`faq.tsx`) — the same four-step process (A→D) as before, now through the shared `<Accordion>` on inverted ground, matching Cuberto's `cb-faq.-inverse`. Replaces the previous pinned `MethodLine` progress-spine.
+- **FAQ** (`faq.tsx`) — the same four-step process (A→D) as before, now through the shared `<Accordion>` on inverted ground, matching Cuberto's `cb-faq.-inverse`. Replaces the previous pinned `MethodLine` progress-spine. Carries `className="ground-sheet"` — it's the incoming side of the page's second (and now last) ground flip, directly after IDENTITY, since Record (which used to sit between them) is deleted (2026-09-03; Record was the page's old rest beat, About-only since 2026-08-28 — see OVERVIEW above for where its content went).
 - **OUTRO** (`outro.tsx`) — Cuberto's `cb-outro` 2-col grid: closing statement left, contact route right. Carries over the previous CLOSE section's `light-pass` sweep and centre-drawn `<RuleDraw>` — the one thing worth keeping from the section it replaces.
 
 ### Cross-section continuity — `GroundHandoff`
 
-`components/home/ground-handoff.tsx`, mounted once after OUTRO, renders nothing. On 11 hand-picked boundary pairs, matched by `aria-label` (including the footer, via its own `aria-label="Site footer"`), the outgoing section scales down/dims/lifts as the incoming section arrives; 2 of the 11 (each at a real ground flip) additionally get a curved-corner "sheet" reveal on the incoming side instead of a recede (the outgoing side pins on both). The remaining 9 receding pairs aren't all the same intensity as of the 2026-09-01 pass — 5 marked `"emphasis"` (the boundaries into/out of a set-piece or an act break) get a stronger recede than the other 4 `"interior"` (default) pairs, which cover the flat run of paper-ground card sections. Only pairs whose outgoing side is pin-free are eligible for a recede — a `transform` on the ancestor of a `position:fixed` pinned element repositions it relative to that ancestor instead of the viewport, so PREVIEW and IDENTITY (the only two sections that pin) can never be an outgoing side. See the file's own doc comment for the full derivation.
+`components/home/ground-handoff.tsx`, mounted once after OUTRO, renders nothing. On 10 hand-picked boundary pairs (down from 11 — one dropped with Record's deletion, 2026-09-03), matched by `aria-label` (including the footer, via its own `aria-label="Site footer"`), the outgoing section fades as the incoming section arrives; 2 of the 10 (each at a real ground flip: Preview→Overview, Identity→Faq) additionally get a rounded-overlap "sheet" reveal on the incoming side instead of a fade (the outgoing side pins on both, so it's excluded from any animation there). The other 8 fading pairs aren't all the same intensity as of the 2026-09-01 pass — marked `"emphasis"` (the boundaries into/out of a set-piece or an act break) get a stronger fade than the `"interior"` (default) pairs, which cover the flat run of paper-ground card sections. See the file's own doc comment for the full derivation.
 
-The scale-down recede can open a real, momentary gap at a boundary between two same-ground sections (most visible between two `deep` sections, since a `deep`-to-`deep` boundary has no color change to mask it). `lib/ground.ts`'s `groundAt()` resolver — shared by the header/EdgeNav ticker and the cursor's own ground-tracking (§10 below) — used to hard-default to `"paper"` whenever nothing covered the sample point, flashing both consumers to the wrong tone for a few frames at exactly such a gap (reported 2026-09-03 as a rendering glitch at the RECORD→FAQ / "About MaCo"→"How MaCo works" seam, both `deep`). Fixed with a `fallback` parameter: continuous trackers now pass their own last-resolved tone instead of the hard default, so a transient gap holds its prior tone instead of flashing.
+**2026-09-03 transition rebuild**, replacing the mechanism above (which used to scale/lift the outgoing section, and animate the sheet's clip-path AWAY from rounded toward square):
+
+- **Same-ground boundaries are now a pure opacity fade — no transform.** The old `yPercent`/`scale` recede shrank the outgoing section from its own bottom edge, which could open a visible dip at the seam — reported as an "empty gap" scrolling Overview→Feature (both `paper`, so not a color mismatch — the shrink itself was the cue that drew the eye to a moment neither section's content had fully settled). Dropping the transform removes the mechanism, not just the symptom.
+- **The two ground-flip boundaries are a real rounded overlap, not a flatten.** The incoming section (`overview.tsx`, `faq.tsx` — both now carry `className="ground-sheet"`, a new `styles.css` utility) has a PERMANENT CSS rest state: `margin-top: -3rem`, `border-radius: 3rem 3rem 0 0`, a drop shadow — it physically overlaps the section above it with rounded top corners at all times, JS or not. `ground-handoff.tsx` now only grows that radius FROM 0 INTO the 48px rest value as the section scrolls in (a real `border-radius` tween, not `clip-path` — clip-path also clips its own box-shadow, so the old mechanism could never have shown one). Reduced-motion/no-JS visitors see the settled rounded composition directly, with no separate branch needed, since `useScrollScene` already no-ops whenever `getScrollRuntime()` returns null.
+
+`lib/ground.ts`'s `groundAt()` resolver — shared by the header/EdgeNav ticker and the cursor's own ground-tracking (§10 below) — is a related but separate fix from earlier the same day: it used to hard-default to `"paper"` whenever nothing covered the sampled y, flashing those two continuous consumers to the wrong tone for a few frames at a momentary gap between two `deep` sections (reported as a glitch at the old RECORD→FAQ seam). Fixed with a `fallback` parameter so continuous trackers pass their own last-resolved tone instead of the hard default.
 
 ### `SurfaceMedia` (`components/media/surface-media.tsx`)
 
@@ -427,7 +430,7 @@ One raking-light gradient (`::after`, `mix-blend-mode: overlay`) reused at multi
 
 ### Scroll substrate & interaction layer
 
-Ownership is split, not layered (see §12). **Lenis** owns raw scroll position (`src/lib/scroll-runtime.ts`, a lazy module-level singleton booted by `<ScrollRuntimeProvider>` in `__root.tsx`, `null` on the server or under reduced motion). **GSAP `ScrollTrigger`** owns every pin/scrub, on all 11 sections. `motion` v13 keeps only discrete UI state (hover springs) and never touches scroll.
+Ownership is split, not layered (see §12). **Lenis** owns raw scroll position (`src/lib/scroll-runtime.ts`, a lazy module-level singleton booted by `<ScrollRuntimeProvider>` in `__root.tsx`, `null` on the server or under reduced motion). **GSAP `ScrollTrigger`** owns every pin/scrub, on all 10 sections. `motion` v13 keeps only discrete UI state (hover springs) and never touches scroll.
 
 `hooks/use-scroll-scene.ts` is the standard entry point for any scroll-linked component — wraps `gsap.context()` for auto-cleanup.
 

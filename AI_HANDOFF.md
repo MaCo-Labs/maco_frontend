@@ -34,9 +34,18 @@ ThemeSwitch hygiene), and a 2026-09-03 pass (FEATURE reverted from the
 2026-09-01 scroll-driven reveal back to `Accordion`'s hover-to-open mode —
 the scroll version lagged real scroll gestures; `groundAt()` gained a
 `fallback` parameter so continuous ground-trackers stop flashing to paper
-at gaps between deep sections). **None of the passes from 2026-09-01 onward
-are committed to git yet** — they sit uncommitted on top of `503ce20`
-alongside this doc update; see "What's uncommitted" below. A full
+at gaps between deep sections), and a 2026-09-03 later "homepage premium
+pass" (4 UI bugs fixed — preloader collision, Layout 2 mobile brand chip
+and panel-CTA overlap, footer wordmark clipping; the two "About" sections
+merged into one, homepage now **10 sections**, was 11; GroundHandoff
+rebuilt as opacity-only fades on same-ground boundaries plus a real
+rounded overlap — not the old barely-visible flatten — at the 2
+ground-flip boundaries; see its own entry below for full detail,
+including an honest note that this pass was verified structurally but
+never actually seen in a browser — both `agent-browser` and `playwright`
+MCP were unavailable all session). **Everything through this pass is now
+committed** (three commits on top of `503ce20`: a docs checkpoint, a code
+checkpoint, and this pass) — `git log --oneline` is authoritative. A full
 dead-code/dependency cleanup pass ran 2026-08-21 (see
 `CONTEXT.md` §11). Build/lint are clean. The `/about` SSR issue is
 resolved. Nothing in the codebase ships behind a preview flag as of this
@@ -1079,23 +1088,150 @@ real mouse (rows open on hover, close on hover-out, first row open by
 default) and confirmed click-only still works with mouse hover disabled
 (coarse-pointer emulation).
 
-## What's uncommitted
+## 2026-09-03, later — homepage premium pass: 4 bugs, About merge, transitions rebuilt
 
-Every pass from **2026-09-01 onward** (chrome/motion/reveal, both
-2026-09-02 passes, and 2026-09-03 above) exists only in the working tree —
-the last real commit is `503ce20` ("Motion/nav pass: split rails,
-translucent panel, preloader enter gate," the 2026-08-31 pass). This
-includes two files that have never been committed at all:
-`components/nav/edge-nav.tsx` (EdgeNav, extracted out of `chrome.tsx` and
-mounted directly in `__root.tsx` as a `<Header>` sibling) and `lib/
-ground.ts` (`groundAt`/`SECTION_SELECTOR`, the shared ground resolver
-`chrome.tsx`, `cursor.tsx`, and `edge-nav.tsx` all now import). `git diff
---stat` against `HEAD` currently shows ~1,700 lines changed across 17
-files. Nothing here is speculative or unverified — every item above and in
-the 2026-09-01/09-02 entries was live-checked as described — it just hasn't
-been packaged into commits yet. Next session (or this one): review the
-diff, split it into sensible commits (roughly one per dated pass above),
-and push.
+Owner brief, 7 numbered items plus an open-ended "check for any issues,
+make it premium, make it perfect" homepage audit. First: committed the
+entire 2026-09-01-through-earlier-09-03 backlog (previously ~1,700
+uncommitted lines, see the old "What's uncommitted" section this replaces)
+as two checkpoint commits — one docs-only, one code (bundling everything
+since `503ce20` without a per-pass split; re-deriving exact hunk
+boundaries across three interleaving chrome.tsx/styles.css passes wasn't
+worth the cost for a checkpoint). Then this pass's own work as a third
+commit. `git log --oneline` from here: the homepage-premium-pass commit,
+then the code checkpoint, then the docs checkpoint, then `503ce20`.
+
+**Four bugs, each root-caused against the actual rendered geometry, not
+guessed:**
+
+1. **Preloader numeral/Enter-button collision.** The percentage numeral
+   (`preloader.tsx`) was `position: absolute` with `-bottom-12` (−48px),
+   so it contributed zero height to the flex column and rendered OUTSIDE
+   the 200px ring's own box — directly into the space the (conditionally
+   mounted) Enter button occupied 40px below the ring (`gap-10`). Both hit
+   their "final" state on the same tick (`showEnter()` sets `ready` and
+   writes "100" together), so the opaque `.btn-solid` pill painted over
+   the last ~8px of the numeral. Fixed two ways at once: numeral moved to
+   `bottom-8`, inside the ring's own box (can't collide with anything
+   below it now); the Enter button's wrapper is now always mounted (a
+   `min-h-[3.25rem]` reserved slot, opacity/y animate in via Motion,
+   `disabled={!ready}` instead of not-yet-existing) so nothing shifts and
+   there's no tick where both occupy the same geometry.
+2. **Layout 2, mobile, closed: brand chip.** Was being *repositioned*
+   into the header row on mobile (`position:static; order:-1`) rather
+   than hidden — now `display:none` via
+   `html[data-layout="2"]:not([data-nav-open="true"]) .layout-nav-overlay-brand`,
+   reusing the same open/closed gating pattern this file already used for
+   the chip's background. MENU plus the panel's own in-list "Home" link
+   already cover navigation without it.
+3. **Layout 2, mobile, panel open: CTA overlap.** The fixed bottom-left
+   utility cluster (`LayoutSwitch`+`ThemeSwitch`, `.layout-nav-overlay-
+   controls`) sits at `z-[47]`, above the open panel's `z-[46]` — it
+   painted directly over the in-panel "Start a project" CTA, which
+   bottom-anchors into the same 20–55px band, both left-aligned at the
+   same gutter. Fixed by hiding the cluster while the panel is open
+   (`html[data-layout="2"][data-nav-open="true"] .layout-nav-overlay-
+   controls { display: none }`) — the panel is a scroll-locked modal with
+   no equivalent controls of its own anyway (same reasoning the CTA row
+   above it already used to drop itself at this width); the cluster
+   reappears the instant the panel closes.
+4. **Footer wordmark clipping.** `.footer-giant-mark`'s `line-height:
+   0.82` was tighter than either display font's real ascender/cap-height
+   metrics — the overflow got clipped by the parent `.shell.overflow-
+   hidden` wrapper AND, separately, excluded from `background-clip:
+   text`'s painted area (same tight line-box), so raising overflow alone
+   wouldn't have fixed it. Raised to `1.15` — "MaCo" has no descenders,
+   so this is ascender/cap-height clearance only, comfortable in both
+   themes' fonts (Unbounded 800 / Michroma 400).
+
+**The two "About" sections merged into one, homepage 11→10 sections.**
+Overview ("What MaCo does," early, paper ground) already had a headline,
+counted stats, and an `/about` CTA; Record ("About MaCo," late, deep
+ground) added only `site.statement` restated — which ALSO already ran
+verbatim as `TopHead`'s hero subtext, so it was on the page three times
+over — plus one location line. `record.tsx` deleted; its location line
+(`{site.category}, based in {site.location}. Working with clients across
+India and the Gulf.`) moved verbatim into Overview as a new paragraph
+after its CTA — no copy invented or reworded. Ripple: `routes/index.tsx`
+(import + render slot removed, renumbered), `ground-handoff.tsx` (the
+Identity→"About MaCo" ground-flip pair now targets Identity→"How MaCo
+works" directly — same flip, one section earlier), `scripts/shoot.mjs`
+(`SECTIONS` entry removed, renumbered `09-faq`/`10-outro`). Grepped for
+`"About MaCo"` as an aria-label after deleting — only remaining hits are
+the (unrelated, intentional) CTA link text on Overview and the `/about`
+route's own page title.
+
+**GroundHandoff rebuilt — the actual point of this pass, per the owner's
+own framing ("very fluid... premium... brilliant," "no dividing line or
+dividing empty spaces... seamless," and specifically: bring back the
+rounded-corner effect like cuberto.com's, which existed before and had
+gone missing).** Root cause of "gone missing": the old sheet mechanism
+animated a `clip-path` corner radius FROM 48px round TO 0 (square) as the
+incoming section arrived — i.e. AWAY from rounded, so the rounded state
+was barely ever on screen; it was also never able to carry a box-shadow,
+since `clip-path` clips its own shadow too (the shadow paints outside the
+border box, which a clip region excludes). Two changes:
+
+- **Same-ground boundaries (8 of 10 pairs) are now a pure opacity
+  fade — no transform at all.** The old recede (`yPercent -2/-4, scale
+  0.985/0.965, transformOrigin "50% 0%"`) shrank the outgoing section
+  from its own bottom edge upward, which could expose a real, if brief,
+  dip at the seam — this is the direct fix for the reported "empty gap"
+  scrolling Overview→Feature (both `paper`, so it was never a color
+  mismatch; the shrink itself was the cue drawing the eye to a moment
+  neither section's content had fully settled). Dropping the transform
+  removes the mechanism, not just the symptom, and directly answers the
+  "no dividing... empty spaces, seamless" ask.
+- **The two ground-flip boundaries (Preview→Overview, Identity→Faq) are a
+  real, permanent rounded overlap now.** New `.ground-sheet` utility
+  (`styles.css`) on the incoming section (`overview.tsx`, `faq.tsx`):
+  `margin-top: -3rem` (permanent physical overlap), `border-radius: 3rem
+  3rem 0 0` (permanent rest-state rounding — the CSS default, not
+  something JS has to create), `box-shadow: 0 -20px 48px -12px oklch(0 0
+  0 / 0.35)` (a ground-invariant dark shadow — deliberately not
+  `--text`/`--accent`-derived, since those flip to near-white on deep
+  ground and would read as a glow, not a shadow). `ground-handoff.tsx`
+  now only grows the radius FROM 0 INTO that 48px rest value via a real
+  `border-radius` GSAP tween (not `clip-path`) as the section scrolls
+  in — reduced-motion/no-JS visitors see the settled rounded composition
+  directly at all times, no separate branch needed, since
+  `useScrollScene` already no-ops whenever `getScrollRuntime()` returns
+  null. 48px reuses the old clip-path's own rounding amount — the
+  already-considered-correct number for this exact spot, not reinvented.
+
+**Verification — and an honest limitation.** `bun run build`/`bun run
+lint`/`bunx tsc --noEmit` all clean (only the pre-existing `MaCoGlobe.tsx`
+error). **No real-browser check was possible this session**: the
+`agent-browser` MCP tool hung on `agent_browser_open` (1800s, no
+response — same failure class as the 2026-09-01 pass's note about it
+hanging on launch), and the `playwright` MCP server failed to connect all
+session (`CONNECT_TIMEOUT`, confirmed via `ToolSearch`, not assumed).
+Verified instead against the actual production build: ran `bun run
+preview`, fetched the SSR HTML with `curl` and confirmed the 10 sections
+render in the correct order with the right `aria-label`s, `ground-sheet`
+is on exactly Overview and Faq (`grep -o 'class="[^"]*ground-sheet[^"]*"'`
+→ 2 matches), the absorbed About paragraph renders `content/maco.ts`'s
+exact `site.category`/`site.location` text (React's `<!-- -->` hydration
+comments between adjacent text-expression siblings initially broke a
+naive grep — found and worked around, not a bug), and the preloader's new
+`bottom-8`/`min-h-[3.25rem]` markup is present; fetched the compiled CSS
+and JS bundles and confirmed `.ground-sheet`'s exact declared values, the
+`.footer-giant-mark` `line-height:1.15`, both new Layout-2-mobile rules,
+and GroundHandoff's `borderRadius:` FROM `` `0px 0px 0px 0px` `` TO ``
+`48px 48px 0px 0px` `` tween all compiled with the intended literal
+values. **This confirms the code is wired correctly, not how it actually
+looks or animates on screen.** A real visual pass — does the rounded
+overlap read as premium, does the fade feel seamless, do the 4 bug fixes
+actually look right — is the single most important thing left; see
+`ROADMAP.md` item 0.
+
+**Open, not acted on:** `frontend/public/white.png`/`white-2.png` remain
+untracked, zero references anywhere in `frontend/src` (confirmed via
+grep) — likely stray exports from the 2026-09-02 logo-crop work. Left
+alone rather than guessed at; delete once confirmed unneeded, or ask.
+`components/motion/split-reveal.tsx` still has zero call sites (noted
+2026-09-03 earlier pass, unchanged this pass) — same "confirm before
+deleting" discipline applies.
 
 ## Read this first
 
@@ -1106,9 +1242,10 @@ and push.
 
 ## What the homepage is now
 
-11 sections, `routes/index.tsx` → `components/home/*`. Full table with
-ground/aria-label/pin behavior in `CONTEXT.md` §10 — don't duplicate it here,
-it will drift again.
+10 sections (was 11 until 2026-09-03 — see that pass's entry above),
+`routes/index.tsx` → `components/home/*`. Full table with ground/
+aria-label/pin behavior in `CONTEXT.md` §10 — don't duplicate it here, it
+will drift again.
 
 ## Typography
 
@@ -1118,8 +1255,10 @@ Obsidian: Unbounded/Jost/Agdasima. Cobalt: Michroma/Tenor Sans/Krona One.
 ## Logo
 
 `Mark` component (`components/mark.tsx`), CSS `mask-image` + `currentColor` —
-one asset, correct on every ground/theme. `logo-mark.png` (chrome, small) and
-`maco-mark-hero.png` (OPEN hero, large).
+one canonical asset (`logo-mark.png`), correct on every ground/theme/size.
+Cropped to its real alpha content 2026-09-02 (`ASPECT` constant, `size` now
+means width). `maco-mark-hero.png` is gone — deleted 2026-09-01, zero
+references since TopHead replaced the old OPEN hero that used it.
 
 ## The signature device — light-pass
 
