@@ -1180,7 +1180,16 @@ html[data-theme="cobalt"] .footer-giant-mark {
    keeps content well clear of the rounded corner. */
 @utility ground-sheet {
   position: relative;
-  z-index: 1;
+  /* Must beat the outgoing section's own stacking, not just sit "above
+     auto". Both ground-flip outgoing sides (EvidenceExpand, Identity) are
+     `z-[41]` PERMANENTLY (not only while pinned — that class never comes
+     off), so a lower z-index here (previously 1) let them paint over this
+     rounded overlap for its entire life, hiding the border-radius AND the
+     box-shadow with zero visual trace. 41 ties their stacking level, so
+     DOM order (this section always comes later) decides it in our favor,
+     same as before either section had an explicit z-index at all. Stays
+     under the header/nav chrome (z-42 and up). */
+  z-index: 41;
   margin-top: -3rem;
   border-radius: 3rem 3rem 0 0;
   box-shadow: 0 -20px 48px -12px oklch(0 0 0 / 0.35);
