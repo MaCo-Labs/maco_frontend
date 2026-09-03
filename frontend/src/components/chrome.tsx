@@ -738,17 +738,21 @@ export function Header() {
         if (mobileNav) mobileNav.dataset["over"] = topGround;
         if (triggerOverlay) triggerOverlay.dataset["over"] = topGround;
         if (edgeNav) edgeNav.dataset["over"] = edgeGround;
-        // Same top sample reused for `<body>`'s own backdrop
-        // (html[data-ground-now] in styles.css) — a coarse safety net, not
-        // pixel-precise, for anything that ever exposes body's background:
-        // margin between two dark sections (the footer gap this was added
-        // for) or GroundHandoff's recede scaling a full-bleed section down
-        // a couple percent at its edges. Without this, either one shows
-        // body's un-grounded default (paper) through the gap. On a route
-        // with no [data-ground] sections at all, `grounds` is empty and
-        // `groundAt` naturally falls back to "paper" — no separate no-op
-        // branch needed for that case.
-        document.documentElement.dataset["groundNow"] = topGround;
+        // `<body>`'s own backdrop (html[data-ground-now] in styles.css)
+        // takes the CENTRE sample, not the top one: body shows through
+        // wherever a section doesn't fully paint — a margin between two
+        // sections, or GroundHandoff's outgoing opacity fade, which is
+        // literally a section going part-transparent while it's still the
+        // main thing on screen. So body has to match the section that OWNS
+        // the viewport, not the sliver behind the header. Sampled at y=48
+        // it lagged by most of a viewport at METHOD (deep, arriving under a
+        // still-paper top sliver): the fading deep section composited
+        // against a near-white body as mid-grey, then snapped to black the
+        // moment the top sample finally flipped — reported live as "it
+        // doesn't transition, it just becomes black". On a route with no
+        // [data-ground] sections at all, `grounds` is empty and `groundAt`
+        // falls back to "paper" — no separate no-op branch needed.
+        document.documentElement.dataset["groundNow"] = edgeGround;
       };
       rt.gsap.ticker.add(applyGround);
     });
