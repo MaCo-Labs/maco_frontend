@@ -6,7 +6,6 @@ import { FeatureAccordion } from "@/components/home/feature-accordion";
 import { LogoReel } from "@/components/home/logo-reel";
 import { FeaturedWork, ProductSummary } from "@/components/home/summary";
 import { Identity } from "@/components/home/identity";
-import { Record } from "@/components/home/record";
 import { Faq } from "@/components/home/faq";
 import { Outro } from "@/components/home/outro";
 import { GroundHandoff } from "@/components/home/ground-handoff";
@@ -32,13 +31,16 @@ export const Route = createFileRoute("/")({
 });
 
 /**
- * Twelve-slot Cuberto-parity structure (docs/REFACTOR_PLAN.md §12, plan
- * "Cuberto-parity homepage rebuild", 2026-08-28). Section order, spacing
- * rhythm and ground alternation are cloned from cuberto.com's own
- * homepage (measured in docs/references/cuberto/skillui/); every colour,
- * typeface and word is MaCo's. The eleven aria-labels are unchanged from
- * the previous architecture — only which component renders each one, and
- * in what order — so scripts/shoot.mjs needed reordering, not renaming.
+ * Ten-slot Cuberto-parity structure (docs/REFACTOR_PLAN.md §12, plan
+ * "Cuberto-parity homepage rebuild", 2026-08-28; originally eleven
+ * slots, down to ten 2026-09-03 when the page's second "About" section
+ * — Record — was merged into Overview, see Overview's own doc comment).
+ * Section order, spacing rhythm and ground alternation are cloned from
+ * cuberto.com's own homepage (measured in docs/references/cuberto/
+ * skillui/); every colour, typeface and word is MaCo's. The remaining
+ * ten aria-labels are unchanged from the previous architecture — only
+ * which component renders each one, and in what order — so
+ * scripts/shoot.mjs needed reordering, not renaming.
  */
 function Home() {
   return (
@@ -49,7 +51,8 @@ function Home() {
       {/* 2. PREVIEW — showreel, unchanged from the prior architecture */}
       <EvidenceExpand />
 
-      {/* 3. OVERVIEW — positioning + counted figures */}
+      {/* 3. OVERVIEW — positioning, counted figures, and (2026-09-03) the
+          page's one About paragraph, absorbed from the deleted Record */}
       <Overview />
 
       {/* 4. FEATURE — every capability, one accordion */}
@@ -67,13 +70,10 @@ function Home() {
       {/* 8. OVERVIEW (2nd) — identity, now on paper ground */}
       <Identity />
 
-      {/* 9. SUMMARY (inverse) — clients + company record, now deep ground */}
-      <Record />
-
-      {/* 10. FAQ (inverse) — the four-step method, as an accordion */}
+      {/* 9. FAQ (inverse) — the four-step method, as an accordion */}
       <Faq />
 
-      {/* 11. OUTRO — final statement + intake */}
+      {/* 10. OUTRO — final statement + intake */}
       <Outro />
 
       {/* Cross-section continuity — renders nothing itself */}

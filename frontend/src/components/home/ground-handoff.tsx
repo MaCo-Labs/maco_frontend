@@ -2,69 +2,74 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
 
 /**
  * Cross-section continuity: as the page moves from one section to the
- * next, the OUTGOING section recedes (scale down, dim, drift up) during
- * the natural crossing window instead of just scrolling off — the
- * incoming section then reads as physically overtaking it, rather than
- * merely following it. Mounted once in routes/index.tsx.
+ * next, the OUTGOING section fades during the natural crossing window
+ * instead of just scrolling off — the incoming section then reads as
+ * arriving over it, rather than merely following it. Mounted once in
+ * routes/index.tsx.
  *
- * Rebuilt 2026-08-28 for the Cuberto-parity twelve-slot structure, then
- * retuned the same day for the dark-first three-act ground sequence
- * (`CONTEXT.md` §10: `deep deep | paper×6 | deep deep deep`). Same pin
- * hazard as before: a `transform` on an ancestor of a `position: fixed`
- * element repositions that fixed element relative to the TRANSFORMED
- * ancestor instead of the viewport, so a section that HOSTS a pin must
- * never be the OUTGOING side of a recede. Only two of the eleven
- * sections pin at all: EvidenceExpand (`aria-label="Bridge in motion"`)
- * and Identity (`aria-label="MaCo, in one name and many scripts"`), both
- * pinning their own `<section>` directly.
+ * 2026-09-03 rebuild (previous version: `yPercent`/`scale` recede +
+ * clip-path-flattens-to-square sheet). Two changes, both fixing real,
+ * reported problems:
  *
- * Only the OUTGOING section is ever transformed by a recede (the
- * incoming section is just the ScrollTrigger's reference point) — so a
- * plain recede is safe whenever the OUTGOING side is pin-free, regardless
- * of what the incoming side hosts.
+ * 1. **Recede is opacity-only now — no transform.** The old recede
+ *    (`yPercent -2/-4, scale 0.985/0.965, transformOrigin "50% 0%"`)
+ *    shrank the outgoing section from its own bottom edge upward, which
+ *    could expose a real, if brief, dip at the seam — reported live as
+ *    an "empty gap" scrolling from Overview into Feature (both `paper`,
+ *    so it wasn't a color mismatch; it was the visible shrink cue itself
+ *    drawing the eye to a moment neither section's own content had fully
+ *    arrived yet). Dropping the transform removes the mechanism, not just
+ *    the symptom — every non-ground-flip boundary is now a plain
+ *    cross-fade, nothing moves or scales.
+ * 2. **The two ground-flip boundaries are a real rounded overlap now, not
+ *    a clip-path that ends flat.** The old sheet animated a clip-path's
+ *    corner radius FROM 48px round TO 0 (square) — i.e. away from
+ *    rounded, so the rounded state was barely on screen. The incoming
+ *    section (`.ground-sheet` in styles.css — Overview, Faq) now has a
+ *    PERMANENT `border-radius`/negative-`margin-top` overlap as its CSS
+ *    rest state; this file only grows the radius FROM 0 INTO that 48px
+ *    rest value as the section arrives, via a real `border-radius` tween
+ *    (not `clip-path`, which also clips its own `box-shadow` — the
+ *    shadow paints outside the border box, which a clip region excludes,
+ *    so the old mechanism could never have shown one; `border-radius`
+ *    doesn't have that problem). Reduced motion / no-JS renders the CSS
+ *    rest state directly — already the settled, correct composition,
+ *    since `useScrollScene` no-ops whenever `getScrollRuntime()` returns
+ *    null (SSR, reduced motion, blocked import), so this file needs no
+ *    explicit reduced-motion branch of its own.
  *
- * The curved-corner sheet reveal (`clip-path: inset(... round ...)`
- * scrubbed from a rounded rect to square) touches the INCOMING side
- * instead, and is reserved for boundaries that are ALSO a ground
- * change — every other boundary just recedes, so the sheet gesture keeps
- * meaning "the ground just changed" rather than decorating every
- * crossing. `clip-path` clips an element's entire painted subtree,
- * including `position: fixed` descendants, so a sheet is only safe on an
- * incoming section that either pins ITSELF or doesn't pin at all — never
- * via a descendant.
+ * Same pin hazard as before: a `transform` on an ancestor of a
+ * `position: fixed` element repositions that fixed element relative to
+ * the TRANSFORMED ancestor instead of the viewport, so a section that
+ * HOSTS a pin must never be the OUTGOING side of an animated transform.
+ * Only two of the ten sections pin at all: EvidenceExpand
+ * (`aria-label="Bridge in motion"`) and Identity (`aria-label="MaCo, in
+ * one name and many scripts"`), both pinning their own `<section>`
+ * directly — moot for the recede now that it's opacity-only (opacity
+ * never had this hazard), but still the reason both ground flips use
+ * `"sheet-only"` (sheet on the incoming side, no recede at all on the
+ * pinned outgoing side) rather than `"sheet"` (recede + sheet, for a
+ * ground-change boundary whose outgoing side is pin-free — none
+ * currently, kept for the next ground change that doesn't land on a pin).
  *
- * The dark-first sequence puts BOTH of the page's two ground flips
- * exactly on the two pinned-outgoing boundaries (EvidenceExpand -> What
- * MaCo does, Identity -> About MaCo) — the only boundaries a recede can't
- * touch. Each `mode` covers one shape:
- *   - default (no `mode`): plain recede only. Every boundary that isn't a
- *     ground change — which, after the inversion, is every OTHER boundary
- *     on the page.
- *   - `"sheet"`: recede + sheet, for a ground-change boundary whose
- *     outgoing side is pin-free (none currently — both ground flips now
- *     sit on a pinned-outgoing boundary, so this mode is unused today but
- *     kept for the next ground change that doesn't).
- *   - `"sheet-only"`: sheet on the incoming side, NO recede (the outgoing
- *     side pins, so it's excluded from transforms entirely) — both of
- *     today's ground flips use this.
+ * `"emphasis"` vs default (no `mode`, i.e. `"interior"`): a fade-opacity
+ * weight, not a transform weight — `"emphasis"` marks the boundaries
+ * into/out of a set-piece or an act break (the hero's exit, the run-up to
+ * IDENTITY's pinned dial, and the closing stretch into the footer);
+ * `"interior"` is the same fade, lighter, for the flat run of paper-
+ * ground card sections in between (Capabilities/Clients/Selected
+ * work/Products) — so the page's real structural beats read as more
+ * deliberate than its interior ones.
  *
- * 2026-09-01: added an `"emphasis" | "interior"` weight (default
- * `"interior"`) to the plain recede, replacing what used to be one fixed
- * intensity for all 8 non-sheet boundaries. `"emphasis"` marks the
- * boundaries into/out of a set-piece or an act break (the hero's exit,
- * the run-up to IDENTITY's pinned dial, and the closing stretch into the
- * footer); `"interior"` is the same recede, toned down, for the flat run
- * of paper-ground card sections in between (Capabilities/Clients/
- * Selected work/Products) — so the page's real structural beats read as
- * more deliberate than its interior ones, instead of every boundary
- * receding identically regardless of what it actually separates. Also
- * closes the one boundary that had no handoff at all: Outro -> the
- * footer (not a `<section>`, so it needs its own `aria-label` —
- * `chrome.tsx`'s `<footer>` — for this file's lookup to reach it).
+ * 2026-09-03: down to 10 pairs (was 11) — Record ("About MaCo") merged
+ * into Overview and was deleted; the ground-flip pair that used to target
+ * it (Identity -> About MaCo) now targets What follows Identity directly
+ * (Identity -> How MaCo works), preserving the same ground flip
+ * (paper -> deep) one section earlier.
  */
 const RECEDE_WEIGHTS = {
-  emphasis: { yPercent: -4, scale: 0.965, opacity: 0.55 },
-  interior: { yPercent: -2, scale: 0.985, opacity: 0.7 },
+  emphasis: { opacity: 0.55 },
+  interior: { opacity: 0.7 },
 } as const;
 
 const PAIRS: readonly [
@@ -79,8 +84,7 @@ const PAIRS: readonly [
   ["Who we work with", "Selected client work"],
   ["Selected client work", "Products"],
   ["Products", "MaCo, in one name and many scripts", "emphasis"],
-  ["MaCo, in one name and many scripts", "About MaCo", "sheet-only"],
-  ["About MaCo", "How MaCo works", "emphasis"],
+  ["MaCo, in one name and many scripts", "How MaCo works", "sheet-only"],
   ["How MaCo works", "Start a project", "emphasis"],
   ["Start a project", "Site footer", "emphasis"],
 ];
@@ -100,37 +104,27 @@ export function GroundHandoff() {
         invalidateOnRefresh: true,
       };
 
-      // "sheet-only" boundaries sit on a PINNED outgoing section — the
-      // recede below is exactly the transform-on-a-pin-ancestor hazard
-      // this file's doc comment describes, so it's skipped entirely here.
+      // "sheet-only" boundaries sit on a PINNED outgoing section — kept
+      // excluded from the fade too, matching the previous version's own
+      // discipline (only the incoming side ever animates there).
       if (mode !== "sheet-only") {
-        // A ground flip ("sheet") is structurally significant the same
-        // way an "emphasis" boundary is — both get the stronger recede;
-        // everything else (undefined/default) gets the lighter one.
         const weight =
           RECEDE_WEIGHTS[mode === "sheet" || mode === "emphasis" ? "emphasis" : "interior"];
-        rt.gsap.fromTo(
-          outgoing,
-          { yPercent: 0, scale: 1, opacity: 1 },
-          {
-            ...weight,
-            ease: "none",
-            transformOrigin: "50% 0%",
-            scrollTrigger,
-          },
-        );
+        rt.gsap.fromTo(outgoing, { opacity: 1 }, { ...weight, ease: "none", scrollTrigger });
       }
 
-      // Curved sheet: the incoming section's top corners start rounded
-      // and flatten to square as it settles into place. clip-path
-      // defaults to `none` in the JSX (no inline style), so with no JS /
-      // reduced motion the section just renders with its normal square
-      // top edge — the settled end-state.
+      // Rounded overlap grows in: FROM square (0) TO the incoming
+      // section's own permanent CSS rest state (48px, `.ground-sheet` in
+      // styles.css — applied directly on Overview's and Faq's <section>).
+      // `immediateRender` (gsap's default for a `fromTo`) sets the FROM
+      // value on mount, which is why JS-enabled visitors see 0 initially
+      // regardless of the CSS class — only reduced-motion/no-JS ever see
+      // the class's own 48px directly, per this file's doc comment above.
       if (mode === "sheet" || mode === "sheet-only") {
         rt.gsap.fromTo(
           incoming,
-          { clipPath: "inset(0px round 48px 48px 0px 0px)" },
-          { clipPath: "inset(0px round 0px 0px 0px 0px)", ease: "none", scrollTrigger },
+          { borderRadius: "0px 0px 0px 0px" },
+          { borderRadius: "48px 48px 0px 0px", ease: "none", scrollTrigger },
         );
       }
     }

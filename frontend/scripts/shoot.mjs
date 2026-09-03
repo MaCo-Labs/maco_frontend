@@ -40,8 +40,8 @@ const WIDTHS = [1440, 1280, 1024, 768, 430, 390, 375];
 const THEMES = ["obsidian", "cobalt"];
 
 // aria-label -> filename slug, in document order (routes/index.tsx). Reordered
-// 2026-08-28 for the Cuberto-parity twelve-slot structure — same eleven
-// labels, new document order, new component per label.
+// 2026-08-28 for the Cuberto-parity twelve-slot structure; down from eleven
+// labels to ten 2026-09-03 when Record ("About MaCo") merged into Overview.
 const SECTIONS = [
   ["Introduction", "01-tophead"],
   ["Bridge in motion", "02-preview"],
@@ -51,9 +51,8 @@ const SECTIONS = [
   ["Selected client work", "06-featured-work"],
   ["Products", "07-product-summary"],
   ["MaCo, in one name and many scripts", "08-identity"],
-  ["About MaCo", "09-record"],
-  ["How MaCo works", "10-faq"],
-  ["Start a project", "11-outro"],
+  ["How MaCo works", "09-faq"],
+  ["Start a project", "10-outro"],
 ];
 
 function parseArgs(argv) {

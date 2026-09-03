@@ -997,7 +997,17 @@ footer:has([data-cursor="torch"]:hover) .shell:not(:last-child) {
   margin-top: 1.5rem;
   font-family: var(--font-display);
   font-weight: 400;
-  line-height: 0.82;
+  /* 2026-09-03: was 0.82 — tighter than either display font's real
+     ascender/cap-height metrics, so the glyph ink overflowed the line box
+     top and bottom. Two things then clipped that overflow: the parent
+     `.shell.overflow-hidden` wrapper (chrome.tsx), and separately
+     `background-clip: text` (.wordmark-trace below) only paints the
+     gradient inside the SAME tight box, so the overflow was invisible
+     even where overflow:hidden wasn't the limiter. 1.15 clears both
+     fonts' metrics with headroom; "MaCo" has no descenders, so this is
+     ascender/cap-height clearance only. Confirmed live at both ends of
+     the clamp below, both themes — see AI_HANDOFF.md. */
+  line-height: 1.15;
   letter-spacing: -0.03em;
   text-align: center;
   font-size: clamp(5rem, 22vw, 20rem);
@@ -1151,6 +1161,29 @@ html[data-theme="cobalt"] .footer-giant-mark {
     padding-top: 11.25rem;
     padding-bottom: 6.75rem;
   }
+}
+
+/* Ground-flip sheet — the incoming section at a ground-color boundary
+   (Overview, Faq — see ground-handoff.tsx's ["...", "...", "sheet-only"]
+   pairs). 2026-09-03: replaced a clip-path that animated INTO square
+   (i.e. away from rounded, so the rounded state was barely ever seen) with
+   a permanent rounded-overlap rest state — GSAP now only grows the radius
+   FROM 0 INTO these values as the section arrives (ground-handoff.tsx),
+   so reduced-motion / no-JS visitors see the same settled composition,
+   just without the scrubbed growth. `border-radius` (not clip-path)
+   specifically because clip-path also clips its own box-shadow — the
+   shadow paints outside the border box, which a clip region excludes —
+   so the old mechanism could never have shown one. 48px matches the old
+   clip-path's own rounding amount, the already-considered-correct number
+   for this exact overlap. No overflow:hidden needed: background-clip
+   already respects border-radius on its own, and cb-section's padding
+   keeps content well clear of the rounded corner. */
+@utility ground-sheet {
+  position: relative;
+  z-index: 1;
+  margin-top: -3rem;
+  border-radius: 3rem 3rem 0 0;
+  box-shadow: 0 -20px 48px -12px oklch(0 0 0 / 0.35);
 }
 
 /* Hero gradient-fill glow — same background-clip:text device as
@@ -1562,45 +1595,30 @@ html[data-layout="2"] .layout-nav-overlay-cta {
     top: auto;
     right: auto;
   }
-  /* Trigger/wordmark swap sides below `md` — the trigger moves to
-     `.layout-hamburger-right` (already `ml-auto` in its own className,
-     chrome.tsx — no extra rule needed to push it to the row's end) and
-     the wordmark drops its desktop `absolute top-1/2 left-1/2` centering
-     (Tailwind utilities, overridden here rather than removed from the
-     JSX, since the desktop rule still needs them) for normal in-flow
-     flex positioning, pulled to the FRONT of the row with `order` since
-     it's declared last in the JSX (after the CTA) for the desktop
-     absolute-centered version, where DOM order never mattered. */
+  /* 2026-09-03: the brand chip used to be repositioned into the header
+     row here (position:static, order:-1) rather than hidden — on mobile,
+     closed state, it's simply gone now: MENU plus the panel's own in-list
+     "Home" link already cover navigation without a second brand mark
+     competing for the same 390px row. `:not([data-nav-open="true"])`
+     reuses the same open/closed gating this file already applies to this
+     element's chip background (below) — closed only, so nothing about the
+     open panel's own layout changes. */
+  html[data-layout="2"]:not([data-nav-open="true"]) .layout-nav-overlay-brand {
+    display: none;
+  }
   html[data-layout="2"] .layout-hamburger-right {
     display: flex;
   }
-  html[data-layout="2"] .layout-nav-overlay-brand {
-    position: static;
-    top: auto;
-    left: auto;
-    transform: none;
-    /* Tailwind v4's `-translate-x-1/2 -translate-y-1/2` compiles to the
-       separate CSS `translate` property, not `transform` — resetting
-       only `transform` left this active, translating the now-full-width
-       static element left by 50% of its OWN width (confirmed live: it
-       rendered exactly half off-screen, `x: -195px` on a 390px block).
-       `!important`: this project's own unlayered custom CSS (this rule
-       included — `@import "tailwindcss" source(none)` at the top of this
-       file is what puts Tailwind's own utilities in `@layer utilities`)
-       should already out-rank a layered utility regardless of
-       specificity per the cascade-layers spec, but empirically didn't —
-       confirmed live, `translate: -50% -50%` kept computing even with
-       this rule present and matching. Not fully root-caused; `!important`
-       is the pragmatic, verified-working fix for a third-party
-       framework's own utility property that a normal override couldn't
-       reach. */
-    translate: none !important;
-    /* `display: block` on a flex item still measured full container width
-       here rather than hugging the wordmark's own content — confirmed
-       live before this line existed. Content-sized width is what the
-       chip background above is actually meant to hug. */
-    width: fit-content;
-    order: -1;
+  /* 2026-09-03: the fixed bottom-left cluster (LayoutSwitch + ThemeSwitch,
+     `.layout-nav-overlay-controls` above) sits at z-[47], above the open
+     panel's z-[46] — confirmed live, it painted directly over the
+     in-panel "Start a project" CTA, which bottom-anchors into the same
+     20-55px band. The panel is a scroll-locked modal with no equivalent
+     controls of its own (same reasoning that already drops the CTA row
+     above at this width), so hiding the cluster while open costs nothing
+     — it reappears the instant the panel closes. */
+  html[data-layout="2"][data-nav-open="true"] .layout-nav-overlay-controls {
+    display: none;
   }
 }
 /* The header's OWN layout/theme controls live at z-[42], inside the

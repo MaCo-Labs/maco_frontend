@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { Link } from "@tanstack/react-router";
-import { services, projects, products, clients } from "@/content/maco";
+import { site, services, projects, products, clients } from "@/content/maco";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
@@ -33,10 +33,19 @@ const FIGURES = [
  * the dark, cinematic hero, the moment the page settles into calm
  * editorial reading — a different settle deserves a visibly different
  * device, once, not scattered across every heading.
+ *
+ * 2026-09-03: this is now the page's ONE About section — it absorbed
+ * Record's closing line (`site.category`/`site.location`) when `Record`
+ * was deleted. The two sections said "About" at two different points on
+ * the page (this one with a headline/stats/CTA, Record with just
+ * `site.statement` restated — which ALSO already ran verbatim as the hero
+ * subtext in `TopHead`, so it was on the page three times over). One About
+ * section, here, early, where a visitor's first "so what is this company"
+ * question actually lands.
  */
 export function Overview() {
   return (
-    <section data-ground="paper" aria-label="What MaCo does">
+    <section data-ground="paper" aria-label="What MaCo does" className="ground-sheet">
       <div className="shell cb-section">
         <div className="grid gap-12 md:grid-cols-2 md:gap-[5.625rem]">
           <div>
@@ -81,6 +90,13 @@ export function Overview() {
                 About MaCo <span aria-hidden="true">→</span>
               </Link>
             </Magnetic>
+
+            {/* Absorbed from the deleted Record section (2026-09-03) —
+                its exact copy, verbatim, not reworded. */}
+            <p className="mt-6" style={{ color: "var(--muted)" }}>
+              {site.category}, based in {site.location}. Working with clients across India and the
+              Gulf.
+            </p>
           </div>
         </div>
       </div>

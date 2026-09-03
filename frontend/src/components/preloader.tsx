@@ -246,9 +246,16 @@ export function Preloader() {
                 />
               </svg>
               <Mark size={64} className="absolute" />
+              {/* Was -bottom-12 (outside the ring's own box, in the gap
+                  between it and the Enter button below) — the numeral had
+                  zero height contribution to the flex column (absolute
+                  positioning), so its box bottom edge landed 8px past the
+                  button's top edge the instant both hit "100"/`ready`
+                  together. Pulled inside the ring's own box instead — can
+                  no longer collide with anything below it, at any value. */}
               <span
                 ref={numeralRef}
-                className="label absolute -bottom-12"
+                className="label absolute bottom-8"
                 style={{ color: "var(--muted-inverted)" }}
                 aria-hidden="true"
               >
@@ -260,33 +267,35 @@ export function Preloader() {
                 the moment loading finishes. `.btn-solid` resolves through
                 this container's own `data-ground="deep"` remap (styles.css),
                 same as every other themed control on the site — no override
-                needed for it to read correctly against `--surface-inverted`. */}
-            <AnimatePresence>
-              {ready && (
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                    transition: reduced
-                      ? { duration: 0 }
-                      : { duration: DUR.ui, ease: EASE_EMPHASIS },
-                  }}
-                  exit={{ opacity: 0, transition: { duration: 0.2 } }}
-                >
-                  <Magnetic>
-                    <button
-                      ref={enterButtonRef}
-                      type="button"
-                      onClick={enterSite}
-                      className="btn-solid"
-                    >
-                      Enter <span aria-hidden="true">→</span>
-                    </button>
-                  </Magnetic>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                needed for it to read correctly against `--surface-inverted`.
+                Always mounted (was gated behind its own `AnimatePresence`,
+                unmounted until `ready`) so the column's height is constant
+                from first paint — nothing shifts, and there's no longer a
+                moment where the numeral and button can occupy the same
+                geometry. `min-h` reserves the button's own rendered height
+                so the slot doesn't collapse to 0 before `ready`. */}
+            <div className="flex min-h-[3.25rem] items-center justify-center">
+              <motion.div
+                initial={false}
+                animate={{
+                  opacity: ready ? 1 : 0,
+                  y: ready ? 0 : 16,
+                  transition: reduced ? { duration: 0 } : { duration: DUR.ui, ease: EASE_EMPHASIS },
+                }}
+              >
+                <Magnetic>
+                  <button
+                    ref={enterButtonRef}
+                    type="button"
+                    onClick={enterSite}
+                    disabled={!ready}
+                    className="btn-solid"
+                  >
+                    Enter <span aria-hidden="true">→</span>
+                  </button>
+                </Magnetic>
+              </motion.div>
+            </div>
           </div>
         </motion.div>
       )}
