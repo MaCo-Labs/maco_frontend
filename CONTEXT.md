@@ -1,7 +1,17 @@
 # MaCo Website — CONTEXT
 
 Complete project context for developers and AI agents.
-Last updated: 2026-08-30 (eleventh pass — `/about` SSR fix, semantic per-state cursor + footer torch, layout modes 2/3 rebuilt to match their references; see §4's adopt/reject log, the layout-modes subsection under §10, and `AI_HANDOFF.md`'s eleventh-pass entry). §11 below still documents the 2026-08-21 cleanup pass.
+Last updated: 2026-09-03. Since the 2026-09-01 chrome/motion/reveal pass:
+two 2026-09-02 follow-ups (FEATURE pacing/Layout 2/mobile fixes, then a
+separate six-item pass — dynamic Layout 2 panel tone, the logo mark
+cropped to its real content, Layout 3 mobile hygiene) and a 2026-09-03 fix
+pass (FEATURE reverted from a scroll-driven reveal back to a hover
+accordion; `groundAt()` gained a `fallback` param, fixing a ground-tone
+flash at deep-to-deep section seams). Full narrative in `AI_HANDOFF.md`'s
+dated entries; this file reflects the resulting current state only. **Note:
+every pass from 2026-09-01 onward, including this doc update, is
+uncommitted** — see `AI_HANDOFF.md`'s "What's uncommitted" note. §11 below
+still documents the 2026-08-21 cleanup pass.
 
 ---
 
@@ -51,22 +61,23 @@ maco-website-v2/
 │   │   ├── components/
 │   │   │   ├── home/              # the 11 homepage sections (see §10)
 │   │   │   ├── media/              # SurfaceMedia, ProductVideo — media slots
-│   │   │   ├── motion/              # ScrubReveal, Stagger, RuleDraw, Magnetic, LineReveal, SplitReveal, RakingSurface
+│   │   │   ├── motion/              # ScrubReveal, Stagger, RuleDraw, Magnetic, LineReveal, SplitReveal, RakingSurface, Cursor
+│   │   │   ├── nav/edge-nav.tsx     # EdgeNav — layout mode 3's dot wayfinding, mounted directly in __root.tsx (see §10)
 │   │   │   ├── hero/MaCoGlobe.tsx   # react-globe.gl globe, /about only, lazy-loaded
-│   │   │   ├── chrome.tsx           # header (fixed), footer, mobile pill nav
+│   │   │   ├── chrome.tsx           # header (fixed), footer, mobile pill nav, all three layout-mode overlays
 │   │   │   ├── scroll-runtime-provider.tsx  # Lenis/GSAP lifecycle owner (see §10)
-│   │   │   ├── mark.tsx             # real logo mark (CSS mask + currentColor)
+│   │   │   ├── mark.tsx             # real logo mark (CSS mask + currentColor), cropped-aspect-aware (§9)
 │   │   │   ├── system-field.tsx     # kept for /products/$slug only (§2 rule 3)
 │   │   │   ├── globe-section.tsx    # lazy wrapper around MaCoGlobe, /about only
 │   │   │   ├── motion-section.tsx   # legacy one-shot fade, used by inner routes
 │   │   │   └── theme.tsx            # ThemeProvider / useTheme, radial clip-path theme wipe
 │   │   ├── content/maco.ts        # sole content source of truth
 │   │   ├── hooks/                 # use-scroll-scene, use-reduced-motion, use-pointer-field, use-media-query, use-script-fonts
-│   │   ├── lib/                   # motion.ts (springs/easing), scroll-runtime.ts (Lenis+GSAP singleton), error handling, skip-to-main
+│   │   ├── lib/                   # motion.ts (springs/easing), scroll-runtime.ts (Lenis+GSAP singleton), ground.ts (shared groundAt/SECTION_SELECTOR resolver, see §10), error handling, skip-to-main
 │   │   ├── routes/                # file-based TanStack routes (see routes/README.md)
 │   │   ├── styles.css             # design tokens + utilities, single CSS file
 │   │   └── router.tsx / server.ts / start.ts
-│   ├── public/                    # logo-mark.png, maco-mark-hero.png, favicon, geo data, media/
+│   ├── public/                    # logo-mark.png (the one canonical mark, cropped 2026-09-02), favicon, geo data, media/
 │   ├── scripts/build-media.mjs    # npm run media — regenerates public/media/ from raw source
 │   ├── package.json
 │   └── vite.config.ts
@@ -193,6 +204,39 @@ Per AGENTS.md §29 — recorded here, not scattered across other docs.
   elements at the screen edges instead of a full nav row." **Ships behind
   `?v2=nav3`**, desktop-only; falls back to mode 1's chrome below `lg`.
 
+**2026-09-01, chrome/motion/reveal pass:**
+
+- **Adopted — FEATURE's scroll-driven sequential reveal**
+  (`components/home/feature-scroll.tsx`), studied from cuberto.com's own
+  `cb-feature` (its raw per-row `-bg`/`-fill` layers, per
+  `docs/references/cuberto/skillui/`, were not reproduced — only the
+  reveal mechanism was: rows expand in sequence as they cross the top of
+  the viewport, no click, and stay expanded as later rows take their
+  turn). Reimplemented on this project's own stack — one `ScrollTrigger`
+  through `useScrollScene`, `data-open` written on plain refs in
+  `onUpdate` — reusing `Accordion`'s existing `cb-panel` CSS and
+  `panel="inverted"` card markup rather than adding a new visual
+  language. `Accordion` itself is untouched; FAQ's click/single-open
+  behavior is unaffected. Reduced motion falls back to the existing click
+  `<Accordion>` (`feature-accordion.tsx` branches on `useReducedMotion()`)
+  — ships to everyone, no preview flag, since it degrades to an
+  already-shipped component rather than a new untested one.
+
+**2026-09-03:**
+
+- **Reverted — FEATURE's scroll-driven sequential reveal.** The
+  2026-09-01 `FeatureScroll` above lagged real scroll gestures (GSAP's
+  `scrub` interpolates toward the scroll position rather than tracking it
+  exactly, so a normal-speed scroll or trackpad flick could blow past
+  several rows' open windows before they visually registered). Reverted to
+  `Accordion`'s own `panel="inverted"` + `hoverToOpen` mode (already built
+  for Capabilities in the 2026-08-29 dark-panel pass) — hover intent is a
+  direct signal a scroll position never was, and reusing an
+  already-shipped mode removes the whole bug class instead of re-tuning
+  it. `feature-scroll.tsx` deleted; `FeatureAccordion` no longer branches
+  on `useReducedMotion()` for this, since hover-to-open already degrades
+  correctly (click-only) with no separate code path needed.
+
 ---
 
 ## 5. Brand & messaging
@@ -305,8 +349,7 @@ Loaded via one combined Google Fonts request in `__root.tsx`. Michroma, Tenor Sa
 
 ### Brand assets (`frontend/public/`)
 
-- `logo-mark.png` — the real mark, used by `Mark` via CSS `mask-image` everywhere in chrome (header/footer/nav)
-- `maco-mark-hero.png` — the OPEN hero's larger mark, rendered via the same CSS-mask technique
+- `logo-mark.png` — the one canonical mark, used by `Mark` via CSS `mask-image` everywhere it appears (header, footer, preloader, TOPHEAD). Re-exported 2026-09-02, cropped to its measured alpha bbox (670×375) — the original 2481×2481 canvas had the glyph occupying only ~26%/~15% of its width/height, which `mask-size: contain` rendered as a tiny glyph in a mostly-empty box at any sane `size`. `Mark`'s `size` prop now means WIDTH; height derives from a fixed `ASPECT = 375/670` constant, so the box tightly wraps the glyph. `maco-mark-hero.png` (the old OPEN hero's separate larger asset) is deleted — dead since the 2026-08-28 Cuberto-parity rebuild replaced OPEN with TOPHEAD, which has used the same canonical mark (at a larger `size`) ever since
 - `favicon.png`
 - `geo/countries-110m.geojson` — globe geometry, `/about` only
 - `media/brand/*.webp` — client logos (6), referenced from `content/maco.ts`
@@ -356,10 +399,10 @@ Cuberto's measured rhythm, adopted as the `cb-*` utilities in `styles.css`: **10
 
 ### What each section does
 
-- **TOPHEAD** (`top-head.tsx`) — Cuberto's actual opening shape: brand row (`<SplitReveal>` wordmark entrance), one large left-aligned `<h1>` (`site.tagline`), short subtext (`site.statement`) and the entry CTA, under `<RakingSurface>`. Replaces the previous full-viewport centred-logo OPEN section — the page now starts reading immediately instead of resolving to a brand lockup first.
+- **TOPHEAD** (`top-head.tsx`) — Cuberto's actual opening shape: brand row, one large left-aligned `<h1>` (`site.tagline`), short subtext (`site.statement`) and the entry CTA, under `<RakingSurface>`. Replaces the previous full-viewport centred-logo OPEN section — the page now starts reading immediately instead of resolving to a brand lockup first. The brand row is the mark alone as of 2026-09-01 (`<Mark size={72} />` + `site.name` in `sr-only`, no spelled-out text) — the header's own `<Wordmark>` already spells "MaCo" out ~120px above this row, so a second instance directly under it doubled up for no reason; this dropped `<SplitReveal>` from TOPHEAD's own render path (the component still exists but currently has zero call sites anywhere in the app — a cleanup candidate, see `ROADMAP.md`).
 - **PREVIEW** (`evidence-expand.tsx`, unchanged) — the page's one pinned cinematic set-piece: a clip-path frame locked to the video's real 16:9, grows to ~88vw on `ScrollTrigger` pin+scrub.
 - **OVERVIEW** (`overview.tsx`) — Cuberto's `cb-overview` 2-col flex: positioning statement left, a counted `<dl>` of real figures (service/client/project/product counts, derived from `content/maco.ts` — never invented) plus a route to `/about` right.
-- **FEATURE** (`feature-accordion.tsx`) — every capability across both service lines, flattened into one `<Accordion>` (`components/home/accordion.tsx`, shared with FAQ below), numbered rows, first row open, one open at a time. Replaces the previous two-card `ServicesConvergence` pin — Cuberto's homepage states its full capability range as one list, not two headline cards.
+- **FEATURE** (`feature-accordion.tsx`) — every capability across both service lines, numbered rows. Replaces the previous two-card `ServicesConvergence` pin — Cuberto's homepage states its full capability range as one list, not two headline cards. Rendered through the shared `<Accordion>` (`components/home/accordion.tsx`, also FAQ's mechanism below) in `panel="inverted"` mode with `hoverToOpen`: real mouse/fine-pointer hover opens a row (gated to `(hover: hover) and (pointer: fine)`), click always works, touch never depends on hover — one open at a time, first row open by default. (A 2026-09-01 scroll-driven variant, `FeatureScroll`, briefly replaced this for full-motion visitors — rows expanded in sequence as the section crossed the viewport, no click. Reverted 2026-09-03: `ScrollTrigger`'s `scrub` lags real scroll position enough that a normal scroll or trackpad flick could blow past a row's open window before it registered. See §4's adopt/reject log.)
 - **LOGOREEL** (`logo-reel.tsx`) — continuous CSS-only horizontal drift of client logo cards (`@utility cb-reel`, radius `--radius-chip`, edge-masked), the track duplicated and translated -50% for a seamless loop, `aria-hidden` on the duplicate half. Replaces the previous scroll-scrubbed scatter field (`client-field.tsx`) — a reel reads correctly at every viewport width with no separate mobile branch.
 - **SUMMARY / FeaturedWork** (`summary.tsx`) — client platforms as a `cb-cards` grid (Cuberto's measured `450×608`-ish portrait plates), on deep ground. One `<Summary>` component, two call sites (here and PRODUCTS below) — matching Cuberto's own reuse of `cb-summary` twice.
 - **SUMMARY / ProductSummary** (`summary.tsx`) — MaCo's own two products, same card shape, paper ground.
@@ -370,7 +413,9 @@ Cuberto's measured rhythm, adopted as the `cb-*` utilities in `styles.css`: **10
 
 ### Cross-section continuity — `GroundHandoff`
 
-`components/home/ground-handoff.tsx`, mounted once after OUTRO, renders nothing. On 8 hand-picked boundary pairs, matched by `aria-label`, the outgoing section scales down/dims/lifts as the incoming section arrives; 3 of the 8 (each at a real ground flip) additionally get a curved-corner "sheet" reveal on the incoming side. Only pairs whose outgoing side is pin-free are eligible — a `transform` on the ancestor of a `position:fixed` pinned element repositions it relative to that ancestor instead of the viewport, so PREVIEW and IDENTITY (the only two sections that pin) can never be an outgoing side. See the file's own doc comment for the full derivation.
+`components/home/ground-handoff.tsx`, mounted once after OUTRO, renders nothing. On 11 hand-picked boundary pairs, matched by `aria-label` (including the footer, via its own `aria-label="Site footer"`), the outgoing section scales down/dims/lifts as the incoming section arrives; 2 of the 11 (each at a real ground flip) additionally get a curved-corner "sheet" reveal on the incoming side instead of a recede (the outgoing side pins on both). The remaining 9 receding pairs aren't all the same intensity as of the 2026-09-01 pass — 5 marked `"emphasis"` (the boundaries into/out of a set-piece or an act break) get a stronger recede than the other 4 `"interior"` (default) pairs, which cover the flat run of paper-ground card sections. Only pairs whose outgoing side is pin-free are eligible for a recede — a `transform` on the ancestor of a `position:fixed` pinned element repositions it relative to that ancestor instead of the viewport, so PREVIEW and IDENTITY (the only two sections that pin) can never be an outgoing side. See the file's own doc comment for the full derivation.
+
+The scale-down recede can open a real, momentary gap at a boundary between two same-ground sections (most visible between two `deep` sections, since a `deep`-to-`deep` boundary has no color change to mask it). `lib/ground.ts`'s `groundAt()` resolver — shared by the header/EdgeNav ticker and the cursor's own ground-tracking (§10 below) — used to hard-default to `"paper"` whenever nothing covered the sample point, flashing both consumers to the wrong tone for a few frames at exactly such a gap (reported 2026-09-03 as a rendering glitch at the RECORD→FAQ / "About MaCo"→"How MaCo works" seam, both `deep`). Fixed with a `fallback` parameter: continuous trackers now pass their own last-resolved tone instead of the hard default, so a transient gap holds its prior tone instead of flashing.
 
 ### `SurfaceMedia` (`components/media/surface-media.tsx`)
 
@@ -394,26 +439,24 @@ Motion vocabulary (`components/motion/`), all writing to registered `@property` 
 - `<RakingSurface>` — unifies `.light-pass`'s `--sweep` driver onto one source
 - `<Magnetic>` — pointer-lean wrapper for buttons/links, `rubberband()`/`SPRING_MOMENTUM`
 - `<LineReveal>` — GSAP `SplitText` line-mask headline reveal, for section headlines site-wide
-- `<SplitReveal>` — the OPEN hero wordmark only, char-rise on mount then `.maco-shine`
+- `<SplitReveal>` — char-rise-on-mount then `.maco-shine`; **currently unused** — its one call site (TOPHEAD's brand row) was dropped 2026-09-01 in favor of a mark-only row (see §10's TOPHEAD entry). File still exists, zero imports elsewhere
 
 `MotionSection` has no homepage call site as of the 2026-08-28 Cuberto-parity rebuild (its one prior use, `method-line.tsx`'s reduced-motion branch, was retired with that file); it's still used across the 7 inner routes.
 
-### First-paint preloader & layout modes (`components/preloader.tsx`, `components/layout-mode.tsx` — 2026-08-29, tenth pass)
+### First-paint preloader & layout modes (`components/preloader.tsx`, `components/layout-mode.tsx` — introduced 2026-08-29, current shape as of the 2026-09-01 chrome/motion/reveal pass)
 
-Both mount in `__root.tsx`, both site-wide (not homepage-specific), both follow theme.tsx's anti-FOUC shape: a pre-paint `<script>` in `RootShell` stamps the relevant `data-*` attribute on `<html>` before hydration, so there's no flash either way.
+Both mount in `__root.tsx`, both site-wide (not homepage-specific), both follow theme.tsx's anti-FOUC shape: a pre-paint `<script>` in `RootShell` stamps the relevant `data-*` attribute on `<html>` before hydration, so there's no flash either way. Nothing in either system ships behind a preview flag — `?v2=` was removed entirely once the eleventh pass's items flipped to default; the only real URL overrides left are `?layout=` and `?motion=`.
 
-**Preloader** — a percentage ring around `<Mark>`, `data-ground="deep"` always (the page opens dark), progress on `--focus` rather than `--accent` (near-white on deep ground in both themes — same reasoning as the hero utilities in §10). A GSAP proxy tween runs toward a 92 ceiling (not 100 — see `preloader.tsx`'s own comment for why a tween that reaches 100 on its own schedule breaks the illusion once real loading outruns it) over ~1.6s; once web fonts and the hero's poster image actually resolve, the remainder snaps to 100 in 0.25s. Skips itself (via the pre-paint script's `data-preload="skip"`) under reduced motion or once already shown this session (`sessionStorage`).
+**Preloader** — a 200px percentage ring (`RADIUS` 86) around a 64px `<Mark>`, `data-ground="deep"` always (the page opens dark), progress on `--focus` rather than `--accent` (near-white on deep ground in both themes — same reasoning as the hero utilities in §10). A GSAP proxy tween runs linearly toward a 92 ceiling (not 100 — see `preloader.tsx`'s own comment for why a tween that reaches 100 on its own schedule breaks the illusion once real loading outruns it) over 2.6s — a constant rate, retimed 2026-09-01 from an eased ~1.6s curve specifically so the visible counter ticks through nearly every integer instead of skipping. The close gates on `Promise.all([realReadiness, 2.6s-minimum])`, not readiness alone, so a fast connection still gets the full deliberate beat instead of snapping the instant assets resolve; once both are satisfied the remainder closes to 100 in 0.45s. A real "Enter" click gate (motion/nav pass, 2026-08-31) holds once the counter reaches 100 rather than auto-transitioning — only that click sets `done` and releases the scroll lock, which lives in the click handler itself since the effect cleanup only fires on unmount/dep-change. Skips itself entirely (via the pre-paint script's `data-preload="skip"`) under reduced motion or once already shown this session (`sessionStorage`).
 
-**Layout modes** — a `data-layout="1"|"2"|"3"` switcher (`LayoutProvider`/`useLayout`, small numbered control in `chrome.tsx`'s header), persisted via `localStorage["maco-layout"]`, with a non-persisting `?layout=` URL override for previews. Mode 1 is the site as built above. Both modes 2 and 3 replace the header's desktop link row and CTA with a hamburger → full-screen overlay (`FullScreenNav`'s trigger/panel split in `chrome.tsx`, `[data-layout]`-scoped CSS in `styles.css`) — chrome-wide. The overlay panel must render as a `<header>` sibling, never a descendant — nesting it inside `<header>` was tried first and inherited the header's own `.chrome-adaptive[data-over]` ground-remap, inverting each theme's accent colour.
+**Layout modes** — a `data-layout="1"|"2"|"3"` switcher (`LayoutProvider`/`useLayout`, small numbered control in `chrome.tsx`'s header), persisted via `localStorage["maco-layout"]`, with a non-persisting `?layout=` URL override for previews. Mode 1 is the site as built above and needs no rules of its own.
 
-Mode 2 (Iventions' hamburger + diagonal wipe) and mode 3 (Minh Pham / by-kin.com) were both rebuilt 2026-08-30 (eleventh pass) — see `AI_HANDOFF.md`'s eleventh-pass entry and `docs/references/{iventions,minhpham}/NOTES.md`:
+- **Mode 2** (Iventions' hamburger + diagonal wipe): re-geometried 2026-09-01 to match the reference's actual silhouette — a hard diagonal edge from top-left to a point past centre, leaving a real uncovered bottom-left triangle that page content shows faintly through, rather than the earlier shape's near-full-bleed coverage. A persistent header row (CLOSE label / centred wordmark / "Start a project" CTA) stays visible above the wipe throughout — `.layout-nav-overlay-brand`/`-cta`, CSS-gated to mode 2 only, rendered inside the existing `[data-nav-trigger-overlay]` (a root-level `<header>` sibling at `z-[47]`, above the panel's `z-[46]`; the header's own brand link is hidden in this mode to avoid a duplicate). 2026-09-02: that row lost its shared backdrop bar in favor of per-element glass chips (MENU/wordmark each their own, closed-state only — open, the panel itself already provides contrast), and the panel's own tone stopped being fixed — `useLayoutNavState()` now samples whichever `[data-ground]` section sits at viewport centre the instant the panel opens and sets the panel to its *inverse* (sampled once, not tracked live, since the panel locks scroll while open so the section behind it can't change mid-open); the sampled tone is also written as `data-nav-ground` on `<html>` so the trigger row/overlay controls match it. A leading `--sweep-light` beam and staggered link entrance (eleventh pass) still lead the wipe; panel links dim every sibling to 0.45 opacity and bold the hovered one (`.layout-nav-link[data-active]`, moved off an inline `style` so CSS can win the hover state). On mobile (2026-09-02), the CTA drops off this row (the panel's own in-list CTA still reaches it) and LayoutSwitch/ThemeSwitch move to the same fixed bottom-left cluster mode 3 uses, since all five controls plus the wordmark can't share one 390px row.
+- **Mode 3** (Minh Pham / by-kin.com's edge-dot wayfinding, `components/nav/edge-nav.tsx` — extracted out of `chrome.tsx` into its own module, mounted directly in `__root.tsx` as a `<Header>` sibling rather than rendered from inside `Header`): the header shows nothing but `EdgeNav`'s two dot columns at any scroll position on desktop — no wordmark, no MENU trigger, no CTA (both removed 2026-09-01; they were leftover from an earlier design where the dots were wayfinding-only, stale now that each dot is a real `<Link>` covering all six routes). `EdgeNav` itself is mode-3-only as of the 2026-09-01 pass (was modes 2 and 3) — mode 2's full-screen panel already covers every route, so running the dots alongside it doubled up two navigation systems with no reference backing that combination. Dot color tracks the section at viewport CENTRE (`lib/ground.ts`'s `groundAt`, sampled at `window.innerHeight / 2`), not the header's own `y=48` sample — the dots are vertically centred, so sharing the header's sample point picked whichever section happened to be at the TOP of the viewport, not behind the dots. `z-[43]` (was `z-40`) keeps the dots above PREVIEW/IDENTITY's own `z-[41]`. Below `lg`, `EdgeNav` swaps from its two side dot-columns (`.edge-nav-col`) to a single bottom bar (`.edge-nav-bar`) rather than falling back to mode 1's chrome outright. The utility cluster (layout switcher + theme toggle, `.header-control-cluster`, `position: fixed`) sits bottom-left on desktop but relocates to top-left below `64rem` (2026-09-02, clear of the new mobile dot bar) — with its own mobile hygiene: `ThemeSwitch`'s text label hides (`.theme-switch-text`) and the brand chip's "MaCo" text hides (`Wordmark`'s new `maco-wordmark-text` class, mark stays) so the cluster, the brand chip, and TOPHEAD's own centred stack (its `padding-top`/`padding-bottom` retuned the same pass) all fit a 390×844 viewport without collision.
 
-- **Mode 2** gains a leading light beam (`--sweep-light`, skewed, `Motion`'s own `skewX` style value — a raw CSS `transform` string is silently dropped once Motion is also animating `x` on the same element) and staggered link entrance, on top of the diagonal clip-path wipe that already worked. **Behind `?v2=nav2`.**
-- **Mode 3** was rebuilt from scratch — it previously used the same hamburger-overlay pattern as mode 2, the opposite of its own reference. Now splits nav content to both screen edges (`.header-nav-row` as a left rail, `.header-control-cluster` as a right rail — two stable classNames added to the header's JSX for this, not `:first-child`/`:last-child`) with `TopHead` centred between, desktop (`lg+`) only. Below `lg` it falls back to mode 1's own chrome (wordmark + the existing bottom pill nav) rather than a hamburger, since two vertical rails don't fit a 390px phone. **Behind `?v2=nav3`.**
+The overlay panel (mode 2) must render as a `<header>` sibling, never a descendant — nesting it inside `<header>` was tried first and inherited the header's own `.chrome-adaptive[data-over]` ground-remap, inverting each theme's accent colour.
 
-Both remain behind the `?v2=` preview flag (same non-persisting URL-override shape as `?layout=`/`?motion=`, added to the same pre-paint script in `__root.tsx`) as of this writing — not yet flipped to default. Mode 1 and the un-rebuilt structure of modes 2/3 (hamburger + overlay, minus the beam/rails) are unaffected by the flag either way.
-
-**Cursor** (`components/motion/cursor.tsx`) also gained a semantic per-state system this same pass — see §4's adopt/reject log above for the full writeup. Ships behind `?v2=cursor`/`?v2=torch`.
+**Cursor** (`components/motion/cursor.tsx`) carries a semantic per-state system (`data-cursor` → resolved `data-state`) — see §4's adopt/reject log above for the original writeup. As of 2026-09-01 its ground-awareness is continuous rather than hover-only: `groundAt()` (`lib/ground.ts`, the same resolver EdgeNav's dots use) runs every frame as a fallback whenever nothing explicit is being hovered, so the ring no longer reverts to `:root`'s default ground the instant the pointer isn't over a hoverable element. As of 2026-09-03 that per-frame fallback passes the cursor's own last-resolved tone as `groundAt`'s `fallback` argument (not a hard `"paper"` default) — see the GroundHandoff subsection above for why a hard default flashed the wrong tone at certain section boundaries.
 
 ### `system-field.tsx`
 

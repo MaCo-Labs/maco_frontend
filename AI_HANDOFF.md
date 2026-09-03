@@ -11,14 +11,37 @@ sequence, a Capabilities dark-panel accordion, a masked video-in-text hero,
 a restrained custom cursor), again the same day (tenth pass: reel
 geometry fix, Lenis retune, IDENTITY script curation, a first-paint
 preloader, a full-width footer wordmark, and a three-mode layout
-switcher), and again 2026-08-30 (eleventh pass: the `/about` SSR bug fixed
+switcher), again 2026-08-30 (eleventh pass: the `/about` SSR bug fixed
 for real, the cursor generalized into a semantic per-state/theme/ground-
 aware system with a footer torch effect, layout modes 2 and 3 rebuilt to
 match their actual references, and a 15-unit premium/interactivity audit —
-see below). A full dead-code/dependency cleanup pass ran 2026-08-21 (see
+see below), a 2026-08-31 motion/nav pass (Layout 3's chrome replaced with
+`EdgeNav`'s dots, mode 2's panel translucency + arrow, preloader Enter
+gate, cursor labels, motion tokens centralized), and again 2026-09-01 (a
+chrome/motion/reveal pass: Layout 2 re-geometried to iventions.com's
+actual silhouette, EdgeNav narrowed to mode 3 only, mode 3's header
+stripped to dots-only, FEATURE's accordion replaced with a scroll-driven
+reveal, GroundHandoff's recede weighted by structural role, the preloader
+retimed/enlarged, cursor ground-tracking made continuous — plus two real
+pre-existing bugs found and fixed during that pass's own verification, see
+below), a 2026-09-02 pass (owner review against 3 screen recordings: FEATURE
+reveal pacing, Layout 2 desktop wipe/header chip/panel-opacity, mobile
+Layout 2 collision fixes, Layout 3 mobile CTA overlap — six items), a
+2026-09-02 later pass (a separate six-item defect list: Layout 2's panel
+tone made dynamic instead of hardcoded, the logo mark cropped to its real
+content, Layout 3 mobile wordmark/control-cluster/TOPHEAD-padding/
+ThemeSwitch hygiene), and a 2026-09-03 pass (FEATURE reverted from the
+2026-09-01 scroll-driven reveal back to `Accordion`'s hover-to-open mode —
+the scroll version lagged real scroll gestures; `groundAt()` gained a
+`fallback` parameter so continuous ground-trackers stop flashing to paper
+at gaps between deep sections). **None of the passes from 2026-09-01 onward
+are committed to git yet** — they sit uncommitted on top of `503ce20`
+alongside this doc update; see "What's uncommitted" below. A full
+dead-code/dependency cleanup pass ran 2026-08-21 (see
 `CONTEXT.md` §11). Build/lint are clean. The `/about` SSR issue is
-resolved. The eleventh pass's cursor/torch/nav2/nav3 work ships behind
-`?v2=` preview flags only, not yet flipped to default — see that entry.
+resolved. Nothing in the codebase ships behind a preview flag as of this
+writing — `?v2=` was removed entirely once the eleventh pass's items
+flipped to default.
 
 ## 2026-08-27 session — re-audit + 2 confirmed bugs fixed
 
@@ -708,6 +731,371 @@ ref-type error, unchanged, confirmed identical on the clean baseline via
 addition to confirm zero behavior change (0 console diffs); reduced-motion
 and coarse-pointer branches confirmed to render no cursor element at all,
 not just a hidden one.
+
+## 2026-09-01, chrome/motion/reveal pass — 8 owner-brief items + 2 pre-existing bugs found live
+
+Eight numbered items from an owner brief dated 2026-08-31, executed
+2026-09-01 against a written plan. Three of the brief's own premises
+turned out stale against the actual code (recorded in the plan before
+building, not discovered mid-work): EdgeNav running in Layout 2 was a
+documented decision from the motion/nav pass, not a bug; `?v2=` no longer
+exists anywhere in the repo; and `GroundHandoff` already covered every
+section-to-section boundary (10 pairs, not the 8 `CONTEXT.md` claimed —
+that drift is now corrected). Each item verified live against a
+production build (`bun run preview`), both themes, all three layout
+modes, via a Playwright script driven directly rather than through the
+`agent-browser` MCP tool, which hung on launch for 30 minutes this
+session and was abandoned — worth checking whether that tool is healthy
+before relying on it again.
+
+1. **Layout 1** — verified unregressed after every other item.
+2. **Layout 2 rebuilt to iventions.com's actual silhouette.** The
+   diagonal wipe already existed (motion/nav pass) but covered nearly the
+   full bottom edge, closer to a full-bleed rectangle than the
+   reference's hard diagonal leaving a real uncovered triangle —
+   re-geometried (`LAYOUT_NAV_CLOSED`/`OPEN` in `chrome.tsx`, still
+   4-point for `clip-path` interpolation parity). The header row
+   (CLOSE / wordmark / CTA) now stays visible above the wipe throughout,
+   not just the trigger — added `.layout-nav-overlay-brand`/`-cta` to the
+   existing `[data-nav-trigger-overlay]` (already the correctly-stacked
+   root-level sibling at `z-[47]`, above the panel's `z-[46]`), CSS-gated
+   to mode 2 only. Panel links gained a hover-dim treatment (hovering any
+   link drops every other to 0.45 opacity, bolds the hovered one) — this
+   required moving each link's active/inactive opacity from an inline
+   `style` to a `data-active` attribute first, since an inline style
+   always outranks any CSS rule regardless of selector specificity.
+3. **Layout 3 stripped to dots-only.** Removed the wordmark
+   (`.header-brand-group`) and the MENU trigger from mode 3's header — both
+   were leftover from EdgeNav's earlier "wayfinding only, not a way to
+   reach a page" design; the dots are real `<Link>`s covering all six
+   routes now, so the second nav path was redundant. Fixed the dot
+   z-order (`z-40` → `z-[43]`) — PREVIEW and IDENTITY are both
+   `relative z-[41]` with opaque grounds and were painting over the dots,
+   a bug nobody had reasoned about since EdgeNav postdates both those
+   `z-[41]` comments. Fixed dot color sampling to read the section at
+   viewport CENTER, not the header's `y=48` — the dots are vertically
+   centered, so the old shared sample point was reading whatever section
+   happened to be at the TOP of the viewport, not behind the dots.
+4. **Reload vs. client-navigation color bug — root-caused for real, not
+   patched.** The reported symptom ("correct after reload, wrong after
+   client-nav") turned out to be two independent, unrelated bugs, both
+   pre-existing (not introduced by this pass), both in `Header`
+   (`chrome.tsx`), which mounts once in `__root.tsx` and never remounts
+   across routes:
+   - **The ground-color ticker.** `applyGround`'s `[data-ground]` element
+     list was captured ONCE per effect run and cached — fine as long as
+     the effect only ran once, but adding a `pathname` dependency (the
+     first fix attempted) exposed a worse problem: `pathname` updates as
+     soon as TanStack Router commits navigation, which can land BEFORE the
+     target route's own code-split chunk has rendered its sections into
+     the DOM, so even a dep-triggered re-run captured the OUTGOING route's
+     stale section list. Real fix: stop caching `grounds` at all — query
+     it fresh inside `applyGround` itself, called every frame via
+     `rt.gsap.ticker`. This extends the same "never more than one frame
+     stale, self-corrects with no further input" property the ticker
+     already gave scroll position to the element list too, and needs no
+     `pathname` dependency at all once nothing is cached across frames.
+     The same fix applied to `cursor.tsx`'s own ground-tracking, which had
+     an identical cached-snapshot bug.
+   - **A second bug this surfaced**: the cursor element itself carries
+     `data-ground` (for its own CSS remap) and is `position: fixed`, so a
+     bare `document.querySelectorAll("[data-ground]")` — used by BOTH the
+     header's ticker and the cursor's own tracking — could match the
+     cursor's current on-screen position as a candidate "section." Caught
+     live: the cursor happening to sit near the header's `y=48` sample
+     point fed the header's ground-sync the cursor's OWN current ground,
+     unrelated to whatever section was actually behind the header. Fixed
+     by scoping every such query to `section[data-ground], footer
+     [data-ground]` (`lib/ground.ts`'s new `SECTION_SELECTOR`) instead of
+     the bare attribute selector.
+   - **The `--header-solid` transparency scrub** (a separate GSAP
+     ScrollTrigger, unrelated to the ticker above) got stuck permanently
+     at 0 after a client-nav to `/` — confirmed via a hard-reload control
+     that the SAME scroll mechanics correctly scrub 0→1, ruling out Lenis/
+     ScrollTrigger wiring as the cause. Root cause, found by dumping
+     `ScrollTrigger.getAll()`'s live geometry: `[aria-label="Introduction"]`
+     collides with EVERY other route's own intro section (`/about`,
+     `/clients`, `/contact`, `/products`, `/products/$slug`, `/services`,
+     `/services/$slug`, `/work` all have one, all `data-ground="paper"`).
+     Frame-by-frame DOM probing confirmed the outgoing route's own
+     "Introduction" section is still present at frame 0 of a client-nav,
+     replaced by TOPHEAD around frame 13 — a real, brief window where the
+     wrong element matches. The query's first (synchronous) check grabbed
+     the OUTGOING route's section, which was then detached moments later,
+     leaving GSAP measuring a disconnected node forever (a permanently
+     near-zero scroll range, `start ≈ end`). Fixed by also matching
+     `[data-ground="deep"]` — TOPHEAD is the only "Introduction" section
+     that's deep-grounded, which disambiguates it using data the two
+     sections already disagree on. Kept the bounded-retry scaffolding
+     (`requestAnimationFrame`, ~90 frames / 1.5s, then gives up) from the
+     first attempt at this fix — still correct and needed for routes
+     whose lazy chunk hasn't rendered yet, just not sufficient alone.
+5. **Preloader.** Retimed: main tween now `0→92` over `2.6s` linear (was
+   `1.6s power1.inOut`) — a constant rate is what makes the counter
+   visibly pass through nearly every integer instead of skipping, and the
+   close is gated on `Promise.all([realReadiness, 2.6s-minimum])` so a
+   fast connection still gets the full deliberate beat rather than
+   snapping the moment assets resolve. The `92` ceiling and its reasoning
+   (never let the ring show a false 100% before real assets are ready)
+   are unchanged. Enlarged: ring `128px→200px` (`RADIUS` 54→86), mark
+   `32px→64px`. TOPHEAD's brand row changed to mark-only (`size={72}`,
+   `site.name` moved to `sr-only`) per the owner's own call when asked —
+   there is exactly one `site.name` text render on the whole homepage,
+   and it sat ~120px under the header's own spelled-out wordmark;
+   dropping the `SplitReveal` word there was the entire fix, not a
+   broader "reduce repetition" sweep, since no other repetition existed.
+   `maco-mark-hero.png` deleted — zero code references, dead since the
+   2026-08-28 Cuberto-parity rebuild replaced the old OPEN hero that used
+   it; only a stale doc comment in `mark.tsx` still mentioned it.
+6. **GroundHandoff — two recede weights instead of one.** Per the
+   owner's own choice between three options when asked (differentiate
+   the existing recede vs. just close the one real gap vs. rebuild the
+   whole language): added an `"emphasis"` weight for the 5 boundaries
+   into/out of a set-piece or act break, kept the existing values as the
+   new `"interior"` default for the other 4 (the flat card-grid run:
+   Capabilities → Clients → Selected work → Products), and closed the one
+   boundary that had no handoff at all (Outro → the footer, which needed
+   its own `aria-label="Site footer"` since it isn't a `<section>`). The
+   2 `sheet-only` ground-flip pairs are unchanged. `CONTEXT.md`'s
+   "8 pairs / 3 sheet" description was already wrong before this pass
+   (the code had 10 pairs, 2 sheet-only) — corrected while the file was
+   open.
+7. **FEATURE — scroll-driven sequential reveal, full motion only.** New
+   `components/home/feature-scroll.tsx`, a fork of `Accordion`'s
+   `panel="inverted"` treatment (not a mode added to it — the two share
+   no state model: `Accordion` is single-open/click-toggle by design for
+   FAQ's sake, `FeatureScroll` needs every row up to the scroll position
+   open at once with no click at all). One `ScrollTrigger`, scrubbed,
+   writing `data-open` on plain refs in `onUpdate` per
+   `evidence-expand.tsx`'s own discipline — `active = floor(progress * N)`
+   opens every row at or before it, so rows pile up scrolling down and
+   symmetrically re-collapse scrolling back up (a reversible scrub, not a
+   literal "never recollapses," which the plan reasoned through and the
+   owner didn't push back on when it was presented as the approach).
+   `FeatureAccordion` branches on `useReducedMotion()`: full motion gets
+   `FeatureScroll`, reduced motion keeps the exact existing click
+   `<Accordion>` call unchanged. Logged in `CONTEXT.md` §4's adopt/reject
+   log per `AGENTS.md` §29.
+8. **Cursor — continuous ground-tracking.** `onOut` used to delete the
+   cursor's `data-ground` attribute entirely, so the ring painted
+   `:root`'s own (paper) `--text` the instant nothing was hovered — wrong
+   over a deep section with no hoverable directly under the pointer.
+   Fixed by tracking `hoveredGround` separately (set by `onOver`/`onOut`,
+   precedence over everything else since it's more precise) and falling
+   back every tick to `groundAt(grounds, py)` — the cursor's own
+   lerped y-position — via the same shared resolver EdgeNav's dots now
+   use, so the two can never independently disagree. Did NOT switch
+   `action`/`media` states to `--accent`-derived color — the plan called
+   this a live A/B taste call requiring visual comparison in both themes,
+   and the current `--text`-based treatment is the already-shipped,
+   already-verified one; left as a next-session decision rather than
+   guessed at blind.
+
+**Not implemented, deliberately:** none — all 8 items shipped. Two
+findings from live verification were fixed as part of this pass (item 4's
+writeup above) rather than deferred, since they were direct, confirmed
+regressions in the exact area being touched, not a new investigation
+opened mid-pass.
+
+**A third regression, caught by the owner from a screenshot after this
+pass's own live-verification checklist had already passed:** item 4b's
+overlay backdrop (`[data-nav-trigger-overlay]`, mode 2) is a full-width
+opaque strip at `z-[47]`, which visually covered the real header's
+`.header-control-cluster` underneath at `z-[42]` — LayoutSwitch and
+ThemeSwitch weren't gone, just invisible behind it (and, since the
+overlay wrapper is `pointer-events-none` with only specific children
+opting back in, may still have been technically clickable through the
+paint, just with no visible affordance). Caught because the automated
+checklist asserted the elements item 2/4b specifically introduced
+(CLOSE/wordmark/CTA visibility, hover dim, z-index ordering) but never
+cross-checked that PRE-EXISTING, unrelated chrome the pass didn't
+directly touch had survived being visually painted over by something
+that WAS touched — a real gap in that verification, not just bad luck.
+Fixed by giving mode 2 one working copy of `LayoutSwitch`/`ThemeSwitch`
+inside the overlay row itself (`.layout-nav-overlay-controls`, right of
+the wordmark, left of the CTA) and hiding the header's own now-covered
+copy (`.header-controls-primary`, a new wrapper around both) specifically
+in that mode — modes 1 and 3, which have no such backdrop, keep the
+single original copy. Re-verified live via the same screenshot-diff
+method that caught it.
+
+Verified this pass: `bun run build`/`bun run lint`/`bunx tsc --noEmit`
+clean after every item (only the pre-existing `MaCoGlobe.tsx` error,
+unchanged); live Playwright checks against a production build across both
+themes, all three layout modes, and reduced motion, described per-item
+above; zero console/page errors across every check.
+
+## 2026-09-02, layout 2/3 follow-up — owner review against 3 screen recordings
+
+Owner reviewed the 2026-09-01 pass live and sent 3 screen recordings (own
+capture, not skillui) of cuberto.com's capability section and
+iventions.com's desktop + mobile menu. Six fixes, all live-verified against
+a production build:
+
+1. **FEATURE reveal paced too fast.** `feature-scroll.tsx`'s ScrollTrigger
+   used `end: "bottom 60%"`, tying reveal speed to the section's own
+   (growing) height — a feedback loop that let several rows snap open per
+   scroll notch. Changed to a fixed `end: "+=${n*520}px"` runway, same
+   technique `evidence-expand.tsx`/`identity.tsx` already use, decoupling
+   pace from height. Verified: ~350-400px of scroll per row now, was
+   several rows per 150px.
+2. **Layout 2 desktop wipe re-geometried** closer to iventions' own
+   silhouette (steeper, less coverage) per the recordings.
+3. **Layout 2's persistent header row lost its shared backdrop bar.** The
+   real `<header>` is now `display:none` in this mode (nothing rendered
+   inside it any more anyway); MENU/wordmark each get their own small
+   glass chip instead, closed-state only (`:not([data-nav-open])` — open,
+   the panel itself already provides contrast, and the chip was visually
+   colliding with the wipe's own corner there).
+4. **Panel recolored white** (`data-ground="paper"`, was each theme's own
+   `--accent`) and the light beam removed — both per the recordings.
+   92%→97% opacity: measured live, 92% of a mathematically-correct
+   near-white read as grey against a blurred near-black Obsidian backdrop.
+5. **Mobile layout 2 was broken outright** — MENU/wordmark/LayoutSwitch/
+   ThemeSwitch/CTA collided into one overlapping cluster on a 390px
+   screen. Fixed: CTA drops off this row on mobile (panel's own in-list
+   CTA still reaches it), LayoutSwitch/ThemeSwitch move to a fixed
+   bottom-left cluster (mode 3's existing pattern), and — per the
+   recordings — trigger/wordmark swap sides below `md` (trigger right,
+   wordmark left, opposite of desktop). Two real bugs surfaced fixing
+   this: the mobile wedge's uncovered triangle geometrically collided with
+   the now-left-aligned nav links (not an opacity bleed-through problem,
+   as first assumed — the affected links had literally no panel behind
+   them); and Tailwind v4's `-translate-x-1/2` compiles to the separate
+   CSS `translate` property, not `transform` — resetting only `transform`
+   left the wordmark rendered exactly 50%-of-its-own-width off-screen.
+6. **Layout 3 mobile: TOPHEAD's own CTA overlapped the fixed bottom-left
+   cluster** on first paint — the centred hero stack is tall enough on its
+   own (no forced `min-height`) to overflow an 844px viewport before any
+   padding is added. `padding-bottom` alone didn't fix it (only adds
+   space after the CTA, doesn't move it) — needed `padding-top` reduced
+   too, pulling the whole stack up. Both `@utility cb-tophead`'s Tailwind
+   defaults needed `!important` to override from outside its layer — a
+   real, reproducible pattern this pass hit twice (also on
+   `.layout-nav-overlay-brand`'s `translate`), not a one-off; this
+   project's unlayered custom CSS is not winning over Tailwind's own
+   layered utilities the way the cascade-layers spec says it should,
+   worth its own investigation if it recurs a third time.
+
+Verified: `bun run build`/`bun run lint`/`bunx tsc --noEmit` clean (only
+the pre-existing `MaCoGlobe.tsx` error); live checks against a production
+build, both themes, desktop (1920) and mobile (390) viewports, computed-
+geometry checks (not just visual) for every collision bug above.
+
+## 2026-09-02, later — six-item defect pass: dynamic panel tone, logo crop, layout 3 mobile hygiene
+
+A separate owner-flagged defect list from continued live use of the
+2026-09-02 build above, six items, each verified live against a production
+build:
+
+1. **Layout 2 panel tone made dynamic.** Was effectively hardcoded (tuned
+   against one section in an earlier pass); `useLayoutNavState()` now
+   samples whichever `[data-ground]` section sits at viewport centre the
+   moment the panel opens and sets `panelGround` to its *inverse* — sampled
+   once on open, not tracked live, since the panel locks scroll while open
+   (`useOverlayMenu`) so the section behind it can't change mid-open. The
+   sampled tone is also written as `data-nav-ground` on `<html>` so the
+   trigger row/overlay controls (`chrome.tsx`, `styles.css`) flip to match
+   the panel instead of assuming one fixed tone.
+2. **Logo mark cropped to its real content.** `logo-mark.png` was a
+   2481x2481 canvas with the glyph occupying only ~26% of its width and
+   ~15% of its height (measured via a per-pixel alpha scan) —
+   `mask-size: contain` fit the whole padded canvas into the box, so at any
+   sane `size` the visible glyph rendered a few px tall. Re-exported the
+   same art cropped to its measured alpha bbox (670x375, no content
+   change). `Mark` (`components/mark.tsx`) now treats `size` as WIDTH, with
+   height derived from a fixed `ASPECT = 375/670` constant, so the box
+   tightly wraps the visible glyph instead of a square padded with empty
+   space. `Wordmark`'s default `size` bumped 36->42 to compensate for the
+   tighter box reading smaller than before at the same number.
+3. **Layout 3 mobile: wordmark text hidden, mark kept.** New
+   `maco-wordmark-text` class on `Wordmark`'s text span — a full "MaCo"
+   chip centered plus the fixed layout/theme control cluster in a corner
+   don't both fit a 390px top row without overlapping; text hides below
+   `64rem` in this mode only, mark stays as an icon-only chip.
+4. **Layout 3 control cluster relocated top-left on mobile.** Was
+   bottom-left (mode 3's original, desktop-only position, since the dot
+   columns occupy the side edges there); below `64rem` `.header-control-
+   cluster` switches to `position: fixed; left: 1.25rem; top: 1.25rem`
+   instead, clear of `EdgeNav`'s new mobile bottom bar (see next pass).
+5. **Layout 3 mobile TOPHEAD padding retuned.** The centred hero stack has
+   no forced `min-height` and is tall enough on its own to overflow a
+   390x844 viewport before any padding is added — needed both
+   `padding-top` reduced (pulls the stack up) and `padding-bottom`
+   increased (clears the relocated cluster), not `padding-bottom` alone,
+   which only adds space after the CTA without moving it.
+6. **ThemeSwitch label hidden on mobile layout 3** (`.theme-switch-text`,
+   `chrome.tsx`) — closed the last few px of overlap between the shrunk
+   control cluster and the brand chip that rules 3-5 didn't fully close on
+   their own (confirmed via `elementFromPoint` before this rule existed).
+
+Verified: `bun run build`/`bun run lint`/`bunx tsc --noEmit` clean; live
+checks both themes, 1440/390, layout mode 3 specifically re-checked at
+390x844 for the mobile-only rules above.
+
+## 2026-09-03 — FEATURE reverted to hover accordion; ground-tone fallback fix
+
+Two items, both from continued live use surfacing real problems with
+2026-09-01/09-02 work:
+
+1. **FEATURE reverted from the scroll-driven `FeatureScroll` back to
+   `Accordion`'s `hoverToOpen` mode.** The 2026-09-01 reveal
+   (`feature-scroll.tsx`, since deleted) tied row-opening to a scrubbed
+   `ScrollTrigger`, which lags real scroll position by design (`scrub`)
+   — a normal-speed scroll or trackpad flick could blow past several rows'
+   open windows before they visually registered. Every row was technically
+   reachable by stopping at the right pixel, but that's not how anyone
+   actually scrolls. `Accordion`'s `panel="inverted"` mode already had a
+   built-in `hoverToOpen` (real mouse + fine pointer only via
+   `(hover: hover) and (pointer: fine)`, click always works, touch never
+   depends on hover) from the 2026-08-29 Capabilities dark-panel work —
+   reusing it removes an entire fragile class of scroll-pacing bugs rather
+   than re-tuning them, and hover intent is a more direct signal for "open
+   this row" than a scroll position ever was. `FeatureAccordion` no longer
+   branches on `useReducedMotion()` for this — `Accordion` with
+   `hoverToOpen` already degrades correctly under reduced motion (click
+   still works, nothing auto-animates on scroll) with no separate
+   component needed.
+2. **`groundAt()` gained a `fallback` parameter** (`lib/ground.ts`), default
+   `"paper"` to preserve one-shot callers' existing behavior. Previously
+   hard-defaulted to `"paper"` whenever no `[data-ground]` section covered
+   the sampled y — which is not just "off the end of the page":
+   `GroundHandoff`'s recede scales an outgoing section down a couple
+   percent from its own bottom edge as the next section arrives, which can
+   open a real, momentary gap at the sample point between two *adjacent
+   `deep` sections*. Hard-defaulting that gap to paper flashed every
+   continuous consumer (the header/EdgeNav ticker in `chrome.tsx`, the
+   cursor in `cursor.tsx`) to the wrong tone for a few frames — most
+   visible at the About MaCo -> How MaCo works boundary (RECORD -> FAQ,
+   both `deep`), reported as a rendering glitch at that seam. Fixed by
+   having both continuous trackers pass their own last-resolved tone as
+   `fallback`, so a transient gap holds its prior tone instead of flashing;
+   the preloader and any future one-shot caller are unaffected.
+
+Verified: `bun run build`/`bun run lint`/`bunx tsc --noEmit` clean; live
+check of the RECORD->FAQ boundary in both themes, scrolled through
+repeatedly, confirms no tone flash; FEATURE's hover-open confirmed with a
+real mouse (rows open on hover, close on hover-out, first row open by
+default) and confirmed click-only still works with mouse hover disabled
+(coarse-pointer emulation).
+
+## What's uncommitted
+
+Every pass from **2026-09-01 onward** (chrome/motion/reveal, both
+2026-09-02 passes, and 2026-09-03 above) exists only in the working tree —
+the last real commit is `503ce20` ("Motion/nav pass: split rails,
+translucent panel, preloader enter gate," the 2026-08-31 pass). This
+includes two files that have never been committed at all:
+`components/nav/edge-nav.tsx` (EdgeNav, extracted out of `chrome.tsx` and
+mounted directly in `__root.tsx` as a `<Header>` sibling) and `lib/
+ground.ts` (`groundAt`/`SECTION_SELECTOR`, the shared ground resolver
+`chrome.tsx`, `cursor.tsx`, and `edge-nav.tsx` all now import). `git diff
+--stat` against `HEAD` currently shows ~1,700 lines changed across 17
+files. Nothing here is speculative or unverified — every item above and in
+the 2026-09-01/09-02 entries was live-checked as described — it just hasn't
+been packaged into commits yet. Next session (or this one): review the
+diff, split it into sensible commits (roughly one per dated pass above),
+and push.
 
 ## Read this first
 
