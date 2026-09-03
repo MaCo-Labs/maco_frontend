@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { site, heroLines, getProduct } from "@/content/maco";
 import { Mark } from "@/components/mark";
-import { SplitReveal } from "@/components/motion/split-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { MaskedHeading } from "@/components/motion/masked-heading";
@@ -36,9 +35,12 @@ const CYCLE_MS = 4800;
  * section at all, not just on the heading — confirmed live that the
  * eyebrow/brand-row/statement read cleanly without it.
  *
- * `<SplitReveal>` still carries the wordmark entrance so the brand is the
- * first thing that moves. Eyebrow above it is `site.category` — real
- * copy, not invented.
+ * Brand row is the mark alone (2026-09-01) — the header's own `<Wordmark>`
+ * already spells "MaCo" out in text ~120px above this row (chrome.tsx),
+ * so a second spelled-out instance directly under it doubled up in the
+ * same viewport for no reason; `site.name` stays in the accessible name
+ * (`sr-only`) rather than disappearing. Eyebrow above it is
+ * `site.category` — real copy, not invented.
  *
  * `data-ground="deep"` since the 2026-08-28 dark-first pass — the page
  * now opens on the material rather than the page, closing the loop with
@@ -102,13 +104,8 @@ export function TopHead() {
         </ScrubReveal>
 
         <div className="cb-tophead-brand mt-6 flex items-center gap-4">
-          <Mark size={44} />
-          <SplitReveal
-            text={site.name}
-            as="p"
-            className="display-md"
-            style={{ color: "var(--text)" }}
-          />
+          <Mark size={72} />
+          <span className="sr-only">{site.name}</span>
         </div>
 
         {showMasked && bridge?.media?.video ? (

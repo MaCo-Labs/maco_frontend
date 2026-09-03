@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { ThemeProvider } from "@/components/theme";
 import { LayoutProvider } from "@/components/layout-mode";
 import { Header, Footer } from "@/components/chrome";
+import { EdgeNav } from "@/components/nav/edge-nav";
 import { Cursor } from "@/components/motion/cursor";
 import { Preloader } from "@/components/preloader";
 import { ScrollRuntimeProvider } from "@/components/scroll-runtime-provider";
@@ -167,6 +168,7 @@ function RootComponent() {
           </a>
           <Cursor />
           <Header />
+          <EdgeNav />
           <main id="main">
             <Outlet />
           </main>

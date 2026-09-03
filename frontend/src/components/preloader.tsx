@@ -7,8 +7,13 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { getLiveScrollRuntime, getScrollRuntime } from "@/lib/scroll-runtime";
 import { DUR, EASE_EMPHASIS } from "@/lib/motion";
 
-const RADIUS = 54;
+const RADIUS = 86;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+// 2026-09-01: how long the counter takes to visibly tick through numbers
+// on a fast connection, where the old 1.6s ceiling read as "very fast"
+// with most integers skipped. See the tween below for how this interacts
+// with the 92 ceiling and the real readiness signal.
+const MIN_DURATION_MS = 2600;
 
 /**
  * First-paint loader: a percentage ring around MaCo's mark, on `deep`
@@ -42,11 +47,16 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
  *
  * Progress is a proxy tween, not byte-accounted.
  * ponytail: time-based illusion, swap for real resource tracking only if
- * it visibly misreports. It runs toward 100 over ~1.6s; once the real
- * readiness signal resolves (web fonts + the hero's poster image
- * decoded), whatever distance remains snaps shut in 0.25s instead of
- * waiting out the full illusion — a fast connection finishes fast, a slow
- * one still shows real progress instead of stalling at a fixed number.
+ * it visibly misreports. It runs toward 92 over MIN_DURATION_MS (2.6s,
+ * linear — a constant tick rate is what makes the counter visibly pass
+ * through nearly every integer instead of skipping) and only starts its
+ * snap to 100 once BOTH that duration and the real readiness signal (web
+ * fonts + the hero's poster image decoded) have resolved — 2026-09-01,
+ * previously gated on readiness alone at a faster ~1.6s pace, which read
+ * as rushed on a fast connection. A slow connection still shows real
+ * progress past 92 instead of stalling at a fixed number; a fast one
+ * still gets the full deliberate ~2.6s+0.45s beat rather than finishing
+ * the instant assets resolve.
  *
  * The ring's `stroke-dashoffset` is written directly via ref on every
  * tick (ref.textContent for the numeral, same no-re-render pattern
@@ -116,7 +126,7 @@ export function Preloader() {
 
       const proxy = { v: 0 };
       const bridgePoster = getProduct("bridge")?.media?.poster;
-      const ready = Promise.all([
+      const assetsReady = Promise.all([
         document.fonts?.ready ?? Promise.resolve(),
         bridgePoster
           ? new Promise<void>((resolve) => {
@@ -127,20 +137,32 @@ export function Preloader() {
             })
           : Promise.resolve(),
       ]);
+      // Gates the close on the LONGER of real readiness and a minimum
+      // elapsed time — without this, a fast connection resolved
+      // `assetsReady` almost immediately and the loader read as rushed
+      // even at the retimed pace below, since the 92->100 snap could fire
+      // a few hundred ms in. `Promise.all` on a fixed-delay promise
+      // enforces the floor without touching the readiness logic itself.
+      const minElapsed = new Promise<void>((resolve) => setTimeout(resolve, MIN_DURATION_MS));
+      const ready = Promise.all([assetsReady, minElapsed]);
 
       // Caps below 100, not at it: a tween that reaches v:100 on its own
-      // schedule (a real risk once assets take longer than ~1.6s to load —
-      // caught live, where it left the ring frozen at a false "100%" for a
-      // visible extra second-plus before the real snap) removes the
-      // "remainder" the ready-signal handler below depends on to ever
-      // animate anything. Capping at 92 guarantees there's always a real
-      // gap left for the snap to close, so the ring can never look
-      // finished before the page actually is.
+      // schedule (a real risk once real assets take longer than the main
+      // tween's own duration — caught live, where it left the ring frozen
+      // at a false "100%" for a visible extra second-plus before the real
+      // snap) removes the "remainder" the ready-signal handler below
+      // depends on to ever animate anything. Capping at 92 guarantees
+      // there's always a real gap left for the snap to close, so the ring
+      // can never look finished before the page actually is. `ease: "none"`
+      // (was power1.inOut) plus the longer duration is what makes the
+      // counter visibly tick through nearly every integer instead of
+      // skipping — a constant ~35 units/sec is roughly one number every
+      // 28ms, well under a 60fps frame budget.
       const CEILING = 92;
       const mainTween = rt.gsap.to(proxy, {
         v: CEILING,
-        duration: 1.6,
-        ease: "power1.inOut",
+        duration: MIN_DURATION_MS / 1000,
+        ease: "none",
         onUpdate: () => write(proxy.v),
       });
 
@@ -149,7 +171,7 @@ export function Preloader() {
         mainTween.kill();
         rt.gsap.to(proxy, {
           v: 100,
-          duration: 0.25,
+          duration: 0.45,
           ease: "power2.out",
           onUpdate: () => write(proxy.v),
           onComplete: showEnter,
@@ -201,32 +223,32 @@ export function Preloader() {
         >
           <div className="flex flex-col items-center gap-10">
             <div className="relative flex items-center justify-center">
-              <svg width={128} height={128} viewBox="0 0 128 128" className="-rotate-90">
+              <svg width={200} height={200} viewBox="0 0 200 200" className="-rotate-90">
                 <circle
-                  cx={64}
-                  cy={64}
+                  cx={100}
+                  cy={100}
                   r={RADIUS}
                   fill="none"
                   stroke="var(--line-inverted)"
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                 />
                 <circle
                   ref={circleRef}
-                  cx={64}
-                  cy={64}
+                  cx={100}
+                  cy={100}
                   r={RADIUS}
                   fill="none"
                   stroke="var(--focus)"
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                   strokeLinecap="round"
                   strokeDasharray={CIRCUMFERENCE}
                   strokeDashoffset={CIRCUMFERENCE}
                 />
               </svg>
-              <Mark size={32} className="absolute" />
+              <Mark size={64} className="absolute" />
               <span
                 ref={numeralRef}
-                className="label absolute -bottom-9"
+                className="label absolute -bottom-12"
                 style={{ color: "var(--muted-inverted)" }}
                 aria-hidden="true"
               >

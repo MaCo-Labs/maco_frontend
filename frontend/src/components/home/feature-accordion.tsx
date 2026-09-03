@@ -49,6 +49,20 @@ const ITEMS: AccordionItem[] = services
  * this section's own `paper` ground (`Accordion`'s only other call site,
  * `Faq`, stays default: it's already `deep`, so a second dark layer there
  * would have nothing to contrast against).
+ *
+ * 2026-09-01: briefly had a scroll-linked variant (`FeatureScroll`) that
+ * opened rows in sequence as the section crossed the viewport, no click
+ * required. Reverted 2026-09-03 — the owner found it unreliable on a real
+ * scroll gesture (GSAP ScrollTrigger's `scrub` lags the actual scroll
+ * position, so a normal-speed scroll or trackpad flick blew past several
+ * rows' open windows before they were visually registered — technically
+ * every row WAS reachable by stopping at the right pixel, but that's not
+ * how anyone actually scrolls a page). `Accordion`'s `panel="inverted"`
+ * already had a built-in `hoverToOpen` (real mouse + fine pointer only,
+ * click always works, touch never depends on hover) — reusing it here
+ * removes an entire fragile class of scroll-pacing bugs instead of
+ * re-tuning them, and it's exactly what CAPABILITY needs: hover intent is
+ * a direct, unambiguous signal a scroll position never was.
  */
 export function FeatureAccordion() {
   return (

@@ -6,6 +6,7 @@ import { Mark, Wordmark } from "./mark";
 import { useTheme } from "./theme";
 import { useLayout, type LayoutMode } from "./layout-mode";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
 import { usePointerField } from "@/hooks/use-pointer-field";
 import { useOverlayMenu } from "@/hooks/use-overlay-menu";
@@ -13,6 +14,7 @@ import { Magnetic } from "@/components/motion/magnetic";
 import { getScrollRuntime } from "@/lib/scroll-runtime";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 import { DUR, EASE_EMPHASIS, EASE_EXIT } from "@/lib/motion";
+import { groundAt, SECTION_SELECTOR, type Ground } from "@/lib/ground";
 
 function ThemeSwitch() {
   const { theme, setTheme } = useTheme();
@@ -36,7 +38,14 @@ function ThemeSwitch() {
           className="block h-2.5 w-2.5 border border-current transition-transform duration-300 group-hover:rotate-90"
           style={{ background: "var(--accent)" }}
         />
-        {theme === "obsidian" ? "Obsidian" : "Cobalt"}
+        {/* Classed (not a bare text node) so layout 3's mobile control
+            cluster (styles.css) can hide it — measured live: the cluster's
+            full "1 2 3 [swatch] Obsidian" footprint (~195px) genuinely
+            overlapped the centered brand chip's hit area on a 390px
+            viewport (elementFromPoint confirmed the brand's own higher
+            z-index was swallowing clicks meant for this button). Text
+            hides, swatch stays — same pattern as `maco-wordmark-text`. */}
+        <span className="theme-switch-text">{theme === "obsidian" ? "Obsidian" : "Cobalt"}</span>
       </button>
     </Magnetic>
   );
@@ -218,8 +227,47 @@ function MobilePillNav() {
   );
 }
 
-const LAYOUT_NAV_CLOSED = "polygon(0% 0%, 0% 0%, -30% 100%, -30% 100%)";
-const LAYOUT_NAV_OPEN = "polygon(0% 0%, 130% 0%, 100% 100%, -30% 100%)";
+// 2026-09-02: two variants, not one, and the desktop one re-measured off
+// the owner's own frame-by-frame capture of iventions.com's real open
+// state (`docs/references/iventions/NOTES.md`'s menu section): its
+// diagonal runs from the top-left corner down to ~93% of the BOTTOM edge
+// — a big, dramatic uncovered bottom-left triangle, not the shallow tilt
+// an earlier reading of a single static screenshot suggested (that pass
+// set 14%, far too little, and the owner flagged the result as still not
+// matching). 72% here rather than the reference's own ~93%: our panel's
+// nav column is right-aligned inside `.shell` (max-width 88rem, centred),
+// so its longest label starts around 70% of a 1920px viewport — at 93%
+// the diagonal would cut straight through the lower links. 70% keeps the
+// reference's dramatic read with the diagonal still clearing the text at
+// every link's own height.
+//
+// Mobile keeps its own much smaller wedge for the opposite reason: those
+// links are LEFT-aligned (matching the reference's own mobile panel), so
+// there the wedge and the text compete for the same edge.
+//
+// 2026-09-02 (second pass): the top edge is a DIAGONAL now, not the full
+// width — the owner's own target mockup (and iventions.com's real open
+// state behind it) leaves the top-right corner uncovered, so the shard
+// reads as a tilted shard rather than a header band with one angled
+// bottom. Second point moves from `130% 0%` to `100% 20%`; the panel's
+// own persistent top-right controls sit in that uncovered corner and
+// keep their chip backgrounds while open for that reason (styles.css).
+const LAYOUT_NAV_CLOSED_DESKTOP = "polygon(0% 0%, 0% 0%, -60% 100%, -60% 100%)";
+const LAYOUT_NAV_OPEN_DESKTOP = "polygon(0% 0%, 100% 20%, 100% 100%, 70% 100%)";
+// Mobile is its own shape entirely, not a narrowed desktop one: the
+// uncovered region sits at the TOP-left (page headline still showing
+// through above the shard, exactly as the reference's own mobile panel
+// does), and the shard owns the whole bottom — which is where the
+// left-aligned links live. The previous mobile wedge grew downward from
+// the top-left corner into the very corner those links occupy, and only
+// a 6rem left-padding hack kept them apart; with the wedge inverted that
+// hack is gone (styles.css) and the links sit flush at `.shell`'s own
+// gutter like the reference's do. Enters as a downward drop (closed =
+// the same quad translated a full viewport up) rather than the desktop's
+// sideways sweep — a near-horizontal diagonal wiping in from the left
+// reads as a shutter, not a shard.
+const LAYOUT_NAV_CLOSED_MOBILE = "polygon(0% -70%, 100% -100%, 100% 0%, 0% 0%)";
+const LAYOUT_NAV_OPEN_MOBILE = "polygon(0% 30%, 100% 0%, 100% 100%, 0% 100%)";
 
 /**
  * Layout modes 2 and 3's shared full-screen menu state — trigger and panel
@@ -237,15 +285,56 @@ const LAYOUT_NAV_OPEN = "polygon(0% 0%, 130% 0%, 100% 100%, -30% 100%)";
  */
 function useLayoutNavState() {
   const [open, setOpen] = useState(false);
+  // Inverse of whatever `[data-ground]` section sits at viewport centre the
+  // moment the panel opens — this panel used to be hardcoded to `"paper"`
+  // (tuned against the dark hero, the only place it was opened during that
+  // pass); over the homepage's six `paper` sections that reads as a white
+  // panel on a white section. Sampled once on open, not tracked live: the
+  // panel locks scroll while open (`useOverlayMenu`), so the section behind
+  // it can't change mid-open, and a single sample avoids the per-frame
+  // ticker `Header` already runs for its own adaptive chrome.
+  const [panelGround, setPanelGround] = useState<"paper" | "deep">("paper");
   const menuId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const reduced = useReducedMotion();
   useOverlayMenu({ open, setOpen, panelRef, triggerRef });
 
+  // `EdgeNav` (edge-nav.tsx) is a sibling of `<Header>`, not a descendant
+  // — this attribute on `<html>` is the cross-component signal it reads
+  // (styles.css's `html[data-nav-open]` rule) to quiet its own dots while
+  // this panel is open, same shape as `data-cursor-active`/`data-layout`/
+  // `data-theme` already use for signalling across components that don't
+  // share a parent. Two navigation systems at equal visual weight at once
+  // is exactly what the motion/nav pass's menu-vs-dots distinction warns
+  // against.
+  //
+  // `data-nav-ground` rides the same effect: sampled at open (not close, so
+  // it stays put through the exit transition instead of snapping back to
+  // "paper" mid-wipe), read by styles.css to flip the trigger row/overlay
+  // controls to match whichever tone the panel actually took.
+  useEffect(() => {
+    if (open) {
+      const grounds = [...document.querySelectorAll<HTMLElement>(SECTION_SELECTOR)];
+      const sectionGround = groundAt(grounds, window.innerHeight / 2);
+      const nextPanelGround = sectionGround === "deep" ? "paper" : "deep";
+      setPanelGround(nextPanelGround);
+      document.documentElement.dataset["navOpen"] = "true";
+      document.documentElement.dataset["navGround"] = nextPanelGround;
+    } else {
+      delete document.documentElement.dataset["navOpen"];
+      delete document.documentElement.dataset["navGround"];
+    }
+    return () => {
+      delete document.documentElement.dataset["navOpen"];
+      delete document.documentElement.dataset["navGround"];
+    };
+  }, [open]);
+
   return {
     open,
     setOpen,
+    panelGround,
     menuId,
     panelRef,
     triggerRef,
@@ -269,8 +358,15 @@ type LayoutNavState = ReturnType<typeof useLayoutNavState>;
  * state but not one `ref` attachment — this way Escape always returns
  * focus to whichever instance was actually clicked.
  */
+/**
+ * §11 — a custom MENU/CLOSE treatment beside the two-line mark, not a bare
+ * icon: `AnimatePresence` crossfades the word itself (small opacity + rise,
+ * `EASE_EMPHASIS`) rather than a generic hamburger-to-X animation carrying
+ * the whole message alone. `aria-hidden`: the real accessible name is
+ * still the button's own `aria-label` below, this is a sighted-only label.
+ */
 function LayoutNavTrigger({ nav, className }: { nav: LayoutNavState; className: string }) {
-  const { open, setOpen, menuId, triggerRef } = nav;
+  const { open, setOpen, menuId, triggerRef, reduced } = nav;
   return (
     <button
       type="button"
@@ -281,24 +377,43 @@ function LayoutNavTrigger({ nav, className }: { nav: LayoutNavState; className: 
       aria-expanded={open}
       aria-controls={open ? menuId : undefined}
       aria-label={open ? "Close navigation menu" : "Open navigation menu"}
-      className={`layout-hamburger flex h-10 w-10 flex-col items-center justify-center gap-[5px] ${className}`}
+      className={`layout-hamburger flex h-10 items-center gap-3 ${className}`}
     >
-      <span
-        aria-hidden="true"
-        className="block h-px w-5 transition-transform duration-300"
-        style={{
-          background: "var(--text)",
-          transform: open ? "translateY(3px) rotate(45deg)" : "none",
-        }}
-      />
-      <span
-        aria-hidden="true"
-        className="block h-px w-5 transition-transform duration-300"
-        style={{
-          background: "var(--text)",
-          transform: open ? "translateY(-3px) rotate(-45deg)" : "none",
-        }}
-      />
+      <span className="relative flex h-10 w-5 flex-col items-center justify-center gap-[5px]">
+        <span
+          aria-hidden="true"
+          className="block h-px w-5 transition-transform duration-300"
+          style={{
+            background: "var(--text)",
+            transform: open ? "translateY(3px) rotate(45deg)" : "none",
+          }}
+        />
+        <span
+          aria-hidden="true"
+          className="block h-px w-5 transition-transform duration-300"
+          style={{
+            background: "var(--text)",
+            transform: open ? "translateY(-3px) rotate(-45deg)" : "none",
+          }}
+        />
+      </span>
+      <span className="label relative overflow-hidden" aria-hidden="true">
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={open ? "close" : "menu"}
+            className="block"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              transition: reduced ? { duration: 0 } : { duration: DUR.micro, ease: EASE_EMPHASIS },
+            }}
+            exit={{ opacity: 0, y: -8, transition: { duration: reduced ? 0 : DUR.micro } }}
+          >
+            {open ? "Close" : "Menu"}
+          </motion.span>
+        </AnimatePresence>
+      </span>
     </button>
   );
 }
@@ -309,30 +424,54 @@ function LayoutNavTrigger({ nav, className }: { nav: LayoutNavState; className: 
  * circle-to-quad or 3-to-4-point mismatch is undefined behavior for the
  * browser's own clip-path interpolation, not just Motion's.
  *
- * Panel color reads `var(--accent)`/`var(--accent-ink)` directly (each
- * theme's own accent — Obsidian near-black, Cobalt blue), never Iventions'
- * yellow-green — see the doc comment on useLayoutNavState for why this
- * component MUST render outside `<header>`'s DOM subtree for that to
- * actually hold.
+ * 2026-09-02: panel recolored to `data-ground`'s own light/dark token remap
+ * instead of each theme's `--accent`/`--accent-ink` — the owner's own direct
+ * comparison against iventions.com found the dark Obsidian panel read as a
+ * heavy, wrong-feeling wedge next to the reference's pale one. Reusing the
+ * existing ground remap (rather than hand-rolling colors) means every
+ * descendant — the nav links, the divider borders, the in-panel CTA's
+ * `.btn-solid` — resolves correctly through the normal cascade with no
+ * per-element override, and still isn't a literal copy of Iventions' own
+ * yellow-green: it's MaCo's own paper/deep tone, just applied here instead
+ * of Obsidian/Cobalt's near-black/blue accent. `[data-ground]`'s remap only
+ * affects DESCENDANTS via custom-property cascade — this element being a
+ * `<div>` (not a `<section>`/`<footer>`) means it's excluded from
+ * `SECTION_SELECTOR` (`lib/ground.ts`), so it can't pollute the
+ * header/EdgeNav/cursor's own ground sampling the way an actual mis-scoped
+ * section would.
  *
- * A leading light beam and a staggered link entrance, layered on TOP of
- * the wipe above — the wipe itself is the base mechanism, this is polish
- * on top of it.
+ * 2026-09-02 (second pass): `data-ground` is no longer hardcoded to
+ * `"paper"` — it's `nav.panelGround`, the inverse of whichever ground sits
+ * at viewport centre when the panel opens (`useLayoutNavState` above). The
+ * literal-paper version was only ever correct while every open click in
+ * testing happened over the `deep` hero; scrolled to any of the homepage's
+ * six `paper` sections first, it rendered a white panel on a white section.
  *
- * Background is `var(--accent)` at 92%, not solid — the owner's own
- * screen recording of the reference mechanic (§0.6) shows the page
- * content staying dimly visible through/around the wipe, not disappearing
- * behind an opaque block. `backdrop-filter: blur` keeps whatever shows
- * through soft rather than legible, so it reads as depth/atmosphere behind
- * the panel rather than a competing layer of text. 92% (not lower) is a
- * contrast floor, not a taste choice: `--accent-ink` is near-white in both
- * themes, and Cobalt's `--accent` is a mid-lightness blue rather than
- * Obsidian's near-black — a more transparent panel risks a light section
- * bleeding enough luminance through to weaken that pairing under AA.
+ * A staggered link entrance, layered on top of the wipe above — the wipe
+ * itself is the base mechanism, this is polish on top of it. (The leading
+ * light beam that used to run here is gone — same live comparison: it
+ * read as a random streak cutting across the shape, not present in the
+ * reference at all.)
+ *
+ * Background is 97% opaque, not solid — the owner's own screen recording
+ * of the reference mechanic (§0.6) shows the page content staying dimly
+ * visible through/around the wipe, not disappearing behind an opaque
+ * block. `backdrop-filter: blur` keeps whatever shows through soft rather
+ * than legible, so it reads as depth/atmosphere behind the panel rather
+ * than a competing layer of text. (92% first, then raised to 97% the same
+ * pass: measured live at 92% the panel's own color was mathematically
+ * correct near-white — `oklab(0.992 0 0 / 0.92)`, confirmed via computed
+ * style — but the remaining 8% was enough of a window onto a blurred,
+ * near-black Obsidian hero to read as a light grey, not the white the
+ * owner asked for. This is a paper-ground panel now, considerably paler
+ * than the accent-colored one 92% was originally tuned against.)
  */
 function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { open, menuId, panelRef, enterTransition, exitTransition, reduced } = nav;
+  const { open, panelGround, menuId, panelRef, enterTransition, exitTransition, reduced } = nav;
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const closedClip = isDesktop ? LAYOUT_NAV_CLOSED_DESKTOP : LAYOUT_NAV_CLOSED_MOBILE;
+  const openClip = isDesktop ? LAYOUT_NAV_OPEN_DESKTOP : LAYOUT_NAV_OPEN_MOBILE;
 
   const navVariants = {
     hidden: {},
@@ -359,43 +498,20 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
           role="dialog"
           aria-modal="true"
           aria-label="Site navigation"
+          data-ground={panelGround}
           className="fixed inset-0 z-[46] flex flex-col justify-center overflow-hidden backdrop-blur-xl"
           style={{
-            background: "color-mix(in oklab, var(--accent) 92%, transparent)",
-            color: "var(--accent-ink)",
+            background: "color-mix(in oklab, var(--bg) 97%, transparent)",
+            color: "var(--text)",
           }}
-          initial={{ clipPath: LAYOUT_NAV_CLOSED }}
-          animate={{ clipPath: LAYOUT_NAV_OPEN, transition: enterTransition }}
-          exit={{ clipPath: LAYOUT_NAV_CLOSED, transition: exitTransition }}
+          initial={{ clipPath: closedClip }}
+          animate={{ clipPath: openClip, transition: enterTransition }}
+          exit={{ clipPath: closedClip, transition: exitTransition }}
         >
-          {/* The beam that leads the wipe — enter only, never on exit; it
-              has no persistent state, so it simply disappears with the
-              panel on close rather than needing its own exit animation.
-              --sweep-light is the same signature light-pass token used
-              everywhere else on the site, not a new colour. `skewX` is set
-              through Motion's own style prop rather than a raw CSS
-              `transform` string — Motion owns the `transform` property
-              once it's animating `x`, and silently drops a hand-written
-              `transform` in the same `style` object rather than composing
-              with it (confirmed live: the beam rendered as a straight
-              vertical band with the raw-string version, not diagonal). */}
-          <motion.div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 w-1/3"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent, color-mix(in oklab, var(--sweep-light) 55%, transparent), transparent)",
-              skewX: -18,
-            }}
-            initial={{ x: "-140%" }}
-            animate={{ x: "140%" }}
-            transition={reduced ? { duration: 0 } : { duration: 0.75, ease: EASE_EMPHASIS }}
-          />
-
           <motion.nav
             aria-label="Primary"
             data-lenis-prevent
-            className="shell relative flex max-h-full flex-col overflow-y-auto"
+            className="shell layout-nav-links relative flex max-h-full flex-col overflow-y-auto"
             variants={navVariants}
             initial="hidden"
             animate="visible"
@@ -403,10 +519,13 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
             <motion.div variants={itemVariants}>
               <Link
                 to="/"
-                className="block py-3 font-display text-4xl md:text-6xl"
-                style={{ opacity: pathname === "/" ? 1 : 0.6 }}
+                className="layout-nav-link block py-3 font-display text-4xl md:text-6xl"
+                data-active={pathname === "/"}
               >
                 Home
+                <span aria-hidden="true" className="layout-nav-link-arrow">
+                  →
+                </span>
               </Link>
             </motion.div>
             {site.nav.map((item) => {
@@ -416,24 +535,26 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
                   key={item.to}
                   variants={itemVariants}
                   className="border-t"
-                  style={{ borderColor: "color-mix(in oklab, var(--accent-ink) 20%, transparent)" }}
+                  style={{ borderColor: "color-mix(in oklab, var(--text) 20%, transparent)" }}
                 >
                   <Link
                     to={item.to}
-                    className="block py-3 font-display text-4xl md:text-6xl"
-                    style={{ opacity: active ? 1 : 0.6 }}
+                    className="layout-nav-link block py-3 font-display text-4xl md:text-6xl"
+                    data-active={active}
                   >
                     {item.label}
+                    <span aria-hidden="true" className="layout-nav-link-arrow">
+                      →
+                    </span>
                   </Link>
                 </motion.div>
               );
             })}
             <motion.div variants={itemVariants} className="mt-8 w-fit">
-              <Link
-                to="/contact"
-                className="btn-solid"
-                style={{ background: "var(--accent-ink)", color: "var(--accent)" }}
-              >
+              {/* No inline color override needed — `.btn-solid` already
+                  reads `--accent`/`--accent-ink`, which this panel's own
+                  `data-ground="paper"` above already remapped correctly. */}
+              <Link to="/contact" className="btn-solid">
                 Start a project
               </Link>
             </motion.div>
@@ -441,29 +562,6 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
         </motion.div>
       )}
     </AnimatePresence>
-  );
-}
-
-/** One desktop nav link, factored out of the header's `<nav>` so it can be
- *  rendered twice — once per rail (§7) — without duplicating the
- *  active-state logic. */
-function NavLink({
-  item,
-  pathname,
-}: {
-  item: { to: (typeof site.nav)[number]["to"]; label: string };
-  pathname: string;
-}) {
-  const active = pathname === item.to || pathname.startsWith(item.to + "/");
-  return (
-    <Link
-      to={item.to}
-      className="label link-draw transition-colors"
-      style={{ color: active ? "var(--text)" : "var(--muted)" }}
-      aria-current={active ? "page" : undefined}
-    >
-      {item.label}
-    </Link>
   );
 }
 
@@ -484,28 +582,81 @@ export function Header() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const headerRef = useRef<HTMLElement>(null);
   const layoutNav = useLayoutNavState();
+  // Invalidates a still-pending retry (below) from a PREVIOUS pathname once
+  // a newer one starts — requestAnimationFrame isn't tracked by
+  // useScrollScene's own gsap.context()-based cleanup, so a stale retry
+  // from an earlier run could otherwise still fire and build a duplicate
+  // trigger after a second, faster navigation superseded it.
+  const runTokenRef = useRef(0);
 
-  useScrollScene((rt) => {
-    const header = headerRef.current;
-    const hero = document.querySelector<HTMLElement>('[aria-label="Introduction"]');
-    if (header && hero) {
-      rt.gsap.fromTo(
-        header,
-        { "--header-solid": 0 },
-        {
-          "--header-solid": 1,
-          ease: "none",
-          scrollTrigger: {
-            trigger: hero,
-            start: "top top",
-            end: "bottom top",
-            scrub: 0.3,
-            invalidateOnRefresh: true,
+  useScrollScene(
+    (rt) => {
+      const header = headerRef.current;
+      if (!header) return;
+      const myToken = ++runTokenRef.current;
+
+      // `[aria-label="Introduction"]` alone is ambiguous across routes —
+      // `/about`, `/clients`, `/contact`, `/products`, `/products/$slug`,
+      // `/services`, `/services/$slug`, and `/work` each have their OWN
+      // section with this exact aria-label (all `data-ground="paper"`).
+      // TOPHEAD (the homepage hero this trigger actually wants) is the
+      // only one that's `data-ground="deep"` — a real bug, caught live:
+      // on a fast client-nav FROM one of those routes TO `/`, the OUTGOING
+      // route's own "Introduction" section is still momentarily in the DOM
+      // (confirmed via frame-by-frame probing — present at frame 0,
+      // replaced by TOPHEAD around frame 13) when this query's first,
+      // synchronous check ran, so it grabbed THAT stale section instead.
+      // GSAP then measured a node that was detached moments later, giving
+      // a permanently degenerate near-zero scroll range (start ≈ end) —
+      // `--header-solid` never moves again because the geometry it's
+      // scrubbing across doesn't exist, not because progress isn't
+      // updating. Scoping to `[data-ground="deep"]` too resolves the
+      // collision using data the two sections already disagree on.
+      //
+      // `pathname` alone also isn't a reliable "the DOM is ready" signal
+      // on its own: TanStack Router updates location.pathname as soon as
+      // navigation is committed, which can land BEFORE the target route's
+      // own (code-split) chunk has actually rendered its sections into the
+      // DOM — confirmed live, the same race `applyGround` above hit. That
+      // one fixed itself by re-deriving every tick; a ScrollTrigger can't
+      // be "re-derived" the same way (it's a discrete object, not a
+      // per-frame read), so this instead retries across frames — the same
+      // "re-aim, don't just nudge once" bounded-retry shape
+      // scripts/shoot.mjs already uses for this exact class of
+      // route-transition timing flake — until the hero exists or a route
+      // genuinely has none (e.g. /about), where it gives up after ~1.5s
+      // rather than polling forever.
+      let attempts = 0;
+      const MAX_ATTEMPTS = 90;
+      const tryBuild = () => {
+        if (runTokenRef.current !== myToken) return;
+        const hero = document.querySelector<HTMLElement>(
+          'section[aria-label="Introduction"][data-ground="deep"]',
+        );
+        if (!hero) {
+          if (++attempts < MAX_ATTEMPTS) requestAnimationFrame(tryBuild);
+          return;
+        }
+        rt.gsap.fromTo(
+          header,
+          { "--header-solid": 0 },
+          {
+            "--header-solid": 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: hero,
+              start: "top top",
+              end: "bottom top",
+              scrub: 0.3,
+              invalidateOnRefresh: true,
+            },
           },
-        },
-      );
-    }
-  }, []);
+        );
+      };
+      tryBuild();
+    },
+    [pathname],
+  );
 
   // Adaptive ground: the header, mobile pill nav, and layout-nav trigger
   // overlay are all `position: fixed`, mounted in __root.tsx (or, for the
@@ -536,34 +687,68 @@ export function Header() {
     let cancelled = false;
     let rt_: Awaited<ReturnType<typeof getScrollRuntime>> = null;
     let applyGround: (() => void) | null = null;
+    // header/mobileNav/triggerOverlay/edgeNav are all mounted once at
+    // __root.tsx's root level, above <Outlet> — they never unmount or
+    // change identity across a route change, so querying them once here
+    // is safe. `[data-ground]` sections are different: they live INSIDE
+    // each route's own content, so a snapshot of them taken once at effect
+    // setup goes stale on navigation.
+    const mobileNav = document.querySelector<HTMLElement>("[data-mobile-pill-nav]");
+    const triggerOverlay = document.querySelector<HTMLElement>("[data-nav-trigger-overlay]");
+    const edgeNav = document.querySelector<HTMLElement>("[data-edge-nav]");
+    // Carried across ticks as `groundAt`'s fallback (lib/ground.ts) — a
+    // continuous tracker holding its own last value on a momentary
+    // no-match gap (GroundHandoff's recede transforms are the main
+    // source, see that fn's own doc comment) reads as "no change" instead
+    // of a flash to paper. Plain closure vars, not React state: this is a
+    // per-frame ticker callback, not a render.
+    let lastTop: Ground = "paper";
+    let lastEdge: Ground = "paper";
 
     getScrollRuntime().then((rt) => {
       if (cancelled || !rt) return;
-      const mobileNav = document.querySelector<HTMLElement>("[data-mobile-pill-nav]");
-      const triggerOverlay = document.querySelector<HTMLElement>("[data-nav-trigger-overlay]");
-      const grounds = [...document.querySelectorAll<HTMLElement>("[data-ground]")];
-      if (grounds.length === 0) return;
-
       rt_ = rt;
       applyGround = () => {
-        const y = 48;
-        const current = grounds.find((el) => {
-          const rect = el.getBoundingClientRect();
-          return rect.top <= y && rect.bottom >= y;
-        });
-        const ground = current?.dataset["ground"] ?? "paper";
+        // Queried fresh every tick, not cached — first tried as a
+        // `[pathname]`-keyed effect dep instead (re-running this whole
+        // setup per route), but that raced TanStack Router's own code
+        // splitting: `pathname` updates before the target route's lazy
+        // chunk has actually rendered its sections into the DOM, so the
+        // dep-triggered re-run still captured the OUTGOING route's
+        // section list. Re-deriving on every frame, the same "never more
+        // than one frame stale, self-corrects with no further input"
+        // property the ticker already gives scroll position, removes the
+        // staleness question entirely — confirmed live: /about ->
+        // client-nav to `/` previously left the deep-ground hero under a
+        // paper-toned header until a hard reload; now it resolves within
+        // one frame of the new route's sections actually existing.
+        const grounds = [...document.querySelectorAll<HTMLElement>(SECTION_SELECTOR)];
+        // Header/pill-nav/trigger-overlay all sample near the top — that's
+        // where they actually render. EdgeNav's dots are vertically
+        // centered (edge-nav.tsx), so sampling y=48 for them picked
+        // whatever section happened to be at the TOP of the viewport, not
+        // behind the dots themselves — wrong section any time the two
+        // differ, which is most of the page.
+        const topGround = groundAt(grounds, 48, lastTop);
+        const edgeGround = groundAt(grounds, window.innerHeight / 2, lastEdge);
+        lastTop = topGround;
+        lastEdge = edgeGround;
         const header = headerRef.current;
-        if (header) header.dataset["over"] = ground;
-        if (mobileNav) mobileNav.dataset["over"] = ground;
-        if (triggerOverlay) triggerOverlay.dataset["over"] = ground;
-        // Same sample reused for `<body>`'s own backdrop
+        if (header) header.dataset["over"] = topGround;
+        if (mobileNav) mobileNav.dataset["over"] = topGround;
+        if (triggerOverlay) triggerOverlay.dataset["over"] = topGround;
+        if (edgeNav) edgeNav.dataset["over"] = edgeGround;
+        // Same top sample reused for `<body>`'s own backdrop
         // (html[data-ground-now] in styles.css) — a coarse safety net, not
         // pixel-precise, for anything that ever exposes body's background:
         // margin between two dark sections (the footer gap this was added
         // for) or GroundHandoff's recede scaling a full-bleed section down
         // a couple percent at its edges. Without this, either one shows
-        // body's un-grounded default (paper) through the gap.
-        document.documentElement.dataset["groundNow"] = ground;
+        // body's un-grounded default (paper) through the gap. On a route
+        // with no [data-ground] sections at all, `grounds` is empty and
+        // `groundAt` naturally falls back to "paper" — no separate no-op
+        // branch needed for that case.
+        document.documentElement.dataset["groundNow"] = topGround;
       };
       rt.gsap.ticker.add(applyGround);
     });
@@ -594,31 +779,34 @@ export function Header() {
           </div>
 
           <nav className="header-nav-row hidden items-center gap-7 lg:flex" aria-label="Primary">
-            {/* `display: contents` in modes 1/2 (styles.css default) so
-                these two groups are invisible to the flex row above — all
-                six links lay out as one flat list, left-then-right in
-                `site.nav`'s own order, unchanged from before this split.
-                Mode 3 gives each group its own box and positions them as
-                the two edge rails (§0.5/§7) instead. */}
-            <div className="header-rail-left contents">
-              {site.nav
-                .filter((item) => item.rail === "left")
-                .map((item) => (
-                  <NavLink key={item.to} item={item} pathname={pathname} />
-                ))}
-            </div>
-            <div className="header-rail-right contents">
-              {site.nav
-                .filter((item) => item.rail === "right")
-                .map((item) => (
-                  <NavLink key={item.to} item={item} pathname={pathname} />
-                ))}
-            </div>
+            {site.nav.map((item) => {
+              const active = pathname === item.to || pathname.startsWith(item.to + "/");
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="label link-draw transition-colors"
+                  style={{ color: active ? "var(--text)" : "var(--muted)" }}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="header-control-cluster flex items-center gap-3">
-            <LayoutSwitch />
-            <ThemeSwitch />
+            {/* Mode 2 hides this specific pair (styles.css) — the trigger
+                overlay below paints an opaque backdrop across the WHOLE top
+                strip at z-[47], above this cluster's z-[42], so leaving
+                these visible here would just mean a covered, invisible-but-
+                technically-present duplicate of the overlay's own working
+                copy. Everywhere else (modes 1 and 3, which have no such
+                backdrop) this is the only copy and stays visible. */}
+            <div className="header-controls-primary flex items-center gap-3">
+              <LayoutSwitch />
+              <ThemeSwitch />
+            </div>
             {/* Same reservation as the brand-group spacer above, for the
                 mode-3 (top-right) trigger placement. */}
             <span aria-hidden="true" className="layout-hamburger-right h-10 w-10 shrink-0" />
@@ -659,13 +847,48 @@ export function Header() {
         data-over="paper"
         className="chrome-adaptive pointer-events-none fixed inset-x-0 top-0 z-[47]"
       >
-        <div className="shell flex h-20 items-center md:h-24">
+        <div className="shell flex h-20 items-center gap-3 md:h-24">
           <LayoutNavTrigger nav={layoutNav} className="layout-hamburger-left pointer-events-auto" />
           <LayoutNavTrigger
             nav={layoutNav}
             className="layout-hamburger-right pointer-events-auto ml-auto"
           />
+          {/* Mode 2 only (styles.css) — the wipe covers everything BEHIND
+              this overlay, but this overlay itself is the layer that must
+              stay visible throughout, per the reference: CLOSE (left,
+              LayoutNavTrigger above) / wordmark (center) / layout switch +
+              theme toggle + CTA (right) never disappear under the panel.
+              LayoutSwitch/ThemeSwitch's real copy lives in the header below
+              (`.header-controls-primary`) for modes 1/3, which have no
+              backdrop here to hide behind — this is the working copy for
+              mode 2 specifically, not a second independent instance
+              visible at the same time as that one (CSS shows exactly one
+              per mode). `ml-auto` here (not on the CTA) is what pushes the
+              whole right-hand group away from centre; harmless in mode 3,
+              where this stays `display:none` (as does the right trigger,
+              which also carries an `ml-auto` for that mode). */}
+          <div className="layout-nav-overlay-controls pointer-events-auto ml-auto hidden items-center gap-3">
+            <LayoutSwitch />
+            <ThemeSwitch />
+          </div>
+          <Magnetic className="layout-nav-overlay-cta pointer-events-auto hidden">
+            <Link to="/contact" className="btn-solid !px-4 !py-2.5">
+              Start a project
+            </Link>
+          </Magnetic>
         </div>
+        {/* Centered independently of the row's flex children — this fixed
+            div is itself a containing block for `position: absolute`, so
+            centering against IT (not the `.shell`'s padded content box)
+            keeps the wordmark on the true viewport center regardless of
+            how wide the left/right slots are. */}
+        <Link
+          to="/"
+          className="layout-nav-overlay-brand pointer-events-auto absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
+          aria-label="MaCo — home"
+        >
+          <Wordmark />
+        </Link>
       </div>
 
       {/* Sibling of <header>, not a descendant — see useLayoutNavState's
@@ -682,7 +905,11 @@ export function Footer() {
   const giantMarkRef = usePointerField<HTMLDivElement>();
 
   return (
-    <footer data-ground="deep" className="section-inverted rule-t pb-28 lg:pb-12">
+    <footer
+      data-ground="deep"
+      aria-label="Site footer"
+      className="section-inverted rule-t pb-28 lg:pb-12"
+    >
       <div className="shell">
         {/* pt-24, not the previous mt-32-on-<footer>: margin sits OUTSIDE
             both this section's background and whatever section precedes

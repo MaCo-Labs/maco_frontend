@@ -47,18 +47,42 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  *   - `"sheet-only"`: sheet on the incoming side, NO recede (the outgoing
  *     side pins, so it's excluded from transforms entirely) — both of
  *     today's ground flips use this.
+ *
+ * 2026-09-01: added an `"emphasis" | "interior"` weight (default
+ * `"interior"`) to the plain recede, replacing what used to be one fixed
+ * intensity for all 8 non-sheet boundaries. `"emphasis"` marks the
+ * boundaries into/out of a set-piece or an act break (the hero's exit,
+ * the run-up to IDENTITY's pinned dial, and the closing stretch into the
+ * footer); `"interior"` is the same recede, toned down, for the flat run
+ * of paper-ground card sections in between (Capabilities/Clients/
+ * Selected work/Products) — so the page's real structural beats read as
+ * more deliberate than its interior ones, instead of every boundary
+ * receding identically regardless of what it actually separates. Also
+ * closes the one boundary that had no handoff at all: Outro -> the
+ * footer (not a `<section>`, so it needs its own `aria-label` —
+ * `chrome.tsx`'s `<footer>` — for this file's lookup to reach it).
  */
-const PAIRS: readonly [outgoing: string, incoming: string, mode?: "sheet" | "sheet-only"][] = [
-  ["Introduction", "Bridge in motion"],
+const RECEDE_WEIGHTS = {
+  emphasis: { yPercent: -4, scale: 0.965, opacity: 0.55 },
+  interior: { yPercent: -2, scale: 0.985, opacity: 0.7 },
+} as const;
+
+const PAIRS: readonly [
+  outgoing: string,
+  incoming: string,
+  mode?: "sheet" | "sheet-only" | "emphasis",
+][] = [
+  ["Introduction", "Bridge in motion", "emphasis"],
   ["Bridge in motion", "What MaCo does", "sheet-only"],
   ["What MaCo does", "Capabilities"],
   ["Capabilities", "Who we work with"],
   ["Who we work with", "Selected client work"],
   ["Selected client work", "Products"],
-  ["Products", "MaCo, in one name and many scripts"],
+  ["Products", "MaCo, in one name and many scripts", "emphasis"],
   ["MaCo, in one name and many scripts", "About MaCo", "sheet-only"],
-  ["About MaCo", "How MaCo works"],
-  ["How MaCo works", "Start a project"],
+  ["About MaCo", "How MaCo works", "emphasis"],
+  ["How MaCo works", "Start a project", "emphasis"],
+  ["Start a project", "Site footer", "emphasis"],
 ];
 
 export function GroundHandoff() {
@@ -80,13 +104,16 @@ export function GroundHandoff() {
       // recede below is exactly the transform-on-a-pin-ancestor hazard
       // this file's doc comment describes, so it's skipped entirely here.
       if (mode !== "sheet-only") {
+        // A ground flip ("sheet") is structurally significant the same
+        // way an "emphasis" boundary is — both get the stronger recede;
+        // everything else (undefined/default) gets the lighter one.
+        const weight =
+          RECEDE_WEIGHTS[mode === "sheet" || mode === "emphasis" ? "emphasis" : "interior"];
         rt.gsap.fromTo(
           outgoing,
           { yPercent: 0, scale: 1, opacity: 1 },
           {
-            yPercent: -4,
-            scale: 0.965,
-            opacity: 0.55,
+            ...weight,
             ease: "none",
             transformOrigin: "50% 0%",
             scrollTrigger,

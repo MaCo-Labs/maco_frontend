@@ -306,6 +306,48 @@ html[data-preload="skip"] .maco-preloader {
   --accent: var(--accent-inverted);
   --accent-ink: var(--accent-inverted-ink);
 }
+/* 2026-09-02: layout mode 2's trigger overlay (CLOSE/wordmark/controls/
+   CTA) forces tokens matching its own panel's ground the instant that
+   panel opens, regardless of whatever `data-over` the ground-tracking
+   ticker currently has it set to. That ticker samples the REAL page
+   section behind the header — over TOPHEAD it's "deep," correctly giving
+   this row light/white text so it reads against the dark hero while
+   CLOSED. But once open, the panel itself covers that section entirely
+   with its OWN ground (`nav.panelGround` in chrome.tsx — the inverse of
+   whatever section sat behind it at open time, no longer a hardcoded
+   "paper"), so the row must follow the panel's ground, not the page's.
+   `.chrome-adaptive` in the selector, not just the attribute, is
+   deliberate: bumps specificity enough to beat `[data-over="deep"]`
+   above regardless of source order, since both could otherwise apply to
+   the same element at equal specificity.
+   2026-09-02 (second pass): split into two rules keyed on
+   `data-nav-ground` (stamped by chrome.tsx alongside `data-nav-open`)
+   instead of one rule that only ever forced paper — the panel can now
+   open dark over the homepage's `paper` sections, and the trigger row
+   needs the matching deep tokens then, not paper ones bleaching out
+   against a dark sheet. */
+html[data-nav-open="true"][data-nav-ground="paper"] [data-nav-trigger-overlay].chrome-adaptive {
+  --bg: var(--bg-paper);
+  --surface: var(--surface-paper);
+  --surface-2: var(--surface-2-paper);
+  --text: var(--text-paper);
+  --muted: var(--muted-paper);
+  --line: var(--line-paper);
+  --line-strong: var(--line-strong-paper);
+  --accent: var(--accent-paper);
+  --accent-ink: var(--accent-ink-paper);
+}
+html[data-nav-open="true"][data-nav-ground="deep"] [data-nav-trigger-overlay].chrome-adaptive {
+  --bg: var(--surface-inverted);
+  --surface: var(--surface-inverted-2);
+  --surface-2: color-mix(in oklab, var(--surface-inverted) 88%, var(--text-inverted));
+  --text: var(--text-inverted);
+  --muted: var(--muted-inverted);
+  --line: var(--line-inverted);
+  --line-strong: var(--line-inverted-strong);
+  --accent: var(--accent-inverted);
+  --accent-ink: var(--accent-inverted-ink);
+}
 .chrome-adaptive,
 .chrome-adaptive * {
   transition:
@@ -1412,16 +1454,35 @@ html[data-theme="cobalt"] .footer-giant-mark {
    chrome's desktop link row + CTA with a hamburger -> full-screen
    overlay (chrome.tsx's LayoutNavPanel) — that swap is site-wide,
    since Header/MobilePillNav mount once in __root.tsx above every
-   route. Mode 3 splits nav to both screen edges as two rails at
-   `lg` and up (falling back to mode 1's own mobile chrome below
-   that), and recomposes TOPHEAD's copy to centred — scoped to
+   route. Mode 3 recomposes TOPHEAD's copy to centred — scoped to
    `[aria-label="Introduction"]` only, since the plan's own boundary
    keeps the hero treatment homepage-only.
+
+   2026-09-01: EdgeNav is mode 3 ONLY now (was 2 and 3) — mode 2's own
+   full-screen panel already covers all six routes, and Iventions' own
+   reference (the mechanism mode 2 is matching) has no secondary edge
+   wayfinding running alongside its hamburger. See the EDGE NAV block
+   below for the corresponding gate change.
    ============================================================ */
 html[data-layout="2"] .header-nav-row,
 html[data-layout="3"] .header-nav-row,
 html[data-layout="2"] .header-cta,
 html[data-layout="3"] .header-cta {
+  display: none;
+}
+
+/* 2026-09-02: the real `<header>` itself is hidden in mode 2, not just its
+   children — the owner's own side-by-side comparison against
+   iventions.com flagged our old approach (every child hidden, but the
+   header ELEMENT still painting its usual `.header-scroll` frost +
+   `rule-b` bottom border) as reading like a persistent bar/navbar
+   strip the reference doesn't have at all: iventions has NO shared
+   background behind its header controls — MENU and "GOT A PROJECT?" are
+   independent floating chips directly on the page. Every mode-2 control
+   now lives exclusively in the trigger overlay below (still a `<header>`
+   sibling, unaffected by this), each with its own small chip background
+   instead of one shared strip. */
+html[data-layout="2"] header.chrome-adaptive {
   display: none;
 }
 
@@ -1442,9 +1503,166 @@ html[data-layout="3"] [data-mobile-pill-nav] {
   display: none;
 }
 /* Mode 2 — hamburger leads, grouped with Wordmark at the header's start
-   (Iventions' own placement: top-left, replacing the nav row). */
-html[data-layout="2"] .layout-hamburger-left {
+   (Iventions' own desktop placement: top-left, replacing the nav row).
+   Desktop only (`md` and up) — mobile swaps sides, see the `max-width`
+   block below: the owner's own frame-by-frame capture of iventions.com's
+   actual mobile view shows the trigger on the RIGHT there, wordmark on
+   the LEFT, the reverse of its own desktop layout. */
+@media (min-width: 768px) {
+  html[data-layout="2"] .layout-hamburger-left {
+    display: flex;
+    /* `.shell`'s own `max-width: 88rem` + `margin-inline: auto` (not just
+       its `padding-inline`) is what actually set the trigger's distance
+       from the true viewport edge — on anything wider than 1408px that
+       auto-margin dwarfs the 2.5rem padding, confirmed live at 1920px
+       (owner screenshot: ~256px of dead space before the button even
+       starts). Iventions' own MENU sits flush at the real corner
+       regardless of viewport width, so this pulls the trigger out of
+       `.shell`'s centered flow entirely and pins it to the viewport
+       edge directly. `top`: the row above is `h-24` (6rem) starting at
+       this fixed ancestor's own `top: 0`; the button's fixed `h-10`
+       (2.5rem) centers inside that at `(6rem - 2.5rem) / 2`. Mode 2
+       desktop only — mode 3 and mobile never reach this rule. */
+    position: fixed;
+    left: 2.5rem;
+    top: 1.75rem;
+  }
+}
+/* The overlay's own centered wordmark, layout/theme controls, and CTA
+   (chrome.tsx) — the rest of the persistent header row the reference
+   keeps visible above the wipe at all times, alongside the CLOSE trigger
+   just above. Hidden by default (Tailwind's `hidden` in the JSX); mode 2
+   only. */
+html[data-layout="2"] .layout-nav-overlay-brand {
+  display: block;
+}
+html[data-layout="2"] .layout-nav-overlay-controls {
   display: flex;
+}
+html[data-layout="2"] .layout-nav-overlay-cta {
+  display: inline-flex;
+}
+/* 2026-09-02: below `md`, MENU (left) + the wordmark (centre) are already
+   the full top row — LayoutSwitch/ThemeSwitch and the CTA together don't
+   fit a 390px `.shell` alongside them (confirmed live: all four collided
+   into one overlapping cluster). Two changes, same fix mode 3 already
+   uses for its own always-visible controls: the CTA is dropped from this
+   row on mobile (the open panel's own in-panel "Start a project" link
+   still reaches it, same as mode 1's mobile chrome has no persistent top
+   CTA either), and LayoutSwitch/ThemeSwitch move to a fixed bottom-left
+   cluster instead of competing for the same row. */
+@media (max-width: 767.999px) {
+  html[data-layout="2"] .layout-nav-overlay-cta {
+    display: none;
+  }
+  html[data-layout="2"] .layout-nav-overlay-controls {
+    position: fixed;
+    left: 1.25rem;
+    bottom: 1.25rem;
+    top: auto;
+    right: auto;
+  }
+  /* Trigger/wordmark swap sides below `md` — the trigger moves to
+     `.layout-hamburger-right` (already `ml-auto` in its own className,
+     chrome.tsx — no extra rule needed to push it to the row's end) and
+     the wordmark drops its desktop `absolute top-1/2 left-1/2` centering
+     (Tailwind utilities, overridden here rather than removed from the
+     JSX, since the desktop rule still needs them) for normal in-flow
+     flex positioning, pulled to the FRONT of the row with `order` since
+     it's declared last in the JSX (after the CTA) for the desktop
+     absolute-centered version, where DOM order never mattered. */
+  html[data-layout="2"] .layout-hamburger-right {
+    display: flex;
+  }
+  html[data-layout="2"] .layout-nav-overlay-brand {
+    position: static;
+    top: auto;
+    left: auto;
+    transform: none;
+    /* Tailwind v4's `-translate-x-1/2 -translate-y-1/2` compiles to the
+       separate CSS `translate` property, not `transform` — resetting
+       only `transform` left this active, translating the now-full-width
+       static element left by 50% of its OWN width (confirmed live: it
+       rendered exactly half off-screen, `x: -195px` on a 390px block).
+       `!important`: this project's own unlayered custom CSS (this rule
+       included — `@import "tailwindcss" source(none)` at the top of this
+       file is what puts Tailwind's own utilities in `@layer utilities`)
+       should already out-rank a layered utility regardless of
+       specificity per the cascade-layers spec, but empirically didn't —
+       confirmed live, `translate: -50% -50%` kept computing even with
+       this rule present and matching. Not fully root-caused; `!important`
+       is the pragmatic, verified-working fix for a third-party
+       framework's own utility property that a normal override couldn't
+       reach. */
+    translate: none !important;
+    /* `display: block` on a flex item still measured full container width
+       here rather than hugging the wordmark's own content — confirmed
+       live before this line existed. Content-sized width is what the
+       chip background above is actually meant to hug. */
+    width: fit-content;
+    order: -1;
+  }
+}
+/* The header's OWN layout/theme controls live at z-[42], inside the
+   header element hidden just above — redundant with that now, kept as a
+   defensive belt-and-suspenders in case a future change un-hides the
+   header without also revisiting this: `.layout-nav-overlay-controls`
+   below is the one working copy for this mode, never both at once. */
+html[data-layout="2"] .header-controls-primary {
+  display: none;
+}
+/* 2026-09-02: no shared full-width backdrop here any more (was a
+   `backdrop-filter`/`background` spanning the whole overlay row — the
+   exact "bar" the owner flagged, since visually it read the same as a
+   navbar regardless of whether it belonged to `<header>` or this sibling
+   overlay). Item 4's original legibility problem (page text scrolling
+   through an unprotected wordmark) is solved per-element below instead —
+   `.layout-hamburger-left`/`.layout-nav-overlay-brand` each get their own
+   small chip background, matching how iventions.com's own MENU/CTA carry
+   individual backgrounds rather than one shared strip.
+   `.layout-nav-overlay-controls`/`-cta` need no extra treatment: their
+   own children (LayoutSwitch/ThemeSwitch's bordered boxes, `.btn-solid`'s
+   opaque pill) already carry enough contrast on their own.
+   2026-09-02 (third pass): the trigger's own chip is now ALWAYS on
+   (open or closed), not just closed — the corner-anchored diagonal
+   above puts a razor-thin, ambiguous strip of the panel's own clip
+   boundary directly under this button's fixed top-left position (the
+   two edges converging on the `(0%,0%)` vertex), so whether the button
+   sits over the white panel or the dark hero behind it flips within a
+   few pixels depending on exact viewport size — confirmed live as the
+   owner-reported "CLOSE looks cut off" (it wasn't clipped, it was
+   unreadable: dark-on-dark where the boundary happened to leave it
+   just outside the panel). A permanent opaque pill sidesteps needing
+   the clip math and the button's real position to agree on every
+   viewport, the same way the CLOSED state already worked. The
+   wordmark's own chip keeps the old closed-only behavior — it isn't
+   the button flagged here, and this pass doesn't touch it. Both
+   trigger placements get this — `-left` is the active one on desktop,
+   `-right` on mobile (see the trigger/wordmark swap above), and each is
+   `display:none` in the viewport where it isn't the active one, so only
+   one of the two ever actually paints a chip at a time. */
+html[data-layout="2"] .layout-hamburger-left,
+html[data-layout="2"] .layout-hamburger-right,
+html[data-layout="2"]:not([data-nav-open="true"]) .layout-nav-overlay-brand,
+/* Mode 3's brand (see the `.header-brand-group` block above) has no panel
+   to open behind it and sits permanently over whatever section is
+   scrolling past underneath — same legibility need mode 2's CLOSED-state
+   wordmark chip already solves, so it reuses the same glass-chip rule
+   rather than a second one. No `:not([data-nav-open="true"])` gate needed
+   here: mode 3 never renders the trigger that sets that attribute. */
+html[data-layout="3"] .layout-nav-overlay-brand {
+  backdrop-filter: blur(10px);
+  background: color-mix(in oklab, var(--bg) 55%, transparent);
+  border-radius: var(--radius-pill);
+  padding-inline: 0.85rem;
+}
+/* `.layout-hamburger-left` carries a fixed `h-10` (Tailwind, border-box) —
+   adding block padding on top of that would shrink its own content box
+   below what the icon inside it needs. Horizontal-only padding widens the
+   chip around the existing icon+label without touching that height. */
+html[data-layout="2"]:not([data-nav-open="true"]) .layout-nav-overlay-brand,
+html[data-layout="3"] .layout-nav-overlay-brand {
+  padding-block: 0.4rem;
 }
 html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead {
   display: flex;
@@ -1469,101 +1687,178 @@ html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-cta {
 html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-lead {
   max-width: 40rem;
 }
-
-/* Mode 3: nav splits to both screen edges, studied from Minh Pham / by-kin
-   (hero centred between the two rails). Rails are a desktop composition;
-   below `lg` it falls back to mode 1's own chrome (wordmark + the bottom
-   pill nav, already focus-trapped and tested) rather than a hamburger,
-   since a 390px phone has no room for two vertical rails. */
+/* Mobile-only clearance for mode 3's fixed chrome. TOPHEAD's own centred
+   headline wraps to several lines at mobile's `text-4xl`, tall enough on
+   its own — no forced `min-height: 100vh` is even needed here, that's
+   desktop-only — to push the top/bottom of the stack into the fixed
+   elements now anchored at both edges.
+   `padding-bottom` alone doesn't fix the TOP collision — it only adds
+   space AFTER the CTA, it doesn't move the CTA itself up; confirmed live
+   via computed geometry (section height grew to 924px on an 844px
+   viewport, CTA bottom still landed at 828px, unchanged). What actually
+   pushes content up off a fixed top element is shrinking `padding-top`,
+   since the whole stack (eyebrow, mark, headline, lead, CTA) already
+   overflows the viewport from ITS OWN height alone before any bottom
+   padding is added.
+   2026-09-02: values retuned twice more, same block, two different fixed
+   elements now sit at the edges TOPHEAD used to have all to itself.
+   `padding-top` 4rem → 6.5rem: the top-centred brand chip
+   (`.layout-nav-overlay-brand`, `top: 1.5rem`) plus the top-left
+   layout/theme cluster (`.header-control-cluster`, `top: 1.25rem`, both
+   above) weren't there when 4rem was tuned — TOPHEAD's own eyebrow
+   started colliding with them.
+   `padding-bottom` 6rem → 7rem: the bottom-left cluster this was ORIGINALLY
+   tuned against is gone from the bottom edge (moved to top-left, same
+   pass) — `EdgeBar` (edge-nav.tsx, `min-height: 3.5rem` +
+   `env(safe-area-inset-bottom)`) replaced it there, and needs its own
+   clearance instead. */
 @media (max-width: 63.999rem) {
-  html[data-layout="3"] [data-mobile-pill-nav] {
-    display: flex;
+  html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead {
+    /* `!important`: `@utility cb-tophead` (styles.css) already sets its
+       own `padding-top`/`padding-bottom` at this width from inside
+       Tailwind's utilities layer — same cross-layer override problem as
+       `.layout-nav-overlay-brand`'s `translate` above, confirmed the
+       same way (a plain override here measured live as having no
+       effect). */
+    padding-top: 6.5rem !important;
+    padding-bottom: 7rem !important;
+  }
+}
+
+/* Mode 3: nav lives entirely in EdgeNav's dots (both screen edges),
+   studied from Minh Pham / by-kin. 2026-09-02: this whole treatment now
+   applies at EVERY width, not just `lg`+ — it previously fell back below
+   `lg` to mode 1's own chrome (wordmark + bottom pill nav) on the theory
+   that two vertical dot columns don't fit a 390px phone, but that
+   reasoning was really about the OLD bordered/backdrop-blur rail boxes,
+   not the few-pixel dots that replaced them (motion/nav pass); the owner
+   found the fallback read as mode 3 mobile being indistinguishable from
+   mode 1, not a deliberate simplification. `height: 100vh` +
+   `pointer-events: none` on the header itself (rather than hiding it
+   outright, the way mode 2's now-empty header is) is load-bearing: mode
+   3's `.header-control-cluster` (layout switcher + theme toggle) is a
+   descendant of `<header>`, moved to `position: fixed` below — a
+   `display: none` ancestor would take that fixed-position descendant
+   down with it, same as any other child, breaking LayoutSwitch's own
+   "always visible, every mode, every viewport" requirement. */
+html[data-layout="3"] header.chrome-adaptive {
+  height: 100vh;
+  /* The header itself no longer eats clicks on the page beneath a 100vh
+     box that's mostly empty space — only its actual interactive children
+     (control cluster) opt back in below. */
+  pointer-events: none;
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: 0;
+}
+html[data-layout="3"] header.chrome-adaptive .shell {
+  height: 100%;
+  align-items: stretch;
+  position: relative;
+}
+/* Mode 3's header carries nothing but EdgeNav's dots — no wordmark, no
+   MENU trigger. EdgeNav's dots are real `<Link>`s with
+   `pointer-events-auto` (edge-nav.tsx) covering all six routes directly,
+   so a second trigger/panel is redundant chrome, not a requirement. */
+html[data-layout="3"] .header-brand-group {
+  display: none;
+}
+/* 2026-09-02: mode 3 had NO way home. EdgeNav's six dots cover every route
+   in `site.nav` (edge-nav.tsx), but `site.nav` itself carries no Home
+   entry — it never needed one, since modes 1/2 both reach `/` through
+   their own wordmark link (`.header-brand-group` above, hidden here; or
+   `LayoutNavPanel`'s hardcoded "Home" row, which mode 3 never opens — it
+   renders no trigger to open it with). Reused rather than built:
+   `.layout-nav-overlay-brand` (chrome.tsx) is already an absolutely-
+   centered `<Link to="/"><Wordmark /></Link>`, already ground-adaptive via
+   its `.chrome-adaptive[data-over]` ancestor, already at the correct
+   stacking context (`[data-nav-trigger-overlay]`, z-[47], a `<header>`
+   sibling) — mode 2 already shows this exact element vertically centered;
+   mode 3 shows the same element pinned to the TOP instead, since mode 3
+   has no menu panel for it to sit above.
+   `top`/`translate` both carry `!important` — this file's own unlayered
+   CSS has repeatedly failed to out-rank Tailwind's own layered utility
+   classes on this exact element (see the mode-2 mobile block above, same
+   root cause, not yet fully explained; `AI_HANDOFF.md` calls it out as
+   worth its own investigation once it recurs a third time — this is that
+   third time). The JSX sets `top-1/2 left-1/2 -translate-x-1/2
+   -translate-y-1/2` for mode 2's vertical centering; `left`/`-translate-x`
+   stay (horizontal centering is still wanted), only `top`/`-translate-y`
+   need overriding to a fixed inset. */
+html[data-layout="3"] .layout-nav-overlay-brand {
+  display: block;
+  top: 1.5rem !important;
+  translate: -50% 0 !important;
+}
+/* Below `64rem` the brand shares the top row with `.header-control-cluster`
+   (relocated there too — see its own rule below, same breakpoint). A full
+   "MaCo" chip centered plus the layout/theme cluster in a corner don't
+   both fit a 390px viewport without overlapping. Text hides, mark stays —
+   `maco-wordmark-text` (mark.tsx) — shrinking the chip to icon-only width.
+   Desktop keeps the full wordmark; only this mode-3 mobile row is tight.
+   Confirmed live via `elementFromPoint` before this rule existed: the
+   cluster's OWN full footprint (LayoutSwitch's 3 buttons + ThemeSwitch's
+   swatch-plus-label, ~195px) still overlapped even the shrunk chip by
+   ~58px, and the brand's higher z-index ([data-nav-trigger-overlay] is
+   z-[47] vs the header's z-[42]) meant it silently ate every click meant
+   for the theme button underneath — the two chips didn't look broken
+   overlapping, but the button in that zone stopped being clickable.
+   `.theme-switch-text` (chrome.tsx) hides ThemeSwitch's own label the same
+   way, closing the real gap rather than just the visual one. */
+@media (max-width: 63.999rem) {
+  html[data-layout="3"] .layout-nav-overlay-brand .maco-wordmark-text {
+    display: none;
+  }
+  html[data-layout="3"] .layout-nav-overlay-brand {
+    padding-inline: 0.6rem;
+  }
+  html[data-layout="3"] .header-control-cluster .theme-switch-text {
+    display: none;
+  }
+  html[data-layout="3"] .header-control-cluster button[aria-label^="Switch to"] {
+    padding-inline: 0.6rem;
+  }
+  /* Still 4px short after the two rules above — the remaining slack is
+     `.header-controls-primary`'s own `gap-3` (0.75rem) between LayoutSwitch
+     and ThemeSwitch (chrome.tsx), tightened here rather than shaving the
+     brand chip further (already at its own minimum comfortable padding). */
+  html[data-layout="3"] .header-controls-primary {
+    gap: 0.375rem;
   }
 }
 @media (min-width: 64rem) {
-  html[data-layout="3"] header.chrome-adaptive {
-    height: 100vh;
-    /* The header itself no longer eats clicks on the page beneath a
-       100vh box that's mostly empty space — only its actual interactive
-       children (brand group, rails, control cluster) opt back in below. */
-    pointer-events: none;
-    background: transparent;
-    backdrop-filter: none;
-    border-bottom: 0;
+  html[data-layout="3"] .layout-nav-overlay-brand {
+    top: 2rem !important;
   }
-  html[data-layout="3"] header.chrome-adaptive .shell {
-    height: 100%;
-    align-items: stretch;
-    position: relative;
-  }
-  html[data-layout="3"] .header-brand-group {
-    flex-direction: column;
-    align-items: flex-start;
-    pointer-events: auto;
-  }
-  /* `<nav>` itself becomes a passthrough box so its two rail children (each
-     `display: contents` in modes 1/2 — see chrome.tsx's NavLink comment) can
-     position independently against `.shell` below, rather than as one flex
-     row. */
-  html[data-layout="3"] .header-nav-row {
-    display: contents;
-  }
-  html[data-layout="3"] .header-rail-left,
-  html[data-layout="3"] .header-rail-right {
-    display: flex;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    flex-direction: column;
-    gap: 0.9rem;
-    pointer-events: auto;
-    /* The rail is fixed for the whole page (`header.chrome-adaptive` is
-       `height: 100vh` below), not just the hero — confirmed live: with no
-       backdrop of its own, it visually collided with every section's own
-       copy the moment you scrolled past TOPHEAD (its padding-inline is
-       the only section tuned to clear the rail; nothing after it is).
-       `--bg`/`--text`/`--line` here read the HEADER's own ground remap
-       (`.chrome-adaptive[data-over]`, synced to whichever section is
-       actually at y=48 by chrome.tsx's ground-tracking effect), not the
-       section literally behind the rail pixel-for-pixel — close enough to
-       read as intentional chrome rather than a floating collision. */
-    background: color-mix(in oklab, var(--bg) 78%, transparent);
-    backdrop-filter: blur(14px);
-    padding: 1rem 1.1rem;
-    border-radius: 1rem;
-    border: 1px solid var(--line);
-  }
-  html[data-layout="3"] .header-rail-left {
-    /* Matches `.shell`'s own padding-inline at this breakpoint. An
-       absolutely-positioned child escapes its containing block's padding
-       entirely, so `left: 0` sat flush at the true viewport edge on any
-       width narrower than the shell's own 88rem cap (everything below
-       ~1440px) — confirmed live: uppercase glyphs with heavy left strokes
-       (W, P) read as clipped there, not just tight. */
-    left: 2.5rem;
-    align-items: flex-start;
-  }
-  html[data-layout="3"] .header-rail-right {
-    right: 2.5rem;
-    align-items: flex-end;
-    text-align: right;
-  }
-  /* Layout + theme switches move off the header's own top-right corner to
-     a fixed bottom-left cluster (owner's call) — `.header-control-cluster`
-     was previously a column at the end of the header's flex row, which
-     read as top-right once that row stretched to the header's full
-     100vh height. `position: fixed` here, same move the rails already
-     make, decouples it from that column and its now-vacated corner. */
+}
+/* Layout + theme switches move off the header's own corner to a fixed
+   cluster (owner's call) — `.header-control-cluster` was previously a
+   column at the end of the header's flex row, which read as top-right
+   once that row stretched to the header's full 100vh height.
+   `position: fixed` decouples it from that column and its vacated corner.
+   2026-09-02: bottom-left at every width originally; now top-left below
+   `64rem` only — `EdgeBar` (edge-nav.tsx, styles.css above) took over the
+   bottom edge at that same breakpoint, and a second fixed element sharing
+   its corner would either collide with the bar's own touch targets or
+   (since the bar's `.edge-nav` ancestor sits at a higher z-index than
+   `<header>`) render invisibly behind it. Desktop is unaffected — the dot
+   columns live at the SIDE edges there, bottom stays clear. */
+html[data-layout="3"] .header-control-cluster {
+  position: fixed;
+  left: 1.25rem;
+  right: auto;
+  top: 1.25rem;
+  bottom: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  pointer-events: auto;
+}
+@media (min-width: 64rem) {
   html[data-layout="3"] .header-control-cluster {
-    position: fixed;
     left: 2.5rem;
-    right: auto;
     top: auto;
     bottom: 2rem;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.75rem;
-    pointer-events: auto;
   }
   /* header-cta stays hidden here (the shared mode-2/3 rule above already
      does that) -- restoring it duplicated the hero's own CTA at the
@@ -1576,23 +1871,24 @@ html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-lead {
     min-height: 100vh;
     justify-content: center;
     padding-inline: 13rem;
-  }
-  /* Both rails are `top: 50%` inside a `height: 100vh` fixed header, so
-     they stay dead-centre in the viewport for the ENTIRE page, not just
-     the hero — every section below TOPHEAD scrolls straight underneath
-     them. TOPHEAD already reserves 13rem above for its own spacious hero
-     composition; every OTHER section needs at least enough clearance on
-     BOTH edges now that a second rail sits opposite the first (measured
-     live at ~5.2rem wide from a 2.5rem inset — 10rem leaves real margin
-     each side). `footer .shell` is included alongside `section .shell`:
-     `<footer>` isn't a `<section>` so the selector wouldn't otherwise
-     reach it, and the footer's own Index/Contact columns sit exactly as
-     flush-left as any section's copy would. Confirmed live: without this,
-     layout 3 read as broken rather than merely minimal past the first
-     screen. */
-  html[data-layout="3"] section .shell,
-  html[data-layout="3"] footer .shell {
-    padding-inline: 10rem;
+    /* 2026-09-02: `@utility cb-tophead`'s own `padding-top: 11.25rem` /
+       `padding-bottom: 6.75rem` (base rule, styles.css) was never
+       overridden at this width — only the `≤63.999rem` block above
+       touches padding, so desktop inherited it untouched. That 180px
+       top-lead-in exists to clear the fixed HEADER modes 1/2 render;
+       mode 3 renders none (`.header-brand-group { display: none }`
+       above) — nothing was ever anchoring that space. With border-box
+       sizing, `justify-content: center` splits the LEFTOVER height
+       evenly around the asymmetric 180/108 pad, so the composition sat
+       measurably below true centre under a top-heavy band that was
+       clearing a header that isn't there.
+       Symmetric here instead, sized for what mode 3 actually has at the
+       top now: the brand chip (`top: 2rem`, ~2.5rem tall) — enough to
+       clear it with real breathing room. `!important` for the same
+       cross-layer reason as the mobile block above (`@utility
+       cb-tophead` lives in Tailwind's utilities layer). */
+    padding-top: 7rem !important;
+    padding-bottom: 7rem !important;
   }
 }
 /* This used to give 1024-1200 its own smaller padding-inline (10.5rem)
@@ -1605,6 +1901,334 @@ html[data-layout="3"] section[aria-label="Introduction"] .cb-tophead-lead {
    flicker to hide behind). Simplest correct fix is to stop giving this
    range less clearance than everything above it — the 13rem block covers
    1024 and up uniformly now. */
+
+/* A quiet trailing arrow on the full-screen nav panel's own links
+   (chrome.tsx's `LayoutNavPanel`) — reveals on hover/focus rather than
+   sitting there permanently, the same "WORK -> WORK ->" restraint as
+   every other arrow-CTA on the site, just without the underline-draw
+   `.link-draw` treatment already used for much smaller text elsewhere:
+   at this display-heading scale a full-width underline reads as heavy,
+   where a small arrow stays a quiet accent. */
+/* Mode 2 only — right-aligned links at desktop widths, matching
+   iventions.com's own panel. Mode 3 never opens this panel (no trigger
+   reaches it — see item 3), so this is scoped defensively rather than
+   because a real conflict exists.
+   2026-09-02 (third pass): `margin-top: auto` moved here, unscoped by
+   width — the owner's own direct comparison against iventions.com's
+   open panel found the links anchored at the BOTTOM-right corner there,
+   not vertically centered the way `LayoutNavPanel`'s `justify-center`
+   (chrome.tsx) put them. This is the panel's only flex child, so the
+   auto top margin absorbs all free space above it regardless of
+   viewport — same mechanism the mobile-only rule below already used,
+   just no longer gated to mobile. */
+@media (min-width: 768px) {
+  html[data-layout="2"] .layout-nav-links {
+    align-items: flex-end;
+    text-align: right;
+    margin-top: auto;
+    padding-bottom: 4rem;
+    /* `.shell`'s own `max-width: 88rem` + `margin-inline: auto` centers
+       it, same issue the corner trigger fix above already hit: past
+       1408px viewport width that centering leaves a large gap before
+       its 2.5rem padding even starts (confirmed live at 1920px — links
+       ended ~300px short of the real edge, reference sits near-flush).
+       `auto 0` collapses the right margin to zero so the box hugs the
+       true viewport edge, left margin still absorbing the leftover
+       space. */
+    margin-inline: auto 0;
+  }
+}
+/* Below that, iventions.com's own mobile panel switches to LEFT-aligned
+   links instead of carrying the desktop's right alignment down to a
+   narrow screen — confirmed against the owner's own mobile screenshot of
+   it. Default (no rule needed) is already flex-start/left, so this only
+   has to exist to override the desktop rule above at the right width;
+   nothing to declare here beyond scoping the media boundary.
+   Bottom-anchored on mobile too, for the same reason the desktop rule
+   above now carries its own `margin-top: auto` — the mobile shard's
+   uncovered region is the TOP-left triangle (chrome.tsx's
+   `LAYOUT_NAV_OPEN_MOBILE`), so the links belong in the bottom half the
+   shard actually covers, matching the reference's own mobile panel.
+   This replaces the old 6rem `padding-left` hack, which existed only to
+   dodge the previous wedge growing INTO the bottom-left corner these
+   links occupy — with the shape inverted there's nothing left to dodge,
+   and the links sit at `.shell`'s own gutter like the reference's do. */
+@media (max-width: 767.999px) {
+  html[data-layout="2"] .layout-nav-links {
+    margin-top: auto;
+    padding-bottom: 3rem;
+  }
+}
+
+/* Base rule for `.layout-nav-link` — previously only existed as the
+   arrow's descendant hook; the active/inactive opacity split used to be
+   an inline `style`, moved to `data-active` (chrome.tsx) so plain CSS can
+   also own hover, which an inline style always out-specifies regardless
+   of selector weight. Hovering ANY link in the panel dims every other
+   link and bolds the hovered one — the reference's "one focal link,
+   everything else recedes" — while the active route still reads through
+   at rest via its own higher base opacity. */
+.layout-nav-link {
+  opacity: 0.6;
+  transition:
+    opacity 0.3s var(--ease-standard),
+    font-weight 0.15s var(--ease-standard);
+}
+.layout-nav-link[data-active="true"] {
+  opacity: 1;
+}
+.layout-nav-links:hover .layout-nav-link {
+  opacity: 0.45;
+}
+.layout-nav-links:hover .layout-nav-link:hover,
+.layout-nav-links:hover .layout-nav-link:focus-visible {
+  opacity: 1;
+  font-weight: 600;
+}
+
+.layout-nav-link-arrow {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.5em;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.3s var(--ease-standard),
+    transform 0.3s var(--ease-emphasis);
+}
+.layout-nav-link:hover .layout-nav-link-arrow,
+.layout-nav-link:focus-visible .layout-nav-link-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ============================================================
+   EDGE NAV — quiet page-indicator dots (edge-nav.tsx), mode 3 only
+   (2026-09-01: was modes 2/3 — see the LAYOUT MODES block's note above).
+   Replaces the boxed rail links: no container box, no border, no
+   backdrop-blur — two independent fixed columns of real `<Link>`s
+   positioned directly against the viewport edge. 2026-09-02: shown at
+   EVERY width now, not just `lg`+ (see the mode-3 header block above for
+   why the old mobile fallback was dropped) — a 6-8px dot plus its
+   hover-only label is thin enough to fit a 390px screen on its own,
+   which the old bordered-rail reasoning for the `lg` gate never actually
+   applied to.
+   2026-09-02 (second pass): that reasoning held for the DOTS' own footprint
+   but missed that their label only ever reveals on `:hover`/
+   `:focus-visible` (below) — a phone has no hover, so five of six targets
+   carried no visible label at all before a tap. Below `64rem` the two
+   columns hand off to `.edge-nav-bar` (edge-nav.tsx's `EdgeBar`) instead: a
+   fixed bottom row, full `site.nav`, label always visible. Columns stay
+   the desktop device.
+   ============================================================ */
+.edge-nav {
+  display: none;
+  opacity: 1;
+  transition: opacity 0.3s var(--ease-standard);
+}
+html[data-layout="3"] .edge-nav {
+  display: block;
+}
+/* Quieted while the full-screen nav panel is open (chrome.tsx's
+   `useLayoutNavState` sets this on `<html>`) — two navigation systems at
+   equal visual weight at once reads as competing, not layered; the
+   panel's own translucency would otherwise let the dots show through as
+   faint, blurred ghosts behind the wipe. */
+html[data-nav-open="true"] .edge-nav {
+  opacity: 0;
+}
+/* Same clearance reasoning as TOPHEAD's own padding-inline above, sized
+   for the dot + its revealed label rather than the old bordered pill —
+   under half what the boxed rails needed (10rem). Tighter below `lg`
+   (matches the dot columns' own tighter mobile inset just below) so a
+   390px viewport doesn't lose as much width to clearance as a desktop
+   one can afford to. `footer .shell` is included alongside
+   `section .shell`: `<footer>` isn't a `<section>` so the selector
+   wouldn't otherwise reach it. Mode 3 only. */
+html[data-layout="3"] section .shell,
+html[data-layout="3"] footer .shell {
+  padding-inline: 2.75rem;
+}
+@media (min-width: 64rem) {
+  html[data-layout="3"] section .shell,
+  html[data-layout="3"] footer .shell {
+    padding-inline: 4.5rem;
+  }
+}
+
+/* Columns are the desktop device, bar is the mobile one — swap at the same
+   `64rem` breakpoint every other mode-3 clearance rule in this file uses
+   (`.header-control-cluster`, `.edge-nav-col`'s own inset below,
+   `.cb-tophead`'s `padding-inline`). `.edge-nav-bar` itself defaults to
+   `display: none` below (desktop-first), shown only under the mode-3 +
+   sub-`64rem` combination the media query narrows to. */
+.edge-nav-col {
+  list-style: none;
+}
+@media (max-width: 63.999rem) {
+  html[data-layout="3"] .edge-nav-col {
+    display: none;
+  }
+}
+/* Was an inline `style={{left/right: "1.75rem"}}` in edge-nav.tsx — moved
+   here so a mobile breakpoint can actually override it (an inline style
+   always wins over any external stylesheet rule targeting the same
+   property, regardless of selector specificity, the same reason
+   `.layout-nav-link`'s active/inactive state moved off an inline style
+   earlier in this pass). Tighter on mobile now that the dots render at
+   every width (was desktop-only) — a 390px screen can't spare as much
+   edge clearance as a desktop one. */
+.edge-nav-col[data-side="left"] {
+  left: 1rem;
+}
+.edge-nav-col[data-side="right"] {
+  right: 1rem;
+}
+@media (min-width: 64rem) {
+  .edge-nav-col[data-side="left"] {
+    left: 1.75rem;
+  }
+  .edge-nav-col[data-side="right"] {
+    right: 1.75rem;
+  }
+}
+/* The connecting line (§5) — a structural guide, not a visible rail:
+   extremely thin, low opacity, no progress fill (§9 explicitly forbids
+   turning this into a progress bar; filled-vs-hollow dots already carry
+   position). Painted once behind the column via the column's own
+   ::before rather than per-dot, so adjacent dots' gaps line up without
+   each needing to know its own index. */
+.edge-nav-col::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: color-mix(in oklab, var(--line) 70%, transparent);
+}
+
+.edge-nav-dot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  /* Visual mark stays tiny (§4); the button itself is the touch target
+     and is sized well past the 44px minimum (§30) without the dot itself
+     growing — padding, not a bigger mark. */
+  padding: 0.75rem;
+  margin: -0.75rem;
+  cursor: pointer;
+}
+.edge-nav-dot-mark {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1.5px solid color-mix(in oklab, var(--muted) 70%, transparent);
+  transition:
+    transform 0.3s var(--ease-emphasis),
+    background-color 0.3s var(--ease-standard),
+    border-color 0.3s var(--ease-standard);
+}
+.edge-nav-dot:hover .edge-nav-dot-mark {
+  transform: scale(1.35);
+  border-color: var(--text);
+}
+.edge-nav-dot[data-active="true"] .edge-nav-dot-mark {
+  transform: scale(1.4);
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.edge-nav-dot-label {
+  font-family: var(--maco-font-label);
+  font-variation-settings: "wdth" 75;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  opacity: 0;
+  transition:
+    opacity 0.3s var(--ease-standard),
+    transform 0.3s var(--ease-emphasis);
+}
+/* Label swings TOWARD the content on reveal (§7) — left rail's label
+   starts 6px further left and settles at 0, right rail's the mirror —
+   rather than a plain fade, so it reads as emerging from the dot rather
+   than appearing beside it. */
+[data-side="left"] .edge-nav-dot-label {
+  transform: translateX(-6px);
+}
+[data-side="right"] .edge-nav-dot-label {
+  transform: translateX(6px);
+}
+.edge-nav-dot:hover .edge-nav-dot-label,
+.edge-nav-dot:focus-visible .edge-nav-dot-label,
+.edge-nav-dot[data-active="true"] .edge-nav-dot-label {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--text);
+}
+.edge-nav-dot:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+
+/* Mobile device for mode 3's nav (below `64rem` — the swap above). A real
+   chip, unlike the columns: it sits over whatever content is scrolling
+   underneath rather than beside a wide margin, so it needs its own
+   background to stay legible, not just `chrome-adaptive`'s token remap.
+   `env(safe-area-inset-bottom)` clears the home-indicator gesture bar on
+   notched phones — the columns never needed this, they don't touch the
+   bottom edge. */
+.edge-nav-bar {
+  display: none;
+  list-style: none;
+  min-height: 3.5rem;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: color-mix(in oklab, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid color-mix(in oklab, var(--line) 70%, transparent);
+}
+@media (max-width: 63.999rem) {
+  html[data-layout="3"] .edge-nav-bar {
+    display: flex;
+  }
+}
+.edge-nav-bar-link {
+  min-height: 3.5rem;
+  padding-block: 0.5rem;
+  cursor: pointer;
+}
+/* Reuses `.edge-nav-dot-mark`'s base visuals verbatim (edge-nav.tsx) — only
+   the active state needs its own rule, since that one is scoped under
+   `.edge-nav-dot`, a class this link doesn't carry. */
+.edge-nav-bar-link[data-active="true"] .edge-nav-dot-mark {
+  transform: scale(1.4);
+  background: var(--text);
+  border-color: var(--text);
+}
+.edge-nav-bar-label {
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-align: center;
+  transition: color 0.3s var(--ease-standard);
+}
+.edge-nav-bar-link[data-active="true"] .edge-nav-bar-label {
+  color: var(--text);
+}
+.edge-nav-bar-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
 
 /* ============================================================
    REDUCED MOTION — deliberate static compositions, not frozen film

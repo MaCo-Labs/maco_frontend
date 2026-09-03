@@ -100,15 +100,13 @@ export const site = {
     "MaCo builds and maintains software that carries real operational weight — client platforms, internal tooling and the systems people log into every working day.",
   contact_email: "hello@maco.dev",
   location: "Kochi, Kerala, India",
-  // `rail` is layout mode 3's split-edge assignment only (chrome.tsx) — modes
-  // 1/2 render this same list as one row/column and ignore the field.
   nav: [
-    { label: "Services", to: "/services", rail: "left" },
-    { label: "Work", to: "/work", rail: "left" },
-    { label: "Products", to: "/products", rail: "left" },
-    { label: "Clients", to: "/clients", rail: "right" },
-    { label: "About", to: "/about", rail: "right" },
-    { label: "Contact", to: "/contact", rail: "right" },
+    { label: "Services", to: "/services" },
+    { label: "Work", to: "/work" },
+    { label: "Products", to: "/products" },
+    { label: "Clients", to: "/clients" },
+    { label: "About", to: "/about" },
+    { label: "Contact", to: "/contact" },
   ],
 } as const;
 

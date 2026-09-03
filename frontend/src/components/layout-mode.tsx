@@ -54,7 +54,12 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
     if (stored) setLayoutState(stored);
   }, []);
 
-  useEffect(() => {
+  // useIsomorphicLayoutEffect (not plain useEffect) — matches theme.tsx's
+  // own stamp, so a `setLayout` call lands before the next paint rather
+  // than one visible frame late. The pre-paint script already covers
+  // first paint/reload; this closes the same-class window on any
+  // post-mount stamp.
+  useIsomorphicLayoutEffect(() => {
     document.documentElement.setAttribute("data-layout", layout);
   }, [layout]);
 

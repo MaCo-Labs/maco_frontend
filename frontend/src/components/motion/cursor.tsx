@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { getScrollRuntime } from "@/lib/scroll-runtime";
+import { groundAt, SECTION_SELECTOR } from "@/lib/ground";
 
 /** The set `Magnetic` also gates on. Extended with an explicit
  *  `data-cursor` escape hatch for elements that need a specific state
@@ -53,7 +54,15 @@ function resolveState(hit: Element): string {
  *   `[data-ground="paper"|"deep"]` already remaps for every section
  *   (styles.css). Obsidian paper -> near-black ring, Obsidian deep ->
  *   near-white, Cobalt paper -> Cobalt blue, Cobalt deep -> near-white.
- *   Zero new state, zero per-section rule.
+ *   Zero new state, zero per-section rule. 2026-09-01: `onOut` used to
+ *   just delete the ground attribute, so the ring painted whatever
+ *   `:root`'s OWN (paper) `--text` resolved to the instant nothing was
+ *   hovered — confirmed live as a wrong-colour ring over a deep section
+ *   with no hoverable directly under the pointer. `tick()` now falls back
+ *   to `groundAt(grounds, py)` (`lib/ground.ts`, the same resolver
+ *   EdgeNav's dot coloring uses) every frame a hover isn't overriding it,
+ *   so the two can never independently disagree about what "the ground
+ *   here" means.
  * - Scales/paints per state via event DELEGATION (`pointerover`/
  *   `pointerout` on `document`, checking `.closest()`), not per-element
  *   listeners — this component mounts once in `__root.tsx` for the app's
@@ -103,6 +112,13 @@ export function Cursor() {
       let tx = px;
       let ty = py;
       let shown = false;
+      // Explicit precedence over the per-frame fallback below — set by
+      // onOver when the hovered element sits under a [data-ground]
+      // ancestor (more precise than a y-sample, since the hovered element
+      // IS the ground), cleared by onOut so the very next tick falls back
+      // to reading the cursor's own position instead of holding a stale
+      // value.
+      let hoveredGround: string | null = null;
 
       const onMove = (e: PointerEvent) => {
         tx = e.clientX;
@@ -119,14 +135,34 @@ export function Cursor() {
         py += (ty - py) * 0.25;
         setX(px);
         setY(py);
+        // Queried fresh every tick, not cached at effect setup — this
+        // component mounts once in __root.tsx and never remounts on
+        // navigation, so a `grounds` snapshot taken once would go stale
+        // the moment a visitor client-navigates (the exact race
+        // chrome.tsx's ground-sync ticker hit and fixed the same way —
+        // see its own comment for the full story). A `querySelectorAll`
+        // over a ~15-element page, once per frame, is the same order of
+        // cost the ticker already pays to sample section geometry.
+        // `SECTION_SELECTOR`, not the bare `[data-ground]` attribute —
+        // this cursor element ITSELF carries `data-ground` a few lines
+        // below, so the bare selector would match the cursor's own
+        // current (fixed, pointer-following) position as a candidate
+        // "section," a real bug caught live: the cursor happening to sit
+        // near chrome.tsx's y=48 header sample point fed that effect the
+        // cursor's OWN ground back, unrelated to the section actually
+        // behind the header.
+        const grounds = [...document.querySelectorAll<HTMLElement>(SECTION_SELECTOR)];
+        // `el.dataset["ground"]` doubles as its own sticky fallback — a
+        // momentary no-match gap (see groundAt's own doc comment, lib/
+        // ground.ts) holds the cursor's last tone instead of flashing.
+        const prev = el.dataset["ground"] === "deep" ? "deep" : "paper";
+        el.dataset["ground"] = hoveredGround ?? groundAt(grounds, py, prev);
       };
       const onOver = (e: PointerEvent) => {
         const hit = e.target instanceof Element ? e.target.closest(CURSOR_SELECTOR) : null;
         if (!hit) return;
         el.dataset["state"] = resolveState(hit);
-        const ground = hit.closest("[data-ground]")?.getAttribute("data-ground");
-        if (ground) el.dataset["ground"] = ground;
-        else delete el.dataset["ground"];
+        hoveredGround = hit.closest("[data-ground]")?.getAttribute("data-ground") ?? null;
         // Optional short word/phrase (§15-19's "VIEW" / "EXPLORE") — read
         // straight off the hit target rather than a second lookup table, CSS
         // renders it via `content: attr(data-label)` (styles.css).
@@ -147,7 +183,7 @@ export function Cursor() {
         const next = e.relatedTarget instanceof Element ? e.relatedTarget.closest(selector) : null;
         if (next === hit) return;
         delete el.dataset["state"];
-        delete el.dataset["ground"];
+        hoveredGround = null;
         delete el.dataset["label"];
       };
       const onLeaveWindow = () => {
