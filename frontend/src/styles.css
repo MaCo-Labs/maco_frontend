@@ -14,15 +14,10 @@
    ============================================================ */
 
 @theme inline {
-  --color-bg: var(--bg);
   --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-line: var(--line);
-  --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
-  --color-focus: var(--focus);
 
   --font-display: var(--maco-font-display);
   --font-body: var(--maco-font-body);
@@ -30,14 +25,6 @@
 
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
-  /* Overshoot — discrete UI only (tab fills, toggle settles). Never on
-     anything scroll-scrubbed: a scrubbed value must be monotonic with
-     scroll position, and an overshoot curve isn't. */
-  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  --duration-fast: 0.25s;
-  --duration-standard: 0.45s;
-  --duration-slow: 0.85s;
 }
 
 /* Scroll-driven custom properties, registered so an unset element resolves
@@ -55,8 +42,6 @@
    pseudo-element inherits from its originating element like any other
    descendant.
      --r     ScrubReveal progress            1 = fully revealed   (self)
-     --lay   SURFACE panel lay-flat          1 = flat (rest)      (self)
-     --p     generic scrub progress          1 = end state        (inherited — WorkPanel reads the rail's --p)
      --t     IDENTITY's dial position        0 = first script centred (inherited — each script reads the track's --t)
      --sweep light-pass band position        0.5 = centred, not moving (inherited — .light-pass::after reads its own element's --sweep) */
 @property --r {
@@ -73,9 +58,8 @@
   syntax: "<number>";
   inherits: true;
   /* Matches the pre-existing `var(--sweep, 0)` used throughout
-     evidence-expand.tsx/product-story.tsx — same reasoning as --p above.
-     0 reads as "the light hasn't reached this surface yet", a deliberate
-     rest state, not an arbitrary one. */
+     evidence-expand.tsx. 0 reads as "the light hasn't reached this
+     surface yet", a deliberate rest state, not an arbitrary one. */
   initial-value: 0;
 }
 @property --header-solid {
@@ -83,11 +67,22 @@
   inherits: false;
   /* 1 = today's always-solid header. Reduced motion, SSR and a blocked
      GSAP import must never risk an unreadable transparent header with no
-     scroll-driven correction available — solid is the only safe default,
-     same reasoning `--c` below uses for CAPABILITY's locked stack. The
-     scroll scrub (chrome.tsx) runs 1 -> 0 as OPEN enters, then back to 1
-     as it scrolls past. */
+     scroll-driven correction available — solid is the only safe default.
+     The scroll scrub (chrome.tsx) runs 1 -> 0 as OPEN enters, then back
+     to 1 as it scrolls past. */
   initial-value: 1;
+}
+@property --vel {
+  syntax: "<number>";
+  inherits: false;
+  /* 0 (at rest) to 1 (fast fling). Written every tick by the same
+     `applyGround` ticker callback that already resolves ground state
+     (chrome.tsx) — one extra `style.setProperty` per `.ambient-field`
+     element, not a second ticker. `inherits:false` since only that one
+     class reads it, direct, never through a descendant. No `transition`
+     on this anywhere — it's already rewritten every frame while
+     scrolling; a transition would just fight that write. */
+  initial-value: 0;
 }
 
 :root,
@@ -363,6 +358,13 @@ html[data-nav-open="true"][data-nav-ground="deep"] [data-nav-trigger-overlay].ch
 
   html {
     -webkit-text-size-adjust: 100%;
+    /* html, not just body: html is what actually owns viewport scroll (the
+       html/body overflow-propagation quirk doesn't pick up `clip` the way
+       it does `hidden`) — confirmed live, body-only left window.scrollTo()
+       still able to scroll the viewport horizontally. clip over hidden:
+       hidden turns the root into a scroll container, which fights Lenis's
+       owned scroll position and ScrollTrigger's pin math. */
+    overflow-x: clip;
   }
 
   body {
@@ -371,6 +373,7 @@ html[data-nav-open="true"][data-nav-ground="deep"] [data-nav-trigger-overlay].ch
     font-family: var(--font-body);
     font-feature-settings: "ss01", "cv01";
     -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
     transition:
       background-color 0.5s var(--ease-standard),
       color 0.5s var(--ease-standard);
@@ -419,6 +422,20 @@ html.lenis:has(:target) {
   scroll-behavior: auto;
 }
 
+/* Native scrollbar hidden site-wide — Lenis already renders scroll
+   position/progress everywhere that needs it (EdgeNav dots, header
+   scroll-state, ScrollTrigger-driven reveals), so the OS scrollbar chrome
+   is pure visual noise on top of a page that already communicates scroll
+   state its own way. Scrolling itself is untouched: this only drops the
+   painted track/thumb, not the `overflow`/wheel/touch behaviour. */
+html {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
 .lenis.lenis-smooth [data-lenis-prevent] {
   overscroll-behavior: contain;
 }
@@ -429,9 +446,11 @@ html.lenis:has(:target) {
   width: 100%;
   max-width: 88rem;
   margin-inline: auto;
-  padding-inline: 1.25rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
   @media (min-width: 768px) {
-    padding-inline: 2.5rem;
+    padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
   }
 }
 
@@ -495,7 +514,10 @@ html.lenis:has(:target) {
   font-weight: 400;
   line-height: 1.02;
   letter-spacing: -0.01em;
-  font-size: clamp(2.5rem, 7.5vw, 6.75rem);
+  /* 7.5vw alone doesn't clear the 2.5rem floor until 533px viewport width —
+     dead flat across the whole phone range. The rem term lifts the curve
+     off the floor starting at 320px instead. */
+  font-size: clamp(2.5rem, 1.25rem + 6vw, 6.75rem);
 }
 
 @utility display-lg {
@@ -503,7 +525,7 @@ html.lenis:has(:target) {
   font-weight: 400;
   line-height: 1.05;
   letter-spacing: -0.008em;
-  font-size: clamp(1.9rem, 4.6vw, 3.6rem);
+  font-size: clamp(1.9rem, 1.4rem + 2.4vw, 3.6rem);
 }
 
 @utility display-md {
@@ -579,32 +601,6 @@ html.lenis:has(:target) {
   }
 }
 
-.index-row-active::before {
-  transform: scaleY(1);
-  transform-origin: top;
-}
-
-.index-row .row-index {
-  transition: transform 0.45s var(--ease-emphasis);
-}
-
-.index-row:hover .row-index,
-.index-row:focus-within .row-index {
-  transform: translate3d(0.35rem, 0, 0);
-}
-
-.index-row .row-meta {
-  transition:
-    opacity 0.4s var(--ease-standard),
-    transform 0.45s var(--ease-emphasis);
-}
-
-.index-row:hover .row-meta,
-.index-row:focus-within .row-meta {
-  opacity: 1;
-  transform: translate3d(-0.25rem, 0, 0);
-}
-
 @utility btn-solid {
   display: inline-flex;
   align-items: center;
@@ -633,6 +629,18 @@ html.lenis:has(:target) {
     transform: translate3d(0, -2px, 0);
     opacity: 0.92;
   }
+  /* The trailing → (every call site's aria-hidden arrow span) nudges
+     forward on hover — a small directional confirmation independent of
+     Magnetic's pointer-follow, which several of these buttons already
+     wrap with. transform/opacity only, so it composes cleanly with the
+     button's own hover transform above rather than fighting it. */
+  > [aria-hidden] {
+    display: inline-block;
+    transition: transform 0.3s var(--ease-emphasis);
+  }
+  &:hover > [aria-hidden] {
+    transform: translateX(3px);
+  }
 }
 
 @utility btn-line {
@@ -658,6 +666,13 @@ html.lenis:has(:target) {
   &:hover {
     background: var(--surface);
     border-color: var(--text);
+  }
+  > [aria-hidden] {
+    display: inline-block;
+    transition: transform 0.3s var(--ease-emphasis);
+  }
+  &:hover > [aria-hidden] {
+    transform: translateX(3px);
   }
 }
 
@@ -705,17 +720,17 @@ html.lenis:has(:target) {
    one did); --ad is its absolute value via max(x,-x), not abs() (see the
    note on rule-draw-x's sibling usage in work-sequence.tsx for why). */
 @utility identity-script {
-  /* The pointer term nudges the dial up to +-0.15 of a step around
-     wherever scroll parked it — (--px - 0.5) ranges -0.5..0.5, so *0.3
-     caps the nudge at +-0.15. --px is unset (0.5 fallback, zero nudge)
+  /* The pointer term nudges the dial up to +-0.25 of a step around
+     wherever scroll parked it — (--px - 0.5) ranges -0.5..0.5, so *0.5
+     caps the nudge at +-0.25. --px is unset (0.5 fallback, zero nudge)
      under a coarse pointer or before the pointer has moved, so this is a
      pure addition to the scroll-driven position, never a replacement
      for it. */
-  --d: calc(var(--i, 0) - var(--t, 0) - ((var(--px, 0.5) - 0.5) * 0.3));
+  --d: calc(var(--i, 0) - var(--t, 0) - ((var(--px, 0.5) - 0.5) * 0.5));
   --ad: max(var(--d), calc(-1 * var(--d)));
   transform: translate3d(calc(var(--d) * 100%), -50%, 0)
-    scale(calc(1 - min(0.55, var(--ad) * 0.28)));
-  opacity: clamp(0, calc(1 - var(--ad) * 0.44), 1);
+    scale(calc(1 - min(0.55, var(--ad) * 0.34)));
+  opacity: clamp(0, calc(1 - var(--ad) * 0.5), 1);
   will-change: transform, opacity;
 }
 
@@ -764,8 +779,8 @@ html.lenis:has(:target) {
 
 /* will-change is scoped to .is-lit rather than permanent — a page with
    10+ light-pass surfaces otherwise promotes every one to its own
-   compositor layer for the entire page lifetime. RakingSurface toggles
-   the class while its scene is mounted. */
+   compositor layer for the entire page lifetime. outro.tsx toggles the
+   class on mount; accordion.tsx's inverted panel carries it statically. */
 .light-pass.is-lit::after {
   will-change: transform;
 }
@@ -780,75 +795,30 @@ html.lenis:has(:target) {
   }
 }
 
+/* CAPABILITY's inverted accordion panel carries `light-pass is-lit`
+   statically (accordion.tsx) but nothing ever drives its scroll-linked
+   --sweep the way evidence-expand.tsx/outro.tsx do, so the beam sat
+   frozen at the registered @property's 0 rest position — never crossing
+   the panel at all. Opening the row is the moment worth lighting: --sweep
+   is a registered <number> custom property, so animating it transitions
+   natively, no JS. The transition lives on the base selector (both open
+   and close states) so closing eases the light back out instead of
+   snapping it — only the target value is conditional on `data-open`. */
+@media (prefers-reduced-motion: no-preference) {
+  .cb-panel .light-pass {
+    transition: --sweep 0.9s var(--ease-standard);
+  }
+  .cb-panel[data-open="true"] .light-pass {
+    --sweep: 1;
+  }
+}
+
 /* A light-pass wrapping real video/screenshot content (not an empty
    gradient panel) gets a lighter touch — full-strength overlay washes
    out midtones on a bright product UI. */
 [data-media] ~ .light-pass::after,
 .light-pass:has([data-media])::after {
   opacity: 0.45;
-}
-
-/* Introduction's RakingSurface box starts at the very top of the
-   section (cb-tophead's own top padding lives INSIDE it, same y=0 as
-   the fixed header), so the base rule's -20% top inset — which starts
-   the ::after pseudo-element's own box ABOVE the section's real edge —
-   let the sweep paint directly behind the ~96px the header physically
-   occupies. header-scroll's own background/blur floor (above) softens
-   whatever crosses there, but the surgical fix is not letting the
-   sweep paint that band at all. A `mask-image` on this same
-   pseudo-element was the first attempt and measurably did nothing —
-   confirmed live — because a mask's gradient is positioned relative to
-   the MASKED element's own box, which (thanks to that same -20% inset)
-   starts well above the section's true top; "88px into the mask"
-   landed above the viewport entirely, nowhere near the header. Moving
-   the pseudo-element's own top edge down to a fixed 6rem — below the
-   header's real height at every viewport width — keeps the beam out
-   of that band structurally instead of trying to mask it after the
-   fact. Left/right/bottom keep the base rule's -40%/-20% for the
-   sweep's horizontal drift room; only top changes. */
-[aria-label="Introduction"] .light-pass::after {
-  top: 6rem;
-}
-
-/* Shiny Text — the hero wordmark's idle state, applied by <SplitReveal>
-   once its entrance settles. Same 115deg as .light-pass above: this is
-   the signature device at word-scale, not a separate imported effect.
-   color-mix toward white reads as a brightening glint on ANY --text
-   (near-white on deep ground barely has headroom and gets a subtle
-   sheen; near-black on paper ground gets a much more visible one) —
-   deliberately relative to --text rather than a fixed color, so it
-   re-themes with Obsidian/Cobalt for free. */
-@utility maco-shine {
-  background-image: linear-gradient(
-    115deg,
-    color-mix(in oklab, var(--text) 55%, transparent) 32%,
-    var(--text) 47%,
-    color-mix(in oklab, var(--text) 45%, white 55%) 50%,
-    var(--text) 53%,
-    color-mix(in oklab, var(--text) 55%, transparent) 68%
-  );
-  background-size: 260% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: maco-shine-sweep 3.6s linear infinite;
-}
-
-@keyframes maco-shine-sweep {
-  from {
-    background-position: 220% 0;
-  }
-  to {
-    background-position: -120% 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .maco-shine {
-    animation: none;
-    background-image: none;
-    color: var(--text);
-  }
 }
 
 /* Custom cursor (components/motion/cursor.tsx) - position written by GSAP
@@ -1108,7 +1078,7 @@ html[data-theme="cobalt"] .footer-giant-mark {
   background: transparent !important;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 63.999rem) {
   .maco-globe-shell {
     max-width: 14rem;
     max-height: 14rem;
@@ -1122,7 +1092,7 @@ html[data-theme="cobalt"] .footer-giant-mark {
   margin-inline: 0;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 64rem) {
   .maco-globe-shell--section {
     max-width: 22rem;
     max-height: 22rem;
@@ -1163,6 +1133,22 @@ html[data-theme="cobalt"] .footer-giant-mark {
   }
 }
 
+/* Inner-route intro clearance. The fixed header is h-20 (80px) below
+   `md`, h-24 (96px) at/above it (chrome.tsx) — every inner-page intro
+   section previously used the plain `py-16 lg:py-24` card-section rhythm
+   (64px/96px), which cleared nothing and let the header overlap the h1.
+   7rem/9rem give real clearance plus the same breathing room cb-tophead
+   already establishes for the homepage hero, just smaller since these
+   aren't full heroes. */
+@utility page-intro {
+  padding-top: 7rem;
+  padding-bottom: 4rem;
+  @media (min-width: 768px) {
+    padding-top: 9rem;
+    padding-bottom: 6rem;
+  }
+}
+
 /* Ground-flip sheet — the incoming section at a ground-color boundary
    (Overview, Faq — see ground-handoff.tsx's ["...", "...", "sheet-only"]
    pairs). 2026-09-03: replaced a clip-path that animated INTO square
@@ -1192,14 +1178,21 @@ html[data-theme="cobalt"] .footer-giant-mark {
   z-index: 41;
   margin-top: -3rem;
   border-radius: 3rem 3rem 0 0;
-  box-shadow: 0 -20px 48px -12px oklch(0 0 0 / 0.35);
+  /* 2026-09-04: this shadow isn't clipped by the radius (border-radius
+     carves the box's own corners, not the area outside it) and isn't
+     scroll-tied like the radius tween above it — it's a static CSS rest
+     state. At the old 0.35 alpha / 48px blur / -20px y it painted a
+     visibly solid blurred band on whatever paper-ground section sits
+     above (Identity, Overview), reported live as the rounded top "not
+     becoming black" — a floating grey bar, not a shadow. Softer numbers
+     read as depth instead of a second surface. */
+  box-shadow: 0 -12px 28px -10px oklch(0 0 0 / 0.18);
 }
 
-/* Hero gradient-fill glow — same background-clip:text device as
-   .maco-shine above, still top-to-bottom (a diagonal band crosses each
-   line of a 3-line headline at a different horizontal offset, reading
-   as a legibility bug rather than a glow — see the dark-first pass
-   below for why that still matters here).
+/* Hero gradient-fill glow — a background-clip:text device, top-to-bottom
+   (a diagonal band crosses each line of a 3-line headline at a different
+   horizontal offset, reading as a legibility bug rather than a glow —
+   see the dark-first pass below for why that still matters here).
    Introduction moved to `deep` ground in the 2026-08-28 dark-first
    pass, which flips this gradient's own logic: --text on deep IS
    already near-white, so "lift toward white" at the top had nothing
@@ -1245,12 +1238,18 @@ html[data-theme="cobalt"] .footer-giant-mark {
    near-white on deep ground for both themes; --focus keeps each
    theme's own colour regardless of ground). Obsidian keeps it a faint
    grey lift, Cobalt runs an actually-blue glow, larger/brighter. */
+/* Position tracks the pointer (--px/--py, written by usePointerField on
+   the section — styles.css never receives an inline value from React,
+   so this reads whatever's currently set and rests at the centred 30%/
+   40% default on touch/no-JS, since usePointerField never runs there and
+   the custom properties are unregistered — no @property, no initial-value
+   to fall back on other than the var()'s own second argument). */
 @utility hero-backlight {
   position: absolute;
   inset: -15% 10% auto 10%;
   height: 70%;
   background: radial-gradient(
-    ellipse at 30% 40%,
+    ellipse at calc(var(--px, 0.3) * 100%) calc(var(--py, 0.4) * 100%),
     color-mix(in oklab, var(--focus) 20%, transparent),
     transparent 70%
   );
@@ -1259,7 +1258,7 @@ html[data-theme="cobalt"] .footer-giant-mark {
 }
 [data-theme="cobalt"] .hero-backlight {
   background: radial-gradient(
-    ellipse at 30% 40%,
+    ellipse at calc(var(--px, 0.3) * 100%) calc(var(--py, 0.4) * 100%),
     color-mix(in oklab, var(--focus) 36%, transparent),
     transparent 70%
   );
@@ -1276,6 +1275,97 @@ html[data-theme="cobalt"] .footer-giant-mark {
   mix-blend-mode: overlay;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Ambient at-rest motion for text-only sections (Overview, Capability,
+   Faq, Identity) — everywhere else on the page has SOME idle motion
+   (hero video drift, the clients marquee, MorphSlider's shader breathing);
+   these flat rooms had none, which is most of what reads as "static" once
+   scroll stops. `border-radius: inherit` matters: Overview/Faq carry
+   `.ground-sheet`'s rounded top corners (above) with no `overflow:hidden`
+   on the section, so a square absolute child would paint over them and
+   cancel the ground-flip overlap. No `overflow:hidden` on the section
+   either — that would clip `.ground-sheet`'s own box-shadow. Deliberately
+   no `filter:blur()` / `mix-blend-mode`: a radial gradient reads as soft
+   on its own, and blurring a viewport-sized layer forces a re-raster on
+   every resize/ground-flip for no visible gain — only `transform`
+   animates, so this stays compositor-only. No `will-change` either
+   (:741 scopes that to `.is-lit` on purpose); a permanent transform
+   animation self-promotes without it. Colors derive from `--focus`, not
+   `--accent` — same reasoning as `.hero-backlight` below: `--accent`
+   remaps to near-white on deep ground for both themes, `--focus` keeps
+   each theme's own hue, so the ground/theme remap recolors this for free. */
+@utility ambient-field {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      ellipse 60% 50% at 20% 25%,
+      color-mix(in oklab, var(--focus) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 55% 45% at 82% 78%,
+      color-mix(in oklab, var(--focus) 12%, transparent),
+      transparent 70%
+    );
+  animation: ambient-drift 48s var(--ease-standard) infinite alternate;
+  /* Fast scroll lifts the glow, at rest it settles back to 0.7 — a second,
+     independent channel from the drift animation above (opacity, not
+     transform, so the two never fight over the same property). */
+  opacity: calc(0.7 + var(--vel, 0) * 0.3);
+}
+/* Evidence-grid card spotlight — a 1px border glow that tracks the pointer,
+   same --focus/--px/--py vocabulary as .hero-backlight above (--focus over
+   --accent because --accent washes to near-white on deep ground; --px/--py
+   per-card via usePointerField, not registered so they inherit but each
+   card's own listener overwrites them to its own local 0..1 anyway).
+   Built with the padding+mask-composite ring trick rather than a real
+   `border`, so it never fights the card's own background/box-sizing and
+   needs no border-radius (these cards are flat hairline-grid cells).
+   Opacity-only reveal — transform/opacity is the house hover vocabulary,
+   no shadow, nothing that needs a reduced-motion fallback (it's a static
+   glow, not an animation). */
+@utility evidence-spotlight {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s var(--ease-standard);
+    background: radial-gradient(
+      220px circle at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
+      color-mix(in oklab, var(--focus) 70%, transparent),
+      transparent 70%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  &:hover::after,
+  &:focus-visible::after {
+    opacity: 1;
+  }
+}
+@keyframes ambient-drift {
+  from {
+    transform: translate3d(-2%, -1.5%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, 1.5%, 0) scale(1.08);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ambient-field {
+    animation: none;
+  }
 }
 
 /* Hero scale-in — one-shot on load, not scroll-linked (nothing to
@@ -1365,6 +1455,11 @@ html[data-theme="cobalt"] .footer-giant-mark {
 @utility cb-cards {
   display: grid;
   gap: 3rem;
+  /* start, not the grid default (stretch) — a portrait phone mockup next
+     to a landscape screenshot are never the same height, and stretch was
+     inflating the shorter card's box with dead space nothing filled.
+     Start keeps every card's media flush with the row's top edge instead. */
+  align-items: start;
   @media (min-width: 768px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 5.625rem;
@@ -1466,6 +1561,20 @@ html[data-theme="cobalt"] .footer-giant-mark {
 .cb-reel-mask:hover .cb-reel,
 .cb-reel-mask:focus-within .cb-reel {
   animation-play-state: paused;
+}
+
+/* Sibling dimming — the reel was the quietest section on the page
+   (a drift plus a hover-lift on the card itself, nothing else responds).
+   Hovering/focusing one card drops every OTHER card to 0.45 opacity, the
+   same `:has()` shape footer's torch effect already uses. transform is
+   untouched (the card's own hover-lift keeps working); this is opacity
+   only, on the same 0.35s standard ease as the rest of the reel's motion. */
+.cb-reel li {
+  transition: opacity 0.35s var(--ease-standard);
+}
+.cb-reel:has(li:hover) li:not(:hover),
+.cb-reel:has(li:focus-within) li:not(:focus-within) {
+  opacity: 0.45;
 }
 
 .cb-reel-mask {
@@ -2243,6 +2352,11 @@ html[data-layout="3"] footer .shell {
   border-color: var(--text);
 }
 .edge-nav-bar-label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: 0.625rem;
   letter-spacing: 0.06em;
   line-height: 1.2;
@@ -2255,6 +2369,308 @@ html[data-layout="3"] footer .shell {
 .edge-nav-bar-link:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: -2px;
+}
+
+/* Hero nav hint (top-head.tsx) — layout 3, desktop only, points at the
+   edge-nav dot columns above. Same left/right inset as `.edge-nav-col`
+   at this breakpoint so it reads as pointing at the real rail, not a
+   floating decoration. `position: absolute` inside TOPHEAD's own
+   `relative` section (not `fixed`) is what confines it to the hero: it
+   scrolls away with the section instead of needing its own scroll-driven
+   show/hide logic. */
+.hero-nav-hint {
+  display: none;
+}
+@media (min-width: 64rem) {
+  html[data-layout="3"] .hero-nav-hint {
+    /* `50vh`, not `50%` — the hero section is taller than one viewport,
+       so a percentage centers on the SECTION's own height, landing well
+       below the dot rail's actual (viewport-fixed) position. The hero's
+       own top edge coincides with the viewport's at scroll position 0,
+       which is the only time this hint is ever visible, so `vh` reaches
+       the same point the rail's `top: 50%` fixed positioning does.
+       `translateY(-100%)` then sits the hint entirely ABOVE that line,
+       chevron-down into the rail, instead of centered on top of it. */
+    position: absolute;
+    top: calc(50vh - 4rem);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transform: translateY(-100%);
+    animation: hero-nav-hint-breathe 2.6s var(--ease-standard) infinite;
+    pointer-events: none;
+  }
+}
+.hero-nav-hint-left {
+  left: 1.75rem;
+}
+.hero-nav-hint-right {
+  right: 1.75rem;
+}
+.hero-nav-hint-label {
+  white-space: nowrap;
+}
+.hero-nav-hint-chevron {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(45deg);
+}
+@keyframes hero-nav-hint-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-layout="3"] .hero-nav-hint {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* ============================================================
+   MORPH SLIDER — React Bits' MorphSlider (components/media/morph-slider.tsx,
+   WebGL shader-morph via ogl). Ported as-is except: chrome (buttons, dots,
+   caption pill) uses this file's theme tokens instead of the original's
+   hardcoded dark rgba, matching DEPTH CAROUSEL above; the shader's own
+   photographic vignette (uOverlay, black by default) is untouched — that's
+   pixel treatment on the image itself, not UI chrome.
+   ============================================================ */
+.morph-slider {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--surface-2);
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.morph-slider-stage {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  outline: none;
+}
+
+.morph-slider-stage:active {
+  cursor: grabbing;
+}
+
+.morph-slider-stage:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.morph-slider-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.morph-slider-caption {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2;
+  max-width: 70%;
+  pointer-events: none;
+  display: grid;
+}
+
+.morph-slider-caption-text {
+  grid-area: 1 / 1;
+  justify-self: start;
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  background: color-mix(in oklab, var(--bg) 72%, transparent);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transform: translateY(12px);
+  filter: blur(6px);
+  transition:
+    opacity var(--ms-swap) var(--ease-standard),
+    transform var(--ms-swap) var(--ease-standard),
+    filter var(--ms-swap) var(--ease-standard);
+}
+
+.morph-slider-caption-text.is-active {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+.morph-slider-controls {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* Hit target (44px, §30) and visible mark are decoupled, same trick as
+   .edge-nav-dot: the button itself is transparent and fixed at 44px, the
+   40px (34px below 420px) circle is a ::before behind the icon so the
+   visual doesn't grow just because the tap target has to. */
+.morph-slider-btn {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.morph-slider-btn::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--bg) 72%, transparent);
+  backdrop-filter: blur(8px);
+  transition:
+    transform 0.25s var(--ease-standard),
+    background 0.25s var(--ease-standard),
+    border-color 0.25s var(--ease-standard);
+}
+
+.morph-slider-btn:hover::before {
+  background: color-mix(in oklab, var(--bg) 88%, transparent);
+  transform: scale(1.06);
+}
+
+.morph-slider-btn:active::before {
+  transform: scale(0.96);
+}
+
+.morph-slider-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.morph-slider-indicators {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.morph-slider-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--text) 40%, transparent);
+  cursor: pointer;
+  transition:
+    width var(--ms-dot) var(--ease-standard),
+    background var(--ms-dot) var(--ease-standard);
+}
+
+.morph-slider-dot.is-active {
+  width: 22px;
+  background: var(--text);
+}
+
+.morph-slider-dot:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+  .morph-slider-btn::before {
+    inset: 5px;
+  }
+
+  .morph-slider-caption-text {
+    font-size: 0.8125rem;
+  }
+}
+
+/* ============================================================
+   PHONE MOCKUP — device chassis around a looping screen recording
+   (components/media/phone-mockup.tsx), for products.screen items that are
+   mobile-only (Driver's Diary). No card box: unlike every other CardMedia
+   variant, this renders straight into the card's flow with no fixed
+   aspect-ratio panel or surface fill — the device is its own shape, sized
+   off the real column width, so a portrait phone next to another card's
+   landscape screenshot doesn't drag a tall grey panel along with it. The
+   chassis is a fixed graphite device, deliberately NOT built from theme
+   tokens — it depicts a physical object, not site chrome, so it stays the
+   same on both paper and deep ground (same reasoning as the shader's
+   untouched uOverlay vignette above).
+   ============================================================ */
+.phone-mockup {
+  display: flex;
+  justify-content: center;
+  /* No top padding — the chassis sits flush with the row's top edge, level
+     with the flat card's media box next to it (`cb-cards`' align-items:
+     start). Bottom padding only, to breathe before the title/caption. */
+  padding: 0 0 1.25rem;
+}
+
+.phone-mockup__device {
+  position: relative;
+  width: clamp(160px, 36%, 210px);
+  aspect-ratio: 9 / 19.5;
+  padding: 12px;
+  border-radius: 2.75rem;
+  background: linear-gradient(155deg, #3a3d42 0%, #1c1d20 45%, #0a0b0c 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.16),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.6),
+    0 30px 55px -20px rgba(0, 0, 0, 0.55),
+    0 12px 25px -12px rgba(0, 0, 0, 0.4);
+}
+
+.phone-mockup__screen {
+  position: relative;
+  height: 100%;
+  border-radius: 2.05rem;
+  overflow: hidden;
+  background: #000;
+}
+
+.phone-mockup__notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 34%;
+  height: 7px;
+  border-radius: 999px;
+  background: #050505;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  z-index: 3;
+  pointer-events: none;
 }
 
 /* ============================================================
@@ -2275,10 +2691,20 @@ html[data-layout="3"] footer .shell {
   .cb-reel {
     animation: none !important;
   }
-}
 
-@media (prefers-reduced-transparency: reduce) {
-  :root {
-    --backdrop-blur: none;
+  /* FEATURE/FAQ accordion panels: the 0fr->1fr grid-row + content
+     fade-and-rise is the one motion path this file's central kill-switch
+     (getScrollRuntime() returning null) doesn't reach, since it's plain
+     CSS with no ScrollTrigger backing it. Panels still open and close —
+     just instantly, no measured transition. */
+  .cb-panel,
+  .cb-panel-content {
+    transition: none !important;
+  }
+
+  .morph-slider-caption-text,
+  .morph-slider-btn::before,
+  .morph-slider-dot {
+    transition: none !important;
   }
 }

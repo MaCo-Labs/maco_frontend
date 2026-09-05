@@ -59,6 +59,7 @@ export function EdgeNav() {
     <nav
       data-edge-nav
       data-over="paper"
+      suppressHydrationWarning
       aria-label="Site"
       className="edge-nav chrome-adaptive pointer-events-none fixed inset-0 z-[43]"
     >
@@ -111,7 +112,7 @@ function EdgeBar({ pathname }: { pathname: string }) {
       {site.nav.map((item) => {
         const active = pathname === item.to || pathname.startsWith(item.to + "/");
         return (
-          <li key={item.to} className="flex-1">
+          <li key={item.to} className="min-w-0 flex-1">
             <Link
               to={item.to}
               data-active={active}

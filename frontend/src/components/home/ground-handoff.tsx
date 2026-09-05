@@ -1,4 +1,4 @@
-import { useScrollScene } from "@/hooks/use-scroll-scene";
+import { useSectionHandoff, type HandoffPair } from "@/hooks/use-section-handoff";
 
 /**
  * Cross-section continuity: as the page moves from one section to the
@@ -67,16 +67,7 @@ import { useScrollScene } from "@/hooks/use-scroll-scene";
  * (Identity -> How MaCo works), preserving the same ground flip
  * (paper -> deep) one section earlier.
  */
-const RECEDE_WEIGHTS = {
-  emphasis: { opacity: 0.55 },
-  interior: { opacity: 0.7 },
-} as const;
-
-const PAIRS: readonly [
-  outgoing: string,
-  incoming: string,
-  mode?: "sheet" | "sheet-only" | "emphasis",
-][] = [
+const PAIRS: readonly HandoffPair[] = [
   ["Introduction", "Bridge in motion", "emphasis"],
   ["Bridge in motion", "What MaCo does", "sheet-only"],
   ["What MaCo does", "Capabilities"],
@@ -90,45 +81,6 @@ const PAIRS: readonly [
 ];
 
 export function GroundHandoff() {
-  useScrollScene((rt) => {
-    for (const [outLabel, inLabel, mode] of PAIRS) {
-      const outgoing = document.querySelector<HTMLElement>(`[aria-label="${outLabel}"]`);
-      const incoming = document.querySelector<HTMLElement>(`[aria-label="${inLabel}"]`);
-      if (!outgoing || !incoming) continue;
-
-      const scrollTrigger = {
-        trigger: incoming,
-        start: "top bottom",
-        end: "top 25%",
-        scrub: 0.4,
-        invalidateOnRefresh: true,
-      };
-
-      // "sheet-only" boundaries sit on a PINNED outgoing section — kept
-      // excluded from the fade too, matching the previous version's own
-      // discipline (only the incoming side ever animates there).
-      if (mode !== "sheet-only") {
-        const weight =
-          RECEDE_WEIGHTS[mode === "sheet" || mode === "emphasis" ? "emphasis" : "interior"];
-        rt.gsap.fromTo(outgoing, { opacity: 1 }, { ...weight, ease: "none", scrollTrigger });
-      }
-
-      // Rounded overlap grows in: FROM square (0) TO the incoming
-      // section's own permanent CSS rest state (48px, `.ground-sheet` in
-      // styles.css — applied directly on Overview's and Faq's <section>).
-      // `immediateRender` (gsap's default for a `fromTo`) sets the FROM
-      // value on mount, which is why JS-enabled visitors see 0 initially
-      // regardless of the CSS class — only reduced-motion/no-JS ever see
-      // the class's own 48px directly, per this file's doc comment above.
-      if (mode === "sheet" || mode === "sheet-only") {
-        rt.gsap.fromTo(
-          incoming,
-          { borderRadius: "0px 0px 0px 0px" },
-          { borderRadius: "48px 48px 0px 0px", ease: "none", scrollTrigger },
-        );
-      }
-    }
-  }, []);
-
+  useSectionHandoff(PAIRS);
   return null;
 }

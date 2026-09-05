@@ -40,12 +40,12 @@ export function LogoReel() {
           <ScrubReveal hold>
             <p className="label">Clients</p>
             <h2 className="display-lg mt-3 max-w-2xl" style={{ color: "var(--text)" }}>
-              Four companies who trusted us with production software.
+              Companies who trusted us with production software.
             </h2>
           </ScrubReveal>
         </div>
 
-        <div className="cb-reel-mask mt-12 overflow-hidden md:mt-16">
+        <div className="cb-reel-mask mt-10 overflow-x-hidden py-2 md:mt-14">
           <ul className="cb-reel" style={{ "--reel-n": clients.length } as CSSProperties}>
             {track.map((client, i) => (
               <li key={i} aria-hidden={i >= clients.length ? "true" : undefined}>

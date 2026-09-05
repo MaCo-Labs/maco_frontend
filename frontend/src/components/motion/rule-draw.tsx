@@ -42,7 +42,7 @@ export function RuleDraw({
         {
           "--r": 1,
           ease: "none",
-          scrollTrigger: { trigger: el, start, end, scrub: 0.3, invalidateOnRefresh: true },
+          scrollTrigger: { trigger: el, start, end, scrub: 0.6, invalidateOnRefresh: true },
         },
       );
     },

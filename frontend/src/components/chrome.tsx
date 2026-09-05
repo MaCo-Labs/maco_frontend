@@ -32,7 +32,7 @@ function ThemeSwitch() {
           setTheme(theme === "obsidian" ? "cobalt" : "obsidian", origin);
         }}
         aria-label={`Switch to ${theme === "obsidian" ? "Cobalt (blue on white)" : "Obsidian (black on white)"} theme`}
-        className="label group flex items-center gap-2 border border-line px-3 py-2 transition-colors hover:border-text hover:text-text"
+        className="label group flex min-h-11 items-center gap-2 border border-line px-3 py-2 transition-colors hover:border-text hover:text-text"
       >
         <span
           className="block h-2.5 w-2.5 border border-current transition-transform duration-300 group-hover:rotate-90"
@@ -73,7 +73,10 @@ function LayoutSwitch() {
             onClick={() => setLayout(mode)}
             aria-pressed={active}
             aria-label={`Layout ${mode}`}
-            className="flex h-8 w-8 items-center justify-center border-r border-line transition-colors last:border-r-0 hover:text-text"
+            // Height only, not width: growing width here re-adds to the
+            // ~195px mode-3 mobile footprint styles.css:1930-1936 already
+            // fought to shrink below the centered brand chip's overlap.
+            className="flex h-11 w-8 items-center justify-center border-r border-line transition-colors last:border-r-0 hover:text-text"
             style={{
               background: active ? "var(--text)" : "transparent",
               color: active ? "var(--bg)" : "var(--muted)",
@@ -127,6 +130,7 @@ function MobilePillNav() {
       <div
         data-mobile-pill-nav
         data-over="paper"
+        suppressHydrationWarning
         className="chrome-adaptive fixed inset-x-0 bottom-0 z-50 hidden max-lg:flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       >
         <div className="w-full max-w-sm">
@@ -206,7 +210,13 @@ function MobilePillNav() {
               borderColor: open ? "var(--text)" : "var(--line)",
             }}
           >
-            <span className="flex items-center gap-2.5">
+            {/* Explicit color, not inherited: this span is a sibling of
+                `.label` (which sets its own `--muted` color on itself), not
+                its descendant, so without this the Mark's `currentColor`
+                falls through to body's static default instead of the local
+                chrome-adaptive `--text` — invisible on a deep ground in
+                Obsidian, wrong-hued in Cobalt. */}
+            <span className="flex items-center gap-2.5" style={{ color: "var(--text)" }}>
               <Mark size={20} />
               <span className="label">{open ? "Menu" : "MaCo"}</span>
             </span>
@@ -704,6 +714,15 @@ export function Header() {
     // per-frame ticker callback, not a render.
     let lastTop: Ground = "paper";
     let lastEdge: Ground = "paper";
+    // Written only when changed (below) — at rest this stays 0, the same
+    // as `--vel`'s own `initial-value`, so nothing ever calls
+    // `style.setProperty` before the user's first scroll. That's not just
+    // an idle-write skip: writing on the very first tick raced React 19's
+    // dev-mode post-hydration verification pass (both scheduled off a
+    // requestAnimationFrame), which then reported the mutated `style`
+    // attribute as a hydration mismatch — confirmed live by toggling this
+    // write off and on. Skipping the no-op write removes the race.
+    let lastVel = 0;
 
     getScrollRuntime().then((rt) => {
       if (cancelled || !rt) return;
@@ -753,6 +772,27 @@ export function Header() {
         // [data-ground] sections at all, `grounds` is empty and `groundAt`
         // falls back to "paper" — no separate no-op branch needed.
         document.documentElement.dataset["groundNow"] = edgeGround;
+
+        // --vel: 0 (at rest) to 1 (fast fling), consumed only by
+        // `.ambient-field` (styles.css). `lenis.velocity` is px per rAF
+        // frame, not px/s — dividing by `deltaRatio()` normalizes it back
+        // to a 60fps-equivalent px/frame so this reads the same at 120Hz.
+        // Re-queried each tick, same reasoning as `grounds` above:
+        // ambient-field elements live inside route content, so a snapshot
+        // taken once at effect setup goes stale on navigation.
+        const rawVel = rt.lenis.velocity / rt.gsap.ticker.deltaRatio();
+        // Fixed px/frame reference, not viewport-relative — velocity is an
+        // input-device speed, not a screen-size quantity. 40 sits between
+        // a wheel notch (~8-12 px/frame) and a trackpad fling (~60-150):
+        // a notch nudges this, a fling saturates it. Both figures are
+        // `lerp: 0.09`'s own numbers (scroll-runtime.ts).
+        const vel = Math.min(1, Math.abs(rawVel) / 40);
+        if (vel !== lastVel) {
+          lastVel = vel;
+          for (const el of document.querySelectorAll<HTMLElement>(".ambient-field")) {
+            el.style.setProperty("--vel", String(vel));
+          }
+        }
       };
       rt.gsap.ticker.add(applyGround);
     });
@@ -769,6 +809,7 @@ export function Header() {
       <header
         ref={headerRef}
         data-over="paper"
+        suppressHydrationWarning
         className="header-scroll chrome-adaptive fixed inset-x-0 top-0 z-[42] rule-b"
       >
         <div className="shell flex h-20 items-center justify-between gap-6 md:h-24">
@@ -849,6 +890,7 @@ export function Header() {
       <div
         data-nav-trigger-overlay
         data-over="paper"
+        suppressHydrationWarning
         className="chrome-adaptive pointer-events-none fixed inset-x-0 top-0 z-[47]"
       >
         <div className="shell flex h-20 items-center gap-3 md:h-24">
@@ -926,10 +968,13 @@ export function Footer() {
         <div className="grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-12">
           <div className="lg:col-span-3">
             <p className="label">Index</p>
-            <ul className="mt-5 space-y-2.5">
+            <ul className="mt-5 space-y-1">
               {site.nav.map((n) => (
                 <li key={n.to}>
-                  <Link to={n.to} className="link-draw text-sm text-muted hover:opacity-100">
+                  <Link
+                    to={n.to}
+                    className="link-draw -mx-1 block px-1 py-1.5 text-sm text-muted hover:opacity-100"
+                  >
                     {n.label}
                   </Link>
                 </li>
@@ -939,29 +984,63 @@ export function Footer() {
 
           <div className="lg:col-span-3">
             <p className="label">Contact</p>
-            <ul className="mt-5 space-y-2.5 text-sm text-muted">
+            <ul className="mt-5 space-y-1 text-sm text-muted">
               <li>
-                <a href={`mailto:${site.contact_email}`} className="link-draw hover:opacity-100">
+                <a
+                  href={`mailto:${site.contact_email}`}
+                  className="link-draw -mx-1 block px-1 py-1.5 hover:opacity-100"
+                >
                   {site.contact_email}
                 </a>
               </li>
-              <li>{site.location}</li>
+              {site.phones.map((p) => (
+                <li key={p.label}>
+                  <a
+                    href={`tel:${p.number.replace(/[^+\d]/g, "")}`}
+                    className="link-draw -mx-1 inline-block px-1 py-1.5 hover:opacity-100"
+                  >
+                    {p.number}
+                  </a>{" "}
+                  ({p.label})
+                </li>
+              ))}
+              <li className="py-1.5">{site.location}</li>
             </ul>
+          </div>
+
+          {/* Fills the 6 columns the two link lists leave empty on desktop
+              (lg:col-span-3 twice, of 12) — real site copy + the one action
+              a footer should end on, not filler. */}
+          <div className="lg:col-span-6 lg:col-start-7">
+            <p className="label">Start a project</p>
+            <p className="mt-5 max-w-sm text-lg" style={{ color: "var(--text)" }}>
+              {site.tagline}
+            </p>
+            <Magnetic className="mt-6 inline-block">
+              <Link to="/contact" className="btn-line">
+                Brief us <span aria-hidden="true">→</span>
+              </Link>
+            </Magnetic>
           </div>
         </div>
 
-        <div className="label rule-t flex flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            © {new Date().getFullYear()} MaCo — {site.category}
-          </span>
-          <span
-            ref={scriptRef}
-            className="normal-case tracking-normal opacity-70"
-            style={{ fontFamily: "var(--font-script-fallback)" }}
-            aria-hidden="true"
-          >
-            {nameScripts.map((s) => s.text).join(" · ")}
-          </span>
+        <div className="label rule-t flex flex-col gap-2 py-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
+            <span>
+              © {new Date().getFullYear()} MaCo — {site.category}
+            </span>
+            {/* Decorative only (aria-hidden) — dropped below `sm` rather than
+                fighting the copyright line for a 320px row; the theme label
+                stays since it's the one bit of real state here. */}
+            <span
+              ref={scriptRef}
+              className="hidden normal-case tracking-normal opacity-70 sm:inline"
+              style={{ fontFamily: "var(--font-script-fallback)" }}
+              aria-hidden="true"
+            >
+              {nameScripts.map((s) => s.text).join(" · ")}
+            </span>
+          </div>
           <span>Obsidian / Cobalt</span>
         </div>
       </div>

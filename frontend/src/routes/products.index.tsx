@@ -5,6 +5,9 @@ import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
+import { CardMedia } from "@/components/home/summary";
+import { useSectionHandoff } from "@/hooks/use-section-handoff";
+import { PageOutro } from "@/components/inner/page-outro";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
@@ -26,11 +29,15 @@ export const Route = createFileRoute("/products/")({
   component: ProductsIndex,
 });
 
+const HANDOFF_PAIRS = [[products[products.length - 1]!.title, "Start a project", "sheet"]] as const;
+
 function ProductsIndex() {
+  useSectionHandoff(HANDOFF_PAIRS);
+
   return (
     <>
       <section data-ground="paper" aria-label="Introduction" className="rule-b">
-        <div className="shell grid gap-8 py-16 lg:grid-cols-12 lg:py-24">
+        <div className="shell grid gap-8 page-intro lg:grid-cols-12">
           <p className="label lg:col-span-3">Index / Products</p>
           <div className="lg:col-span-9">
             <LineReveal as="h1" className="display-lg max-w-3xl">
@@ -53,7 +60,7 @@ function ProductsIndex() {
           className={i % 2 === 0 ? "rule-b" : "rule-b grid-field"}
         >
           <ScrubReveal as="div" hold className="shell grid gap-10 py-16 lg:grid-cols-12 lg:py-24">
-            <div className="lg:col-span-5">
+            <div className="lg:sticky lg:top-28 lg:col-span-4 lg:self-start">
               <p className="label">
                 {pr.index} / {pr.kind}
               </p>
@@ -83,7 +90,17 @@ function ProductsIndex() {
               </div>
             </div>
 
-            <div className="lg:col-span-6 lg:col-start-7">
+            <div className="lg:col-span-4">
+              <CardMedia
+                media={pr.media}
+                brand={pr.brand}
+                screen={pr.screen}
+                title={pr.title}
+                aspect="4 / 3"
+              />
+            </div>
+
+            <div className="lg:col-span-4">
               <Stagger
                 as="div"
                 className="grid gap-px"
@@ -108,6 +125,13 @@ function ProductsIndex() {
           </ScrubReveal>
         </section>
       ))}
+
+      <PageOutro
+        ariaLabel="Start a project"
+        heading="Own software next, not just build it."
+        body="Bridge and Driver's Diary both started as a client problem MaCo kept solving after launch. Talk to us about what yours needs."
+        cta={{ label: "Start a project", to: "/contact" }}
+      />
     </>
   );
 }

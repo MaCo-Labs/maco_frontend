@@ -81,14 +81,6 @@ function applyUrlMotionOverride(): StoredMotionPreference | null {
   return raw;
 }
 
-/** Explicitly set (or, with "system", clear) the stored override and notify
- *  any mounted `useReducedMotion()` hooks so the change applies live. */
-export function setMotionOverride(pref: StoredMotionPreference | "system"): void {
-  if (pref === "system") window.localStorage.removeItem(MOTION_STORAGE_KEY);
-  else window.localStorage.setItem(MOTION_STORAGE_KEY, pref);
-  window.dispatchEvent(new Event(MOTION_CHANGE_EVENT));
-}
-
 /** Resolves to "reduced" or "full". Priority: `?motion=` (persisted) >
  *  a stored override from a previous visit > the OS `prefers-reduced-motion`
  *  setting. Client-only — callers must guard SSR themselves. */

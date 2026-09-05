@@ -46,6 +46,7 @@ const FIGURES = [
 export function Overview() {
   return (
     <section data-ground="paper" aria-label="What MaCo does" className="ground-sheet">
+      <div aria-hidden="true" className="ambient-field" />
       <div className="shell cb-section">
         <div className="grid gap-12 md:grid-cols-2 md:gap-[5.625rem]">
           <div>
@@ -95,7 +96,7 @@ export function Overview() {
                 its exact copy, verbatim, not reworded. */}
             <p className="mt-6" style={{ color: "var(--muted)" }}>
               {site.category}, based in {site.location}. Working with clients across India and the
-              Gulf.
+              Middle East.
             </p>
           </div>
         </div>

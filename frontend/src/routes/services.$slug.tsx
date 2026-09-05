@@ -5,6 +5,45 @@ import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
+import { usePointerField } from "@/hooks/use-pointer-field";
+
+/** One Evidence cell — project or product, same chrome either way. Carries
+ *  its own `usePointerField` so `.evidence-spotlight`'s --px/--py glow is
+ *  local to this card, not the whole grid (each card's pointer math is
+ *  independent, matching a real per-card spotlight rather than one field
+ *  shared across the grid). */
+function EvidenceCard({
+  to,
+  slug,
+  kind,
+  title,
+  description,
+  index,
+}: {
+  to: "/work/$slug" | "/products/$slug";
+  slug: string;
+  kind: "Project" | "Product";
+  title: string;
+  description: string;
+  index: number;
+}) {
+  const ref = usePointerField<HTMLAnchorElement>();
+  return (
+    <Link
+      ref={ref}
+      to={to}
+      params={{ slug }}
+      className="evidence-spotlight stagger-item group p-7 transition-colors"
+      style={{ background: "var(--bg)", "--i": index } as CSSProperties}
+    >
+      <span className="label">{kind}</span>
+      <p className="mt-3 font-display text-2xl tracking-[-0.03em] group-hover:opacity-70">
+        {title}
+      </p>
+      <p className="mt-2 text-sm text-muted">{description}</p>
+    </Link>
+  );
+}
 
 export const Route = createFileRoute("/services/$slug")({
   loader: ({ params }) => {
@@ -70,14 +109,16 @@ function ServiceDetail() {
               {service.capabilities.map((c, i) => (
                 <div
                   key={c.title}
-                  className="stagger-item rule-t grid gap-2 py-6 md:grid-cols-12 md:gap-6"
+                  className="stagger-item group rule-t grid gap-2 py-6 md:grid-cols-12 md:gap-6"
                   style={{ "--i": i } as CSSProperties}
                 >
                   <span className="label md:col-span-1">{String(i + 1).padStart(2, "0")}</span>
-                  <h2 className="font-display text-xl tracking-[-0.03em] md:col-span-4">
+                  <h2 className="font-display text-xl tracking-[-0.03em] transition-transform duration-300 ease-[var(--ease-emphasis)] group-hover:translate-x-1 md:col-span-4">
                     {c.title}
                   </h2>
-                  <p className="max-w-xl text-sm text-muted md:col-span-7">{c.description}</p>
+                  <p className="max-w-xl text-sm text-muted transition-[color,transform] duration-300 ease-[var(--ease-emphasis)] group-hover:translate-x-1 group-hover:text-[var(--text)] md:col-span-7">
+                    {c.description}
+                  </p>
                 </div>
               ))}
             </Stagger>
@@ -89,50 +130,45 @@ function ServiceDetail() {
       <section data-ground="paper" aria-label="Evidence" className="rule-b">
         <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
           <p className="label lg:col-span-3">Evidence</p>
-          <div
+          <Stagger
+            as="div"
             className="grid gap-px lg:col-span-9 lg:grid-cols-2"
             style={{ background: "var(--line)" }}
+            gap={0.08}
+            band={0.3}
           >
-            {service.evidence.map((slug) => {
+            {service.evidence.map((slug, i) => {
               const project = getProject(slug);
-              const product = getProduct(slug);
               if (project) {
                 return (
-                  <Link
+                  <EvidenceCard
                     key={slug}
                     to="/work/$slug"
-                    params={{ slug }}
-                    className="group p-7 transition-colors"
-                    style={{ background: "var(--bg)" }}
-                  >
-                    <span className="label">Project</span>
-                    <p className="mt-3 font-display text-2xl tracking-[-0.03em] group-hover:opacity-70">
-                      {project.title}
-                    </p>
-                    <p className="mt-2 text-sm text-muted">{project.short_description}</p>
-                  </Link>
+                    slug={slug}
+                    kind="Project"
+                    title={project.title}
+                    description={project.short_description}
+                    index={i}
+                  />
                 );
               }
+              const product = getProduct(slug);
               if (product) {
                 return (
-                  <Link
+                  <EvidenceCard
                     key={slug}
                     to="/products/$slug"
-                    params={{ slug }}
-                    className="group p-7"
-                    style={{ background: "var(--bg)" }}
-                  >
-                    <span className="label">Product</span>
-                    <p className="mt-3 font-display text-2xl tracking-[-0.03em] group-hover:opacity-70">
-                      {product.title}
-                    </p>
-                    <p className="mt-2 text-sm text-muted">{product.short_description}</p>
-                  </Link>
+                    slug={slug}
+                    kind="Product"
+                    title={product.title}
+                    description={product.short_description}
+                    index={i}
+                  />
                 );
               }
               return null;
             })}
-          </div>
+          </Stagger>
         </div>
       </section>
 

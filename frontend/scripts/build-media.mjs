@@ -44,75 +44,98 @@ function size(p) {
 // ---------------------------------------------------------------------
 // 1. Bridge product recording — trimmed 4s-30s (dashboard -> calendar ->
 //    tasks kanban): a coherent arc, chosen by reviewing extracted frames
-//    at 1s/3s resolution rather than guessed. Source is 1024x576; kept
-//    at source resolution since it's already compact.
+//    at 1s/3s resolution rather than guessed.
+//
+//    Source is 1984x1024 (DAR 31:16, ~1.9375 — NOT 16:9) with a stereo
+//    AAC track. An earlier 1024x576 source was swapped out for this one;
+//    every consumer of these outputs derives its box from ASPECT below,
+//    so the ratio lives here and nowhere else.
+//
+//    Two encodes, deliberately:
+//      capture.*  1280 wide, silent  — the inline scroll-scrub frame.
+//                 Loads on scroll, so it stays lean; ProductVideo mutes
+//                 it anyway (autoplay policy), making the audio track
+//                 pure waste on that path.
+//      feature.*  1920 wide, WITH audio — the fullscreen lightbox only.
+//                 Never fetched until the viewer clicks to expand, so it
+//                 can afford the bitrate and the soundtrack.
 // ---------------------------------------------------------------------
 const src = path.join(root, "src", "assets", "Bridge Demo.mp4");
 const IN = "4";
 const DURATION = "26"; // -> 30s out point
+const INLINE_W = 1280;
+const FEATURE_W = 1920;
 
 if (!existsSync(src)) {
   console.error(`Missing source video: ${src}`);
   process.exit(1);
 }
 
-run(
-  [
-    "-y",
-    "-ss",
-    IN,
-    "-t",
-    DURATION,
-    "-i",
-    src,
-    "-an",
-    "-vf",
-    "scale=1024:-2,format=yuv420p",
-    "-c:v",
-    "libvpx-vp9",
-    "-crf",
-    "36",
-    "-b:v",
-    "0",
-    "-deadline",
-    "good",
-    "-cpu-used",
-    "2",
-    path.join(outVideo, "capture.webm"),
-  ],
-  "bridge/capture.webm (VP9)",
-);
+/** VP9/WebM + H.264/MP4 pair at one width. `audio: false` drops the track. */
+function encodePair(width, base, audio) {
+  const vf = `scale=${width}:-2,format=yuv420p`;
+  run(
+    [
+      "-y",
+      "-ss",
+      IN,
+      "-t",
+      DURATION,
+      "-i",
+      src,
+      ...(audio ? ["-c:a", "libopus", "-b:a", "96k"] : ["-an"]),
+      "-vf",
+      vf,
+      "-c:v",
+      "libvpx-vp9",
+      "-crf",
+      "36",
+      "-b:v",
+      "0",
+      "-deadline",
+      "good",
+      "-cpu-used",
+      "2",
+      path.join(outVideo, `${base}.webm`),
+    ],
+    `bridge/${base}.webm (VP9${audio ? " + Opus" : ", silent"})`,
+  );
 
-run(
-  [
-    "-y",
-    "-ss",
-    IN,
-    "-t",
-    DURATION,
-    "-i",
-    src,
-    "-an",
-    "-vf",
-    "scale=1024:-2,format=yuv420p",
-    "-c:v",
-    "libx264",
-    "-preset",
-    "slow",
-    "-crf",
-    "24",
-    "-profile:v",
-    "high",
-    "-movflags",
-    "+faststart",
-    path.join(outVideo, "capture.mp4"),
-  ],
-  "bridge/capture.mp4 (H.264, Safari fallback)",
-);
+  run(
+    [
+      "-y",
+      "-ss",
+      IN,
+      "-t",
+      DURATION,
+      "-i",
+      src,
+      ...(audio ? ["-c:a", "aac", "-b:a", "128k"] : ["-an"]),
+      "-vf",
+      vf,
+      "-c:v",
+      "libx264",
+      "-preset",
+      "slow",
+      "-crf",
+      "24",
+      "-profile:v",
+      "high",
+      "-movflags",
+      "+faststart",
+      path.join(outVideo, `${base}.mp4`),
+    ],
+    `bridge/${base}.mp4 (H.264${audio ? " + AAC" : ", silent"}, Safari fallback)`,
+  );
+}
+
+encodePair(INLINE_W, "capture", false);
+encodePair(FEATURE_W, "feature", true);
 
 // Poster: 1s into the trimmed segment (clean dashboard frame, no cursor
 // mid-drag) — matches the video's first visible frame so there's no
-// poster->video jump cut.
+// poster->video jump cut. Sized to the inline encode, since that's the
+// element it sits behind.
 run(
   [
     "-y",
@@ -123,7 +146,7 @@ run(
     "-frames:v",
     "1",
     "-vf",
-    "scale=1024:-2",
+    `scale=${INLINE_W}:-2`,
     path.join(outVideo, "poster.jpg"),
   ],
   "bridge/poster.jpg",

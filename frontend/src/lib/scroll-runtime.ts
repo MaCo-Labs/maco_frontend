@@ -135,6 +135,10 @@ export function getScrollRuntime(): Promise<ScrollRuntime | null> {
         scheduleRefresh,
         destroy() {
           gsap.ticker.remove(raf);
+          if (refreshRaf) {
+            window.cancelAnimationFrame(refreshRaf);
+            refreshRaf = 0;
+          }
           lenis.destroy();
           document.documentElement.classList.remove("lenis");
           listeners.clear();
@@ -159,8 +163,8 @@ export function getLiveScrollRuntime(): ScrollRuntime | null {
 }
 
 /** Forces the next `getScrollRuntime()` call to reconstruct. Called by
- *  `ScrollRuntime.destroy()`; also exported directly for test/HMR use. */
-export function resetScrollRuntime(): void {
+ *  `ScrollRuntime.destroy()`. */
+function resetScrollRuntime(): void {
   runtimePromise = null;
   liveRuntime = null;
 }

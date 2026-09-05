@@ -68,7 +68,7 @@ export function Identity() {
       const trigger = rt.ScrollTrigger.create({
         trigger: section,
         start: "top top",
-        end: "+=110%",
+        end: "+=170%",
         pin: true,
         anticipatePin: 1,
         scrub: 0.25,
@@ -86,7 +86,7 @@ export function Identity() {
       const trigger = rt.ScrollTrigger.create({
         trigger: section,
         start: "top top",
-        end: "+=90%",
+        end: "+=130%",
         pin: true,
         anticipatePin: 1,
         scrub: 0.25,
@@ -106,6 +106,7 @@ export function Identity() {
       className="relative z-[41] flex min-h-[100svh] flex-col items-center justify-center overflow-hidden"
       aria-label="MaCo, in one name and many scripts"
     >
+      <div aria-hidden="true" className="ambient-field" />
       <div className="shell cb-section flex flex-col items-center gap-6 text-center">
         <p className="label">One name. Many scripts.</p>
 
@@ -117,8 +118,8 @@ export function Identity() {
           className="relative w-full overflow-hidden"
           style={
             {
-              "--slot": "clamp(11rem, 26vw, 20rem)",
-              height: "clamp(7.5rem, 15vw, 10.5rem)",
+              "--slot": "clamp(13rem, 34vw, 30rem)",
+              height: "clamp(9rem, 20vw, 15rem)",
               fontFamily: "var(--font-script-fallback)",
               WebkitMaskImage:
                 "linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)",
@@ -141,7 +142,7 @@ export function Identity() {
                   marginLeft: "calc(var(--slot) / -2)",
                   fontFamily: "var(--font-display)",
                   fontWeight: 400,
-                  fontSize: "clamp(2.2rem, 6vw, 5rem)",
+                  fontSize: "clamp(2.6rem, 9vw, 8rem)",
                   // NOT display-hero's line-height (1.02) — that clips
                   // Malayalam/Devanagari/Gujarati/Gurmukhi vowel marks and
                   // Bengali/Odia ascenders.
@@ -157,7 +158,7 @@ export function Identity() {
           ))}
         </div>
 
-        <p className="lead max-w-md">MaCo works with clients across India and the Gulf.</p>
+        <p className="lead max-w-md">MaCo works with clients across India and the Middle East.</p>
 
         {/* The one accessible representation — the reel above is aria-hidden.
             Per-item lang so a screen reader switches voice/pronunciation

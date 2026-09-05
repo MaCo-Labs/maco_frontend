@@ -1,11 +1,23 @@
 import type { CSSProperties } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { site, process, principles, services } from "@/content/maco";
-import { SystemField } from "@/components/mark";
+import { site, process, principles, services, origin, team } from "@/content/maco";
 import { GlobeSection } from "@/components/globe-section";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { Stagger } from "@/components/motion/stagger";
+
+/** slug -> initials, for the founder-card fallback (no portraits exist
+ *  yet). Typographic, not a fake-avatar image — the honest stand-in per
+ *  design-taste-frontend's guidance on invented headshots. */
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -31,23 +43,30 @@ function AboutPage() {
   return (
     <>
       <section data-ground="paper" aria-label="Introduction" className="rule-b">
-        <div className="shell grid gap-10 py-16 lg:grid-cols-12 lg:py-24">
-          <div className="lg:col-span-8">
-            <p className="label">Index / About</p>
-            <LineReveal as="h1" className="display-lg mt-6 max-w-3xl">
-              A software company that stays{" "}
-              <span style={{ color: "var(--muted)" }}>after the launch post.</span>
+        <div className="shell py-16 lg:py-24">
+          <p className="label">Index / About</p>
+          <LineReveal as="h1" className="display-lg mt-6 max-w-3xl">
+            A software company that stays{" "}
+            <span style={{ color: "var(--muted)" }}>after the launch post.</span>
+          </LineReveal>
+          <p className="mt-8 max-w-2xl text-lg leading-snug">{site.statement}</p>
+          <p className="mt-5 max-w-2xl text-muted">
+            We work across two sides of the same discipline: websites and platforms for clients, and
+            products we own and operate ourselves. The second keeps the first honest — we run
+            software in production, so we build for the version of it that exists two years from
+            now.
+          </p>
+        </div>
+      </section>
+
+      <section data-ground="paper" aria-label="Origin" className="rule-b">
+        <div className="shell grid gap-8 py-16 lg:grid-cols-12 lg:py-24">
+          <p className="label lg:col-span-3">{origin.eyebrow}</p>
+          <div className="lg:col-span-9">
+            <LineReveal as="h2" mode="words" className="display-lg max-w-3xl">
+              {origin.heading}
             </LineReveal>
-            <p className="mt-8 max-w-2xl text-lg leading-snug">{site.statement}</p>
-            <p className="mt-5 max-w-2xl text-muted">
-              We work across two sides of the same discipline: websites and platforms for clients,
-              and products we own and operate ourselves. The second keeps the first honest — we run
-              software in production, so we build for the version of it that exists two years from
-              now.
-            </p>
-          </div>
-          <div className="hidden lg:col-span-4 lg:block">
-            <SystemField className="border-t border-l border-line" />
+            <p className="mt-8 max-w-2xl text-lg leading-snug text-muted">{origin.body}</p>
           </div>
         </div>
       </section>
@@ -98,13 +117,58 @@ function AboutPage() {
         </div>
       </section>
 
+      <section data-ground="paper" aria-label="Team" className="rule-b">
+        <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
+          <p className="label lg:col-span-3">Team</p>
+          <Stagger
+            as="div"
+            className="grid grid-cols-1 gap-px sm:grid-cols-2 lg:col-span-9 lg:grid-cols-4"
+            style={{ background: "var(--line)" }}
+            gap={0.06}
+            band={0.3}
+          >
+            {team.map((person, i) => (
+              <div
+                key={person.slug}
+                tabIndex={0}
+                className="stagger-item group p-6 outline-none"
+                style={{ background: "var(--bg)", "--i": i } as CSSProperties}
+              >
+                <div className="flex aspect-[4/5] items-center justify-center bg-[var(--surface-2)] transition-[filter] duration-400 ease-[var(--ease-emphasis)] group-hover:contrast-125 group-hover:brightness-105 group-focus-within:contrast-125 group-focus-within:brightness-105">
+                  {person.portrait ? (
+                    <img
+                      src={person.portrait.poster}
+                      alt={person.portrait.alt}
+                      width={person.portrait.width}
+                      height={person.portrait.height}
+                      className="h-full w-full object-cover grayscale"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="font-display text-3xl tracking-[-0.02em] text-muted">
+                      {initials(person.name)}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-4 font-display text-lg tracking-[-0.02em]">{person.name}</p>
+                <p className="mt-1 text-sm text-muted">{person.role}</p>
+                <p className="mt-3 max-h-0 overflow-hidden text-sm text-muted opacity-0 transition-[max-height,opacity] duration-400 ease-[var(--ease-emphasis)] group-hover:max-h-20 group-hover:opacity-100 group-focus-within:max-h-20 group-focus-within:opacity-100">
+                  {person.bio}
+                </p>
+              </div>
+            ))}
+          </Stagger>
+        </div>
+      </section>
+
       <section data-ground="paper" aria-label="Contact MaCo">
         <div className="shell grid gap-10 py-14 lg:grid-cols-12 lg:items-center lg:py-20">
           <div className="lg:col-span-5">
             <p className="label">Where we are</p>
             <p className="display-md mt-6">{site.location}</p>
             <p className="mt-6 max-w-xl text-muted">
-              Working with clients in India and the Gulf across {services.length} service lines.
+              Working with clients in India and the Middle East across {services.length} service
+              lines.
             </p>
             <Magnetic className="mt-8 inline-block">
               <Link to="/contact" className="btn-solid">
@@ -114,8 +178,8 @@ function AboutPage() {
           </div>
           <div className="lg:col-span-7">
             <GlobeSection
-              label="Connected systems"
-              description="An abstract view of linked systems and regions — visual context, not a map of offices or claimed reach."
+              label="Operational hubs"
+              description="Kochi, Bangalore, Chennai, Qatar and Dubai — where MaCo works."
             />
           </div>
         </div>

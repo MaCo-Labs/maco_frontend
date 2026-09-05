@@ -82,7 +82,7 @@ Step 7 — DOCUMENT — update the project-state docs (§ Documentation checkpoi
 
 Frontend: React 19, TypeScript (strict), TanStack Start + TanStack Router, Vite 8, Tailwind CSS v4, GSAP (`ScrollTrigger`/`SplitText`) + Lenis for scroll, `motion` v13 for discrete UI state, raw `three` for WebGL. Full stack detail in `CONTEXT.md` §4.
 
-Backend: Django 5 + Django REST Framework + Django Admin (the internal CMS) + PostgreSQL.
+Backend: Django 5 + Django REST Framework + Django Admin (the internal CMS) + PostgreSQL. Moved out to `../maco-backend` (sibling folder, untracked) — repo is frontend-only for now, kept for future use.
 
 Do not migrate frameworks merely for preference. Preserve the current architecture unless there is a demonstrated problem.
 
@@ -163,13 +163,13 @@ Do not invent features, screenshots, or UI previews that don't exist.
 
 16. BACKEND / CMS DIRECTION
 
-Django Admin is the internal CMS/control surface. Backend supports: projects, products, services, clients, images, descriptions, external links, ordering, featured status, contact submissions. Don't over-engineer fields before the frontend/content requirements justify them.
+Not part of this repo currently — moved to `../maco-backend`. When reintroduced: Django Admin is the internal CMS/control surface. Backend supports: projects, products, services, clients, images, descriptions, external links, ordering, featured status, contact submissions. Don't over-engineer fields before the frontend/content requirements justify them.
 
 When changing Django: inspect models, serializers, views, URLs, admin, migrations first. Never create destructive migrations blindly.
 
 17. FRONTEND/BACKEND SEPARATION
 
-Frontend: presentation, theme, animation, responsive behavior, interaction. Backend: data, content, persistence, admin, APIs. Don't put business logic inside presentation components. Note: the frontend currently reads content from `frontend/src/content/maco.ts`, not live API calls — only the contact form hits the backend (`CONTEXT.md` §8).
+Frontend: presentation, theme, animation, responsive behavior, interaction. Backend (when reintroduced): data, content, persistence, admin, APIs. Don't put business logic inside presentation components. The frontend reads content from `frontend/src/content/maco.ts`, not live API calls. The contact form posts to `VITE_API_BASE_URL` when set; with the backend moved out and that var unset, it shows a mailto fallback instead (`CONTEXT.md` §8).
 
 18. PERFORMANCE
 
@@ -231,7 +231,7 @@ Read `CONTEXT.md` → `PROJECT_STATUS.md` → `ROADMAP.md` → `AI_HANDOFF.md`, 
 
 32. PRESERVE THESE DECISIONS
 
-Unless explicitly requested otherwise, preserve: MaCo brand identity, Obsidian/Cobalt two-theme architecture, `SystemField` (kept for `/products/$slug`, §2 rule 3 in `CONTEXT.md`), mobile pill navigation, editorial desktop navigation, Bridge's stronger emphasis, real project information, existing routes, content architecture, the working Django backend, the existing Lenis/GSAP/`motion` split. Improve these; do not casually replace them.
+Unless explicitly requested otherwise, preserve: MaCo brand identity, Obsidian/Cobalt two-theme architecture, `SystemField` (kept for `/products/$slug`, §2 rule 3 in `CONTEXT.md`), mobile pill navigation, editorial desktop navigation, Bridge's stronger emphasis, real project information, existing routes, content architecture, the existing Lenis/GSAP/`motion` split. Improve these; do not casually replace them.
 
 33. FINAL QUALITY BAR
 

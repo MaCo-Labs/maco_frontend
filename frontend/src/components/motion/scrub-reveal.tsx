@@ -61,7 +61,7 @@ export function ScrubReveal({
           {
             "--r": 1,
             ease: "none",
-            scrollTrigger: { trigger: el, start, end, scrub: 0.35, invalidateOnRefresh: true },
+            scrollTrigger: { trigger: el, start, end, scrub: 0.6, invalidateOnRefresh: true },
           },
         );
       }

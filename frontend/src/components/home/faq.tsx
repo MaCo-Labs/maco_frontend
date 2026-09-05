@@ -28,6 +28,7 @@ const ITEMS: AccordionItem[] = process.map((p) => ({
 export function Faq() {
   return (
     <section data-ground="deep" aria-label="How MaCo works" className="ground-sheet">
+      <div aria-hidden="true" className="ambient-field" />
       <div className="shell cb-section">
         <ScrubReveal hold>
           <p className="label">Method</p>

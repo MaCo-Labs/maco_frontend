@@ -1,11 +1,18 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { getProduct } from "@/content/maco";
 import { SurfaceMedia } from "@/components/media/surface-media";
 import { ProductVideo } from "@/components/media/product-video";
+import { VideoLightbox } from "@/components/media/video-lightbox";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 import { usePointerField } from "@/hooks/use-pointer-field";
 import { lerp, smootherstep, clamp01 } from "@/lib/motion";
+
+/** Bridge capture's real aspect — 1280x660 (see scripts/build-media.mjs).
+ *  NOT 16:9; the source recording is DAR 31:16. */
+const ASPECT = 1280 / 660;
+/** The inline encode's own width — the frame never upscales past this. */
+const W_CAP = 1280;
 
 /**
  * EVIDENCE — the homepage's one cinematic set-piece. A contained media
@@ -15,11 +22,13 @@ import { lerp, smootherstep, clamp01 } from "@/lib/motion";
  * expensive moment.
  *
  * The frame is a real sized box (`width`/`height` written in `onUpdate`,
- * not a clip-path inset) locked to the video's own 16:9 aspect throughout,
- * with `mediaRef` gone — `SurfaceMedia`/`ProductVideo` mount directly
- * inside the frame, so `objectFit: "cover"` is a 1:1 fit and never crops.
- * `wMax` caps at 1024px — the source recording's own resolution, so the
- * frame never upscales past what's actually sharp.
+ * not a clip-path inset) locked to the video's own aspect (`ASPECT`)
+ * throughout, with `mediaRef` gone — `SurfaceMedia`/`ProductVideo` mount
+ * directly inside the frame, so `objectFit: "cover"` is a 1:1 fit and
+ * never crops. `wMax` caps at the inline encode's own width (see
+ * `scripts/build-media.mjs`), so the frame never upscales past what's
+ * actually sharp — a separate, higher-res encode with audio backs the
+ * fullscreen lightbox instead of pushing this cap higher.
  *
  * Pin + scrub come from GSAP ScrollTrigger — it computes its own
  * pin-spacing, and `scrub` reads directly off Lenis-smoothed native
@@ -39,6 +48,8 @@ export function EvidenceExpand() {
   const captionInRef = useRef<HTMLParagraphElement>(null);
   const captionOutRef = useRef<HTMLParagraphElement>(null);
   const reduced = useReducedMotion();
+  const lightboxTriggerRef = useRef<HTMLButtonElement>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useScrollScene((rt) => {
     const section = sectionRef.current;
@@ -62,13 +73,13 @@ export function EvidenceExpand() {
         const e = smootherstep(p);
         const vw = window.innerWidth;
         const vh = window.innerHeight;
-        // Aspect-locked: w/h always stay 16:9, so clip-path insets are
-        // never uniform (x and y differ) except by coincidence of the
+        // Aspect-locked: w/h always stay at ASPECT, so clip-path insets
+        // are never uniform (x and y differ) except by coincidence of the
         // viewport's own ratio.
-        const wStart = Math.min(vw * 0.56, vh * 0.5 * (16 / 9));
-        const wMax = Math.min(vw * 0.88, vh * 0.94 * (16 / 9), 1024);
+        const wStart = Math.min(vw * 0.56, vh * 0.5 * ASPECT);
+        const wMax = Math.min(vw * 0.88, vh * 0.94 * ASPECT, W_CAP);
         const w = lerp(wStart, wMax, e);
-        const h = w * (9 / 16);
+        const h = w / ASPECT;
         const radius = lerp(32, 6, e);
         frame.style.width = `${w}px`;
         frame.style.height = `${h}px`;
@@ -106,9 +117,25 @@ export function EvidenceExpand() {
         {bridge?.media ? (
           <div
             className="relative overflow-hidden rounded-2xl border border-line"
-            style={{ aspectRatio: "16/9" }}
+            style={{ aspectRatio: ASPECT }}
           >
             <ProductVideo media={bridge.media} priority="low" objectFit="cover" />
+            <button
+              ref={lightboxTriggerRef}
+              type="button"
+              data-cursor="media"
+              data-cursor-label="View"
+              onClick={() => setLightboxOpen(true)}
+              aria-label={`Watch ${caption} fullscreen, with sound`}
+              className="absolute inset-0"
+            />
+            <VideoLightbox
+              media={bridge.media}
+              alt={caption}
+              open={lightboxOpen}
+              setOpen={setLightboxOpen}
+              triggerRef={lightboxTriggerRef}
+            />
           </div>
         ) : (
           <SurfaceMedia label={caption} aspect="16/9" />
@@ -147,12 +174,10 @@ export function EvidenceExpand() {
 
       <div
         ref={frameRef}
-        data-cursor="media"
-        data-cursor-label="View"
         className="absolute left-1/2 top-1/2 overflow-hidden"
         style={{
           width: "36vw",
-          height: "20.25vw",
+          aspectRatio: ASPECT,
           borderRadius: 32,
           transform: "translate(-50%, -50%)",
         }}
@@ -171,7 +196,27 @@ export function EvidenceExpand() {
           className="pointer-events-none absolute inset-0"
           style={{ background: "black", opacity: 0.62 }}
         />
+        {bridge?.media && (
+          <button
+            ref={lightboxTriggerRef}
+            type="button"
+            data-cursor="media"
+            data-cursor-label="View"
+            onClick={() => setLightboxOpen(true)}
+            aria-label={`Watch ${caption} fullscreen, with sound`}
+            className="absolute inset-0"
+          />
+        )}
       </div>
+      {bridge?.media && (
+        <VideoLightbox
+          media={bridge.media}
+          alt={caption}
+          open={lightboxOpen}
+          setOpen={setLightboxOpen}
+          triggerRef={lightboxTriggerRef}
+        />
+      )}
       <div
         ref={vignetteRef}
         aria-hidden="true"

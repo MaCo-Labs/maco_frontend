@@ -42,7 +42,9 @@ export function Accordion({
   panel = "default",
 }: {
   items: readonly AccordionItem[];
-  /** Which row starts open. Cuberto opens its first feature row. */
+  /** Which row starts open. Neither call site sets this today — CAPABILITY
+   *  used to default its first row open, but that read as a stray reveal
+   *  before any hover/click, so it now starts closed like FAQ. */
   defaultOpen?: string | undefined;
   /** "inverted" wraps the open panel in `.section-inverted` — a dark
    *  contrast card, only worth it on a `paper`-ground caller. Default

@@ -79,9 +79,18 @@ export function Preloader() {
   // never as a result of that click, so the unlock can't live there.
   const prevOverflowRef = useRef("");
 
+  // TopHead's masked-video wipe waits for this event (`mounted && entered`
+  // in top-head.tsx) rather than firing on its own mount — otherwise it
+  // finishes behind the overlay before the visitor ever presses Enter,
+  // so the hero's one real reveal moment is wasted off-screen.
+  const markDone = () => {
+    window.dispatchEvent(new CustomEvent("maco:entered"));
+    setDone(true);
+  };
+
   useEffect(() => {
     if (document.documentElement.dataset["preload"] === "skip" || reduced) {
-      setDone(true);
+      markDone();
       return;
     }
 
@@ -189,7 +198,7 @@ export function Preloader() {
   const enterSite = () => {
     getLiveScrollRuntime()?.lenis.start();
     document.body.style.overflow = prevOverflowRef.current;
-    setDone(true);
+    markDone();
   };
 
   const enterButtonRef = useRef<HTMLButtonElement>(null);

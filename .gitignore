@@ -1,11 +1,3 @@
-# Python / Backend
-backend/venv/
-backend/__pycache__/
-backend/**/__pycache__/
-backend/*.pyc
-backend/.env
-*.pyc
-*.pyo
 
 # Logs
 logs
@@ -47,9 +39,15 @@ motion-audits/
 # part meant to ship — live in docs/references/<site>/NOTES.md, tracked.
 docs/references/*/skillui/
 
-# Raw media build input (36MB source for scripts/build-media.mjs).
-# Output lives in public/media/ and is tracked; the raw source is not.
-frontend/src/assets/Bridge Demo.mp4
+# Raw media build input (source screenshots/video for scripts/build-media.mjs,
+# convert-work-shots.mjs, convert-product-video.mjs — hundreds of MB, one file
+# alone over GitHub's 100MB limit). Output lives in public/media/ and is
+# tracked; the raw source is not.
+frontend/src/assets/
+
+# npm lockfile — this project is managed with bun (frontend/bun.lock is the
+# tracked lockfile); a stray package-lock.json is an npm-install byproduct.
+frontend/package-lock.json
 
 # Editor directories and files
 .vscode/*

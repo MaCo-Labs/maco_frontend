@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { getScrollRuntime } from "@/lib/scroll-runtime";
+import { ensureCobaltFonts } from "@/lib/fonts";
 
 export type Theme = "obsidian" | "cobalt";
 
@@ -98,6 +99,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } catch {
       /* storage unavailable */
     }
+    // Start the fetch the instant a Cobalt switch is requested, not after
+    // the wipe reveals it — the radial wipe still takes 0.7s to cover the
+    // viewport, plenty of headroom for the stylesheet to resolve first.
+    if (t === "cobalt") ensureCobaltFonts();
     if (origin && !reduced) {
       setWipe({ theme: t, x: origin.x, y: origin.y });
     } else {

@@ -4,7 +4,10 @@ import { projects, products, type Brand, type Media } from "@/content/maco";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
+import { Magnetic } from "@/components/motion/magnetic";
 import { ProductVideo } from "@/components/media/product-video";
+import { MorphSlider } from "@/components/media/morph-slider";
+import { PhoneMockup } from "@/components/media/phone-mockup";
 
 /**
  * SUMMARY — `section.cb-summary`, the shape Cuberto's homepage uses twice
@@ -73,23 +76,39 @@ function Summary({
  *  the brand-plate fallback looks deliberately unlike a screenshot. */
 /** Exported for reuse on `/work/$slug` (item 7b's "no imagery anywhere"
  *  gap) — same fallback chain, same data shape, no duplicated logic.
- *  `aspect` defaults to the card grid's own portrait ratio so every
- *  existing call site is unaffected; the case-study page passes a wide
- *  ratio instead, since a full-shell-width hero has no business being
- *  608-tall. */
+ *  `aspect` defaults to the card grid's own landscape ratio (matches the
+ *  real screenshots' native 21:10-ish crop) so every existing call site
+ *  is unaffected; the case-study page passes its own wide ratio, since a
+ *  full-shell-width hero needs a different one entirely. */
 export function CardMedia({
   media,
   brand,
+  gallery,
+  screen,
   title,
-  aspect = "450 / 608",
+  aspect = "2.1 / 1",
   className = "",
 }: {
   media?: Media | undefined;
   brand?: Brand | undefined;
+  gallery?: string[] | undefined;
+  /** A looping screen recording for a phone-only product — rendered inside
+   *  a phone-frame mockup instead of every other media type's flat card
+   *  box, since a device screenshot doesn't read as "this is a phone app"
+   *  boxed into a landscape panel. Takes priority over `gallery`/`media`. */
+  screen?: Media | undefined;
   title: string;
   aspect?: string;
   className?: string;
 }) {
+  // Phone mockup bypasses the flat card box entirely — no fixed
+  // aspect-ratio panel, no surface fill, no clip radius. The device is its
+  // own shape; boxing it in a landscape card panel (like the other media
+  // types below) just added dead grey space above and below it.
+  if (screen) {
+    return <PhoneMockup screen={screen} className={className} />;
+  }
+
   return (
     <div
       className={`relative overflow-hidden ${className}`}
@@ -99,10 +118,15 @@ export function CardMedia({
         background: "var(--surface-2)",
       }}
     >
-      {media ? (
+      {gallery && gallery.length > 1 ? (
+        // Radius 0: the CardMedia wrapper above already clips + rounds this
+        // box (var(--radius-card)); a second radius here would just double
+        // up at the same corners, so the slider fills it edge-to-edge.
+        <MorphSlider items={gallery.map((src) => ({ image: src }))} radius={0} autoplay loop />
+      ) : media ? (
         <ProductVideo
           media={media}
-          objectFit="contain"
+          objectFit={media.note ? "contain" : "cover"}
           radius="var(--radius-card)"
           priority="low"
         />
@@ -135,6 +159,8 @@ function SummaryCard({
   params,
   media,
   brand,
+  gallery,
+  screen,
   title,
   caption,
   meta,
@@ -145,6 +171,8 @@ function SummaryCard({
   params: { slug: string };
   media?: Media | undefined;
   brand?: Brand | undefined;
+  gallery?: string[] | undefined;
+  screen?: Media | undefined;
   title: string;
   caption: string;
   meta: string;
@@ -152,24 +180,48 @@ function SummaryCard({
 }) {
   return (
     <article className="stagger-item" style={{ "--i": i } as CSSProperties}>
-      <Link
-        to={to}
-        params={params}
-        data-cursor="media"
-        data-cursor-label={cursorLabel}
-        className="group block transition-transform duration-500 hover:-translate-y-1.5"
-      >
-        <CardMedia media={media} brand={brand} title={title} />
-        <div className="mt-6 flex items-baseline justify-between gap-4">
-          <h3 className="display-md" style={{ color: "var(--text)" }}>
-            {title}
-          </h3>
-          <span className="label shrink-0">{meta}</span>
-        </div>
-        <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
-          {caption}
-        </p>
-      </Link>
+      {/* Magnetic leans the whole card toward the pointer (14px rubber-
+          banded travel); the card's own translate-y lift composes on top
+          of it since they're different elements — wrapper leans, card
+          lifts. No-ops to a plain div on touch/reduced motion. */}
+      <Magnetic>
+        <Link
+          to={to}
+          params={params}
+          data-cursor="media"
+          data-cursor-label={cursorLabel}
+          className="group block transition-transform duration-300 hover:-translate-y-1.5"
+        >
+          <CardMedia media={media} brand={brand} gallery={gallery} screen={screen} title={title} />
+          <div className="mt-6 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {brand && (
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center border border-line p-1.5"
+                  style={{ background: "var(--surface-2)", borderRadius: "var(--radius-chip)" }}
+                >
+                  <img
+                    src={brand.src}
+                    alt=""
+                    width={brand.width}
+                    height={brand.height}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              )}
+              <h3 className="display-md" style={{ color: "var(--text)" }}>
+                {title}
+              </h3>
+            </div>
+            <span className="label shrink-0">{meta}</span>
+          </div>
+          <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
+            {caption}
+          </p>
+        </Link>
+      </Magnetic>
     </article>
   );
 }
@@ -182,9 +234,11 @@ export function FeaturedWork() {
       label="Work"
       heading="Platforms carrying real operational weight."
       cta={
-        <Link to="/work" className="btn-line">
-          All work <span aria-hidden="true">→</span>
-        </Link>
+        <Magnetic>
+          <Link to="/work" className="btn-line">
+            All work <span aria-hidden="true">→</span>
+          </Link>
+        </Magnetic>
       }
     >
       <Stagger as="div" className="contents" gap={0.14} band={0.45}>
@@ -196,6 +250,7 @@ export function FeaturedWork() {
             params={{ slug: p.slug }}
             media={p.media}
             brand={p.brand}
+            gallery={p.gallery}
             title={p.title}
             caption={p.short_description}
             meta={p.index}
@@ -215,9 +270,11 @@ export function ProductSummary() {
       label="Products"
       heading="Two products of our own, in daily use."
       cta={
-        <Link to="/products" className="btn-line">
-          All products <span aria-hidden="true">→</span>
-        </Link>
+        <Magnetic>
+          <Link to="/products" className="btn-line">
+            All products <span aria-hidden="true">→</span>
+          </Link>
+        </Magnetic>
       }
     >
       <Stagger as="div" className="contents" gap={0.16} band={0.5}>
@@ -229,6 +286,7 @@ export function ProductSummary() {
             params={{ slug: p.slug }}
             media={p.media}
             brand={p.brand}
+            screen={p.screen}
             title={p.title}
             caption={p.short_description}
             meta={p.kind}

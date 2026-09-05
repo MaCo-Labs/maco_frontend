@@ -4,8 +4,6 @@
  * constants for fetches against /api/v1/* ; the field names match.
  */
 
-export type Status = "published" | "draft";
-
 /**
  * A real brand asset (client/product logo). Optional everywhere it's
  * used — a missing `brand` field means the caller falls back to text,
@@ -27,6 +25,11 @@ export interface Media {
   width: number;
   height: number;
   video?: { webm: string; mp4: string };
+  /** Higher-resolution, audio-bearing encode of the same clip as `video` —
+   *  only wired for Bridge today, and only fetched by the fullscreen video
+   *  lightbox on deliberate click. `video` stays silent/lean because
+   *  ProductVideo mutes it anyway for autoplay policy. */
+  feature?: { webm: string; mp4: string };
   /** Set only when this slot's poster is standing in for real product
    *  capture that doesn't exist yet (a brand illustration, not a screenshot)
    *  — rendered as a visible caption by ProductVideo. Per AGENTS.md's
@@ -58,7 +61,9 @@ export interface Project {
   challenge: string;
   solution: string;
   results: string;
-  external_url: string;
+  /** Omitted for client work that isn't a live website (e.g. a print
+   *  deliverable) — callers must guard before rendering a "visit" link. */
+  external_url?: string;
   technologies: string[];
   services: string[];
   seo_title: string;
@@ -68,6 +73,11 @@ export interface Project {
   /** Real project footage/screenshot for the WORK hover panel. Optional —
    *  falls back to the brand-mark-on-plate treatment. Mirrors `Product.media`. */
   media?: Media;
+  /** Extra real screenshots (same aspect as `media.poster`) that the WORK
+   *  card crossfades through. Optional — a card with only `media` shows a
+   *  single static shot. `media.poster` should equal `gallery[0]`, since
+   *  the gallery is a progressive enhancement over the static poster. */
+  gallery?: string[];
 }
 
 export interface Product {
@@ -86,6 +96,11 @@ export interface Product {
   brand?: Brand;
   /** Real product footage/screenshot. Optional — falls back to the designed SurfaceMedia panel. */
   media?: Media;
+  /** A real screen recording for a product that's phone-only (a PWA with
+   *  no desktop surface) — looped inside a phone-frame mockup instead of
+   *  the flat `media` slot, since a bare screenshot/video doesn't read as
+   *  "this is a phone app" the way `media` does for a desktop capture. */
+  screen?: Media;
   technologies: string[];
   live_url: string;
   seo_title: string;
@@ -98,7 +113,12 @@ export const site = {
   tagline: "Software and IT solutions for products that need to work.",
   statement:
     "MaCo builds and maintains software that carries real operational weight — client platforms, internal tooling and the systems people log into every working day.",
-  contact_email: "hello@maco.dev",
+  contact_email: "info@maco.codes",
+  phones: [
+    { label: "Qatar", number: "+974 3126 6690" },
+    { label: "Dubai", number: "+971 54 321 0907" },
+    { label: "India", number: "+91 73067 94846" },
+  ],
   location: "Kochi, Kerala, India",
   nav: [
     { label: "Services", to: "/services" },
@@ -127,7 +147,7 @@ export const site = {
  * the Gulf). Added: Japanese, Korean — both already in
  * `--font-script-fallback` (styles.css), so no new font request.
  */
-export interface NameScript {
+interface NameScript {
   text: string;
   lang: string;
   code: string;
@@ -146,22 +166,6 @@ export const nameScripts: readonly NameScript[] = [
   { text: "ماكو", lang: "Arabic", code: "ar", dir: "rtl" },
   { text: "מאקו", lang: "Hebrew", code: "he", dir: "rtl" },
 ] as const;
-
-/**
- * The hero's cycling taglines (top-head.tsx, 2026-08-29 masked-video-hero
- * pass) — four lines, all lifted verbatim from copy already approved
- * elsewhere on the site, nothing invented for this rotation specifically:
- * `site.tagline` itself, two clauses out of `site.statement`, and the
- * closing line `outro.tsx` already uses ("Good software earns its
- * place.") — a deliberate refrain, not a duplicate: the hero previews the
- * line, Outro lands it at the end of the page.
- */
-export const heroLines: readonly string[] = [
-  site.tagline,
-  "Software that carries real operational weight.",
-  "Systems people log into every working day.",
-  "Good software earns its place.",
-];
 
 /**
  * Two services, 2026-08-18 — collapsed from the previous five at the
@@ -237,7 +241,7 @@ export const services: Service[] = [
           "Content planning tied to launches and campaign moments, on-brand asset production, and plain reach and engagement reporting without vanity framing.",
       },
     ],
-    evidence: ["ananta-nethralaya", "al-afzah", "soorath-autos", "headgreen"],
+    evidence: ["ananta-nethralaya", "al-afzah", "soorath-autos", "headgreen", "ozone"],
     seo_title: "Digital Solutions — MaCo",
     seo_description:
       "MaCo delivers digital solutions: websites, e-commerce, branding and design, and social media management.",
@@ -265,6 +269,18 @@ export const projects: Project[] = [
     seo_title: "Ananta Nethralaya — Client work by MaCo",
     seo_description: "MaCo built the website for Ananta Nethralaya, an eye clinic.",
     brand: { src: "/media/brand/ananta.webp", alt: "Ananta Nethralaya", width: 640, height: 639 },
+    media: {
+      poster: "/media/work/ananta-nethralaya/1.webp",
+      alt: "Ananta Nethralaya — the eye clinic's website, live",
+      width: 1400,
+      height: 662,
+    },
+    gallery: [
+      "/media/work/ananta-nethralaya/1.webp",
+      "/media/work/ananta-nethralaya/2.webp",
+      "/media/work/ananta-nethralaya/3.webp",
+      "/media/work/ananta-nethralaya/4.webp",
+    ],
   },
   {
     slug: "al-afzah",
@@ -291,6 +307,19 @@ export const projects: Project[] = [
       width: 500,
       height: 500,
     },
+    media: {
+      poster: "/media/work/al-afzah/1.webp",
+      alt: "Al Afzah Group — the corporate website, live",
+      width: 1400,
+      height: 663,
+    },
+    gallery: [
+      "/media/work/al-afzah/1.webp",
+      "/media/work/al-afzah/2.webp",
+      "/media/work/al-afzah/3.webp",
+      "/media/work/al-afzah/4.webp",
+      "/media/work/al-afzah/5.webp",
+    ],
   },
   {
     slug: "soorath-autos",
@@ -311,7 +340,19 @@ export const projects: Project[] = [
     services: ["digital-solutions"],
     seo_title: "Soorath Autos — Client work by MaCo",
     seo_description: "MaCo built the website for Soorath Autos, a pre-owned car showroom.",
-    brand: { src: "/media/brand/soorath.webp", alt: "Soorath Autos", width: 500, height: 500 },
+    brand: { src: "/media/brand/soorath.webp", alt: "Soorath Autos", width: 640, height: 640 },
+    media: {
+      poster: "/media/work/soorath-autos/1.webp",
+      alt: "Soorath Autos — the showroom's website, live",
+      width: 1400,
+      height: 670,
+    },
+    gallery: [
+      "/media/work/soorath-autos/1.webp",
+      "/media/work/soorath-autos/2.webp",
+      "/media/work/soorath-autos/3.webp",
+      "/media/work/soorath-autos/4.webp",
+    ],
   },
   {
     slug: "headgreen",
@@ -334,6 +375,44 @@ export const projects: Project[] = [
     seo_description:
       "MaCo built the website for HeadGreen, a corporate EV fleet cab service in Kochi, Kerala.",
     brand: { src: "/media/brand/headgreen.webp", alt: "HeadGreen", width: 500, height: 826 },
+    media: {
+      poster: "/media/work/headgreen/1.webp",
+      alt: "HeadGreen — the corporate EV fleet website, live",
+      width: 1400,
+      height: 660,
+    },
+    gallery: [
+      "/media/work/headgreen/1.webp",
+      "/media/work/headgreen/2.webp",
+      "/media/work/headgreen/3.webp",
+      "/media/work/headgreen/4.webp",
+    ],
+  },
+  {
+    slug: "ozone",
+    index: "05",
+    title: "Ozone",
+    client: "Ozone Fitout & Contracting W.L.L.",
+    sector: "Interior fit-out & contracting",
+    year: "—",
+    short_description: "A 16-page corporate brochure for a fit-out and contracting company.",
+    challenge:
+      "Ozone Fitout & Contracting needed one document that could introduce the company and its service domains to a client in a single sitting — a printed, shareable brand piece, not a website.",
+    solution:
+      "A 16-page corporate brochure structuring interior fit-out, contracting, MEP and engineering-consultancy capability into one editorial system: company introduction, services, client and brand showcase, working process, quality policy, a project portfolio, and a QR-linked contact page.",
+    results:
+      "Ozone now has one brand communication piece, cover to contact page, carrying its full capability and portfolio story in a single consistent visual language.",
+    technologies: ["Editorial layout", "Print design", "Brand system"],
+    services: ["digital-solutions"],
+    seo_title: "Ozone — Client work by MaCo",
+    seo_description:
+      "MaCo designed a 16-page corporate brochure for Ozone Fitout & Contracting W.L.L., an interior fit-out and contracting company.",
+    brand: {
+      src: "/media/brand/ozone.webp",
+      alt: "Ozone Fitout & Contracting",
+      width: 800,
+      height: 360,
+    },
   },
 ];
 
@@ -377,12 +456,28 @@ export const products: Product[] = [
     seo_title: "Driver's Diary — Fleet operations platform by MaCo",
     seo_description:
       "Driver's Diary is a PWA built by MaCo for HeadGreen: attendance, rides, payroll, documentation and reporting.",
+    brand: {
+      src: "/media/brand/drivers-diary.webp",
+      alt: "Driver's Diary",
+      width: 900,
+      height: 1203,
+    },
     media: {
       poster: "/media/brand/drivers-diary.webp",
       alt: "Driver's Diary — a fleet operations record, visualised as HeadGreen's mark on the map it operates across",
       width: 900,
       height: 1203,
       note: "Brand illustration — not product UI. Real screen capture is pending.",
+    },
+    screen: {
+      poster: "/media/products/drivers-diary/screen-poster.webp",
+      alt: "Driver's Diary — a walkthrough of attendance, rides and payroll, recorded on device",
+      width: 540,
+      height: 1128,
+      video: {
+        webm: "/media/products/drivers-diary/screen.webm",
+        mp4: "/media/products/drivers-diary/screen.mp4",
+      },
     },
   },
   {
@@ -428,9 +523,10 @@ export const products: Product[] = [
     media: {
       poster: "/media/bridge/poster.jpg",
       alt: "Bridge — dashboard, calendar and task board, recorded in daily use",
-      width: 1024,
-      height: 576,
+      width: 1280,
+      height: 660,
       video: { webm: "/media/bridge/capture.webm", mp4: "/media/bridge/capture.mp4" },
+      feature: { webm: "/media/bridge/feature.webm", mp4: "/media/bridge/feature.mp4" },
     },
   },
 ];
@@ -439,7 +535,9 @@ export interface Client {
   name: string;
   slug: string;
   industry: string;
-  website: string;
+  /** Omitted for a client with no live site (e.g. print-only work) —
+   *  callers must guard before rendering a "visit" link. */
+  website?: string;
   work: string[];
   /** The client's real logo. Optional — falls back to text. */
   brand?: Brand;
@@ -475,7 +573,7 @@ export const clients: Client[] = [
     industry: "Automotive retail",
     website: "https://www.soorathautos.in/",
     work: ["soorath-autos"],
-    brand: { src: "/media/brand/soorath.webp", alt: "Soorath Autos", width: 500, height: 500 },
+    brand: { src: "/media/brand/soorath.webp", alt: "Soorath Autos", width: 640, height: 640 },
   },
   {
     name: "HeadGreen",
@@ -484,6 +582,18 @@ export const clients: Client[] = [
     website: "https://www.headgreen.in/",
     work: ["headgreen"],
     brand: { src: "/media/brand/headgreen.webp", alt: "HeadGreen", width: 500, height: 826 },
+  },
+  {
+    name: "Ozone Fitout & Contracting W.L.L.",
+    slug: "ozone",
+    industry: "Interior fit-out & contracting",
+    work: ["ozone"],
+    brand: {
+      src: "/media/brand/ozone.webp",
+      alt: "Ozone Fitout & Contracting",
+      width: 800,
+      height: 360,
+    },
   },
 ];
 
@@ -519,6 +629,51 @@ export const principles = [
   "No invented metrics, no invented clients, no invented testimonials.",
   "Small releases beat annual rewrites.",
   "Accessibility and reduced motion are requirements, not polish.",
+];
+
+/** /about's origin narrative — the team's own framing of how MaCo started,
+ *  not a claim this file invents. Kept to what was actually said: a small
+ *  team, built alongside other work, no founding year or metric attached. */
+export const origin = {
+  eyebrow: "Origin",
+  heading: "Eight people, one discipline, built between other jobs.",
+  body: "MaCo started as work done alongside separate careers — hours spent building for clients who needed something that actually shipped. The team stayed small on purpose: people covering frontend, full-stack, infrastructure and the business side, all still hands-on. What began as extra hours became the standard the rest of the company runs on.",
+};
+
+/** A real MaCo team member. `role`/`bio`/`portrait` are per AGENTS.md's
+ *  no-invented-claims rule (see `principles` above) — nobody's job title or
+ *  bio gets written on their behalf. Until the team supplies them, `role`
+ *  and `bio` carry a visible pending state (same pattern as `Media.note`:
+ *  never let a stand-in read as the real thing) rather than a guess.
+ *  `portrait` mirrors `Media` so a real photo drops in with zero layout
+ *  shift the moment one exists; until then the card falls back to initials. */
+export interface TeamMember {
+  slug: string;
+  name: string;
+  role: string;
+  bio: string;
+  portrait?: Media;
+}
+
+export const team: TeamMember[] = [
+  { slug: "syed-mahroof", name: "Syed Mahroof", role: "Role — pending", bio: "Bio — pending." },
+  {
+    slug: "muhammed-sheffin-khan-p-a",
+    name: "Muhammed Sheffin Khan P A",
+    role: "Role — pending",
+    bio: "Bio — pending.",
+  },
+  {
+    slug: "alshid-mohammed",
+    name: "Alshid Mohammed",
+    role: "Role — pending",
+    bio: "Bio — pending.",
+  },
+  { slug: "minhaj-v-shams", name: "Minhaj V Shams", role: "Role — pending", bio: "Bio — pending." },
+  { slug: "sonu-mirza-a", name: "Sonu Mirza A", role: "Role — pending", bio: "Bio — pending." },
+  { slug: "akshai-n-v", name: "Akshai N V", role: "Role — pending", bio: "Bio — pending." },
+  { slug: "sahal-siyad", name: "Sahal Siyad", role: "Role — pending", bio: "Bio — pending." },
+  { slug: "arfin-nassar", name: "Arfin Nassar", role: "Role — pending", bio: "Bio — pending." },
 ];
 
 export const getService = (slug: string) => services.find((s) => s.slug === slug);

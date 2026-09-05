@@ -15,8 +15,9 @@ type Props = {
 };
 
 /**
- * Lazy-loaded globe section — supporting visual for connected systems context.
- * Decorative only; not a claim about offices or global presence.
+ * Lazy-loaded globe section. The five labelled points on the globe (Kochi,
+ * Bangalore, Chennai, Qatar, Dubai) are real MaCo operational hubs; the
+ * remaining unlabelled points are ambient network decoration only.
  *
  * Mounted behind a `mounted` gate, not just `React.lazy`+`Suspense` alone:
  * `react-globe.gl` -> `globe.gl` -> `three-globe` is a fully static import

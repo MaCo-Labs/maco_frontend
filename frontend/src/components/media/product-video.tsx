@@ -17,7 +17,9 @@ type Props = {
 
 type NetworkInformation = { saveData?: boolean; effectiveType?: string };
 
-function autoplayAllowed(reduced: boolean): boolean {
+/** Exported so other autoplaying video surfaces (the masked hero) apply the
+ *  same policy instead of a second, drifting copy of these checks. */
+export function autoplayAllowed(reduced: boolean): boolean {
   if (reduced) return false;
   if (typeof window === "undefined") return false;
   if (!window.matchMedia("(pointer: fine)").matches) return false; // no touch-primary

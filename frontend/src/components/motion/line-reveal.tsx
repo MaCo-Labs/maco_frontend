@@ -99,7 +99,7 @@ export function LineReveal({
                 opacity: 1,
                 ease: "none",
                 stagger: { each: 0.12, from: "start" },
-                scrollTrigger: { trigger: el, start, end, scrub: 0.4, invalidateOnRefresh: true },
+                scrollTrigger: { trigger: el, start, end, scrub: 0.6, invalidateOnRefresh: true },
               },
             );
           }

@@ -31,7 +31,7 @@ const ITEMS: AccordionItem[] = services
 /**
  * CAPABILITY — `section#features.cb-feature`. Cuberto's most distinctive
  * homepage device: the whole capability offer as one column of numbered,
- * expandable rows, first row open, one open at a time.
+ * expandable rows, none open until hovered or clicked, one open at a time.
  *
  * Replaces `services-convergence.tsx` (two cards flying in from opposite
  * edges and locking into a pinned stack). That was a good device but it
@@ -66,7 +66,8 @@ const ITEMS: AccordionItem[] = services
  */
 export function FeatureAccordion() {
   return (
-    <section data-ground="paper" aria-label="Capabilities">
+    <section data-ground="paper" aria-label="Capabilities" className="relative overflow-hidden">
+      <div aria-hidden="true" className="ambient-field" />
       <div className="shell cb-section">
         <ScrubReveal hold>
           <p className="label">Capability</p>
@@ -81,7 +82,7 @@ export function FeatureAccordion() {
         </LineReveal>
 
         <div className="mt-12 md:mt-16">
-          <Accordion items={ITEMS} defaultOpen={ITEMS[0]?.id} panel="inverted" />
+          <Accordion items={ITEMS} panel="inverted" />
         </div>
       </div>
     </section>

@@ -75,7 +75,7 @@ function WorkDetail() {
               ["Client", p.client],
               ["Sector", p.sector],
               ["Type", "Client project"],
-              ["Live", "Public"],
+              p.external_url ? ["Live", "Public"] : ["Delivered", "Print / brand piece"],
             ].map(([k, v], i) => (
               <div
                 key={k}
@@ -127,16 +127,18 @@ function WorkDetail() {
                 );
               })}
             </div>
-            <Magnetic className="mt-8 inline-block">
-              <a
-                href={p.external_url}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="btn-solid"
-              >
-                Visit {p.title} ↗
-              </a>
-            </Magnetic>
+            {p.external_url && (
+              <Magnetic className="mt-8 inline-block">
+                <a
+                  href={p.external_url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="btn-solid"
+                >
+                  Visit {p.title} ↗
+                </a>
+              </Magnetic>
+            )}
           </div>
         </div>
       </section>
