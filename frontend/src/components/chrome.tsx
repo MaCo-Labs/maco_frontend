@@ -1053,7 +1053,7 @@ export function Footer() {
           the custom cursor into the light source while hovering here —
           see cursor.tsx's CURSOR_SELECTOR and styles.css's
           `[data-state="torch"]` rule. */}
-      <div className="shell overflow-hidden">
+      <div className="shell footer-giant-shell overflow-hidden">
         <div
           ref={giantMarkRef}
           data-cursor="torch"

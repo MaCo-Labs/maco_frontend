@@ -961,6 +961,19 @@ footer:has([data-cursor="torch"]:hover) .shell:not(:last-child) {
    so 800 costs nothing extra; Michroma (Cobalt) is single-static-weight
    (AGENTS.md §13) and would fake-bold if forced, so Cobalt gets mass from
    size and tighter tracking instead. */
+/* Sizes `.footer-giant-mark` off THIS box's own content width, not the raw
+   viewport — the old `22vw` was measured against the viewport, but the
+   text actually has to fit inside `.shell`'s padded box (viewport minus
+   2 x 1.25rem/2.5rem), a mismatch that gets proportionally worse on
+   narrower phones where that fixed padding eats a bigger share of the
+   width. Confirmed as the real overflow source (owner-reported "MaCo" cut
+   off at the right edge on mobile, both themes — Michroma's own metrics
+   in Cobalt run wider than Unbounded's, so it clipped there too): `cqw`
+   below reads THIS container's actual inner width directly, so the same
+   `22` coefficient fits regardless of device width or theme font. */
+.footer-giant-shell {
+  container-type: inline-size;
+}
 .footer-giant-mark {
   display: block;
   width: 100%;
@@ -981,6 +994,9 @@ footer:has([data-cursor="torch"]:hover) .shell:not(:last-child) {
   letter-spacing: -0.03em;
   text-align: center;
   font-size: clamp(5rem, 22vw, 20rem);
+  /* Container-relative override — browsers without `cqw` support ignore
+     this whole declaration (invalid unit) and keep the `vw` one above. */
+  font-size: clamp(5rem, 22cqw, 20rem);
   white-space: nowrap;
   color: transparent;
 }
@@ -1598,6 +1614,26 @@ html[data-theme="cobalt"] .footer-giant-mark {
   --radius-pill: 1000px;
 }
 
+/* Default (mode 1) mobile header: `.header-controls-primary` (LayoutSwitch
+   + ThemeSwitch) sits inline with the wordmark in `.shell`'s own flex row —
+   no fixed/overlay repositioning at this mode, unlike 2/3. Below `lg` the
+   nav row and CTA already hide (Tailwind's `lg:flex`/`lg:inline-flex` in
+   chrome.tsx), but ThemeSwitch's text label ("Obsidian"/"Cobalt") didn't:
+   wordmark + LayoutSwitch's three buttons + that label together overflowed
+   past a mobile `.shell` width — confirmed live, the label ran off the
+   right edge under the browser's own tab-count chip. Same icon-only fix
+   mode 3 already applies to this exact button below the same breakpoint
+   (further down this file), generalized here since mode 1 hits the
+   identical unfitted-row problem that fix was written for. */
+@media (max-width: 63.999rem) {
+  .header-controls-primary .theme-switch-text {
+    display: none;
+  }
+  .header-controls-primary button[aria-label^="Switch to"] {
+    padding-inline: 0.6rem;
+  }
+}
+
 /* ============================================================
    LAYOUT MODES — a small numbered switcher (chrome.tsx), studied
    from by-kin.com's own LAYOUT 1/2 toggle. Mode 1 is the site as
@@ -1990,6 +2026,21 @@ html[data-layout="3"] .header-control-cluster {
   gap: 0.75rem;
   pointer-events: auto;
 }
+/* 2026-09-06: mobile only — moved off the top-left corner, which put it
+   directly beside/under `.layout-nav-overlay-brand`'s centered chip
+   (owner-reported: the two visibly collided). Desktop's own top-left
+   placement above is untouched (no collision there — the brand chip sits
+   further down at `top: 2rem` and this cluster's `min-width:64rem` sibling
+   rule below moves it to the bottom-left besides). The centered brand chip
+   is otherwise unclaimed on the right at this width (CTA and the mode-2/3
+   hamburger are both hidden here), so the cluster has the whole side to
+   itself with no further layout change needed. */
+@media (max-width: 63.999rem) {
+  html[data-layout="3"] .header-control-cluster {
+    left: auto;
+    right: 1.25rem;
+  }
+}
 @media (min-width: 64rem) {
   html[data-layout="3"] .header-control-cluster {
     left: 2.5rem;
@@ -2092,6 +2143,20 @@ html[data-layout="3"] .header-control-cluster {
 @media (max-width: 767.999px) {
   html[data-layout="2"] .layout-nav-links {
     margin-top: auto;
+    /* Floor, not a guess at final position: `margin-top: auto` above
+       collapses to 0 once the 7-item list (Home + `site.nav` + CTA)
+       is taller than the panel, which it is on most phone heights — with
+       no floor the list then starts flush at y=0, squarely inside
+       `LAYOUT_NAV_OPEN_MOBILE`'s (chrome.tsx) excluded top-left triangle
+       at the left edge (visible until 30% of panel height down), clipping
+       "Home" entirely. Padding can't collapse the way margin-auto does,
+       so this guarantees the same 30% clearance the clip shape itself
+       uses regardless of how much content overflows; `overflow-y-auto`
+       (chrome.tsx) handles the rest via scroll. dvh first for browsers
+       that support it (matches the fixed `inset-0` panel's actual dynamic
+       height more closely than vh on mobile Safari); vh is the fallback. */
+    padding-top: 30vh;
+    padding-top: 30dvh;
     padding-bottom: 3rem;
   }
 }
