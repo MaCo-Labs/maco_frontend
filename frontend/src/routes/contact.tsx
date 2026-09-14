@@ -14,7 +14,7 @@ export const Route = createFileRoute("/contact")({
       {
         name: "description",
         content:
-          "Send MaCo the problem, the constraint and the deadline. We reply with scope. Email hello@maco.dev or use the enquiry form.",
+          "Send MaCo the problem, the constraint and the deadline. We reply with scope. Email info@maco.codes or use the enquiry form.",
       },
       { property: "og:title", content: "Contact — MaCo" },
       {
