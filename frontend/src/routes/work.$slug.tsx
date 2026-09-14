@@ -144,7 +144,7 @@ function WorkDetail() {
       </section>
 
       <section data-ground="paper" aria-label="Next case study">
-        <div className="shell py-14 lg:py-20">
+        <div className="shell dock-clearance-b py-14 lg:py-20">
           <p className="label">Next case study</p>
           <Link
             to="/work/$slug"

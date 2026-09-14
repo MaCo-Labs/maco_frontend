@@ -270,6 +270,26 @@ html[data-preload="skip"] .maco-preloader {
   color: var(--text-inverted);
 }
 
+/* Item 2 — MobilePillNav hides during active scroll (chrome.tsx's shared
+   ticker writes `data-scrolling` onto this same element) and slides back
+   ~200ms after scroll settles, so it stops permanently eating ~4.5rem of
+   viewport height on every mobile page. `data-open` is set by
+   MobilePillNav itself (React state, not the ticker) and always wins —
+   the open panel must never hide mid-interaction, even on a stale
+   velocity read the instant `lenis.stop()` (useOverlayMenu) takes hold. */
+/* Reduced motion: the dock stays put, full stop — a disappearing/
+   reappearing fixed element reads as motion regardless of whether the
+   transform between the two states is eased or instant. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-mobile-pill-nav] {
+    transition: transform 0.3s var(--ease-standard);
+  }
+  [data-mobile-pill-nav][data-scrolling="true"]:not([data-open]) {
+    transform: translateY(150%);
+    pointer-events: none;
+  }
+}
+
 /* Adaptive chrome — chrome.tsx's <Header> and <MobilePillNav>, both
    `position: fixed` and mounted outside every section's DOM subtree, so
    they never naturally inherit a [data-ground] remap. chrome.tsx's
@@ -1634,6 +1654,21 @@ html[data-theme="cobalt"] .footer-giant-mark {
 @media (max-width: 63.999rem) {
   html[data-layout="1"] .header-controls-primary {
     display: none;
+  }
+}
+
+/* Item 2 — extra trailing clearance for a route's LAST section on pages
+   that don't end in `<PageOutro>` (which already runs into the deep-ground
+   Footer's own generous `pb-28`). `work.$slug.tsx`/`products.$slug.tsx`'s
+   closing "Next case study"/"Other product" link previously had only the
+   section's own `py-14` (3.5rem) before the Footer began — enough for
+   MobilePillNav (hide-on-scroll above helps, but the dock is still VISIBLE
+   at rest) to sit directly over that link at some scroll positions. Scoped
+   to match the dock's own visibility exactly (hidden in modes 2/3, so no
+   extra clearance needed there either). */
+@media (max-width: 63.999rem) {
+  html:not([data-layout="2"]):not([data-layout="3"]) .dock-clearance-b {
+    padding-bottom: max(6.5rem, calc(env(safe-area-inset-bottom) + 6rem));
   }
 }
 

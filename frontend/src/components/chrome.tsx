@@ -55,6 +55,7 @@ function MobilePillNav() {
       <div
         data-mobile-pill-nav
         data-over="paper"
+        data-open={open || undefined}
         suppressHydrationWarning
         className="chrome-adaptive fixed inset-x-0 bottom-0 z-50 hidden max-lg:flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       >
@@ -648,6 +649,12 @@ export function Header() {
     // attribute as a hydration mismatch — confirmed live by toggling this
     // write off and on. Skipping the no-op write removes the race.
     let lastVel = 0;
+    // MobilePillNav hide-on-scroll: last tick where velocity exceeded the
+    // threshold below. Plain elapsed-time comparison on every tick, not a
+    // setTimeout — a timer re-armed every scrolling frame is no different
+    // in effect but adds a second clock to reason about; this reuses the
+    // ticker's own clock the same way `lastTop`/`lastEdge` above do.
+    let lastActiveAt = 0;
 
     getScrollRuntime().then((rt) => {
       if (cancelled || !rt) return;
@@ -718,6 +725,16 @@ export function Header() {
             el.style.setProperty("--vel", String(vel));
           }
         }
+
+        // Dock hide-on-scroll (item 2): 1.5px/frame is a fraction of a
+        // single wheel notch (~8-12, per the `vel` comment above) — enough
+        // to catch the very start of a scroll without false-triggering on
+        // sub-pixel Lenis settle jitter at rest. `data-open` (set by
+        // MobilePillNav itself) always wins over this in CSS, so the open
+        // panel is never hidden mid-interaction even on stale velocity.
+        const now = performance.now();
+        if (Math.abs(rawVel) > 1.5) lastActiveAt = now;
+        if (mobileNav) mobileNav.dataset["scrolling"] = String(now - lastActiveAt < 200);
       };
       rt.gsap.ticker.add(applyGround);
     });

@@ -243,7 +243,7 @@ function ProductDetail() {
       )}
 
       <section data-ground="paper" aria-label="Other product">
-        <div className="shell py-14 lg:py-20">
+        <div className="shell dock-clearance-b py-14 lg:py-20">
           <p className="label">Other product</p>
           <Link
             to="/products/$slug"
