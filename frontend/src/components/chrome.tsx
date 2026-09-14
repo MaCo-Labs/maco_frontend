@@ -3,8 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { nameScripts, site } from "@/content/maco";
 import { Mark, Wordmark } from "./mark";
-import { useTheme } from "./theme";
-import { useLayout, type LayoutMode } from "./layout-mode";
+import { ExperienceSwitch } from "./experience-switch";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
@@ -15,80 +14,6 @@ import { getScrollRuntime } from "@/lib/scroll-runtime";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 import { DUR, EASE_EMPHASIS, EASE_EXIT } from "@/lib/motion";
 import { groundAt, SECTION_SELECTOR, type Ground } from "@/lib/ground";
-
-function ThemeSwitch() {
-  const { theme, setTheme } = useTheme();
-  const btnRef = useRef<HTMLButtonElement>(null);
-  return (
-    <Magnetic>
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={() => {
-          const rect = btnRef.current?.getBoundingClientRect();
-          const origin = rect
-            ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
-            : undefined;
-          setTheme(theme === "obsidian" ? "cobalt" : "obsidian", origin);
-        }}
-        aria-label={`Switch to ${theme === "obsidian" ? "Cobalt (blue on white)" : "Obsidian (black on white)"} theme`}
-        className="label group flex min-h-11 items-center gap-2 border border-line px-3 py-2 transition-colors hover:border-text hover:text-text"
-      >
-        <span
-          className="block h-2.5 w-2.5 border border-current transition-transform duration-300 group-hover:rotate-90"
-          style={{ background: "var(--accent)" }}
-        />
-        {/* Classed (not a bare text node) so layout 3's mobile control
-            cluster (styles.css) can hide it — measured live: the cluster's
-            full "1 2 3 [swatch] Obsidian" footprint (~195px) genuinely
-            overlapped the centered brand chip's hit area on a 390px
-            viewport (elementFromPoint confirmed the brand's own higher
-            z-index was swallowing clicks meant for this button). Text
-            hides, swatch stays — same pattern as `maco-wordmark-text`. */}
-        <span className="theme-switch-text">{theme === "obsidian" ? "Obsidian" : "Cobalt"}</span>
-      </button>
-    </Magnetic>
-  );
-}
-
-const LAYOUT_MODES: readonly LayoutMode[] = ["1", "2", "3"];
-
-/**
- * Small numbered layout switcher, studied from by-kin.com's own LAYOUT 1/2
- * toggle — MaCo's own type/tokens throughout, three modes instead of two.
- * Always visible (every mode, every viewport) since it's the only way back
- * out of modes 2/3 once chosen. Persists via `setLayout` (localStorage +
- * the pre-paint script in __root.tsx), same anti-FOUC shape as ThemeSwitch.
- */
-function LayoutSwitch() {
-  const { layout, setLayout } = useLayout();
-  return (
-    <div role="group" aria-label="Layout" className="label flex items-center border border-line">
-      {LAYOUT_MODES.map((mode) => {
-        const active = layout === mode;
-        return (
-          <button
-            key={mode}
-            type="button"
-            onClick={() => setLayout(mode)}
-            aria-pressed={active}
-            aria-label={`Layout ${mode}`}
-            // Height only, not width: growing width here re-adds to the
-            // ~195px mode-3 mobile footprint styles.css:1930-1936 already
-            // fought to shrink below the centered brand chip's overlap.
-            className="flex h-11 w-8 items-center justify-center border-r border-line transition-colors last:border-r-0 hover:text-text"
-            style={{
-              background: active ? "var(--text)" : "transparent",
-              color: active ? "var(--bg)" : "var(--muted)",
-            }}
-          >
-            {mode}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 /**
  * Mobile floating pill — MaCo-native (React Bits Pill Nav evaluated;
@@ -154,7 +79,7 @@ function MobilePillNav() {
                     <Mark size={18} />
                     MaCo
                   </span>
-                  <ThemeSwitch />
+                  <ExperienceSwitch />
                 </div>
                 <nav aria-label="Mobile">
                   <Link
@@ -849,8 +774,7 @@ export function Header() {
                 copy. Everywhere else (modes 1 and 3, which have no such
                 backdrop) this is the only copy and stays visible. */}
             <div className="header-controls-primary flex items-center gap-3">
-              <LayoutSwitch />
-              <ThemeSwitch />
+              <ExperienceSwitch />
             </div>
             {/* Same reservation as the brand-group spacer above, for the
                 mode-3 (top-right) trigger placement. */}
@@ -902,20 +826,19 @@ export function Header() {
           {/* Mode 2 only (styles.css) — the wipe covers everything BEHIND
               this overlay, but this overlay itself is the layer that must
               stay visible throughout, per the reference: CLOSE (left,
-              LayoutNavTrigger above) / wordmark (center) / layout switch +
-              theme toggle + CTA (right) never disappear under the panel.
-              LayoutSwitch/ThemeSwitch's real copy lives in the header below
-              (`.header-controls-primary`) for modes 1/3, which have no
-              backdrop here to hide behind — this is the working copy for
-              mode 2 specifically, not a second independent instance
-              visible at the same time as that one (CSS shows exactly one
-              per mode). `ml-auto` here (not on the CTA) is what pushes the
-              whole right-hand group away from centre; harmless in mode 3,
-              where this stays `display:none` (as does the right trigger,
-              which also carries an `ml-auto` for that mode). */}
+              LayoutNavTrigger above) / wordmark (center) / Experience +
+              CTA (right) never disappear under the panel. ExperienceSwitch's
+              other copy lives in the header below (`.header-controls-primary`)
+              for modes 1/3, which have no backdrop here to hide behind —
+              this is the working copy for mode 2 specifically, not a second
+              independent instance visible at the same time as that one (CSS
+              shows exactly one per mode). `ml-auto` here (not on the CTA) is
+              what pushes the whole right-hand group away from centre;
+              harmless in mode 3, where this stays `display:none` (as does
+              the right trigger, which also carries an `ml-auto` for that
+              mode). */}
           <div className="layout-nav-overlay-controls pointer-events-auto ml-auto hidden items-center gap-3">
-            <LayoutSwitch />
-            <ThemeSwitch />
+            <ExperienceSwitch />
           </div>
           <Magnetic className="layout-nav-overlay-cta pointer-events-auto hidden">
             <Link to="/contact" className="btn-solid !px-4 !py-2.5">

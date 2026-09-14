@@ -1618,23 +1618,22 @@ html[data-theme="cobalt"] .footer-giant-mark {
   --radius-pill: 1000px;
 }
 
-/* Default (mode 1) mobile header: `.header-controls-primary` (LayoutSwitch
-   + ThemeSwitch) sits inline with the wordmark in `.shell`'s own flex row —
-   no fixed/overlay repositioning at this mode, unlike 2/3. Below `lg` the
-   nav row and CTA already hide (Tailwind's `lg:flex`/`lg:inline-flex` in
-   chrome.tsx), but ThemeSwitch's text label ("Obsidian"/"Cobalt") didn't:
-   wordmark + LayoutSwitch's three buttons + that label together overflowed
-   past a mobile `.shell` width — confirmed live, the label ran off the
-   right edge under the browser's own tab-count chip. Same icon-only fix
-   mode 3 already applies to this exact button below the same breakpoint
-   (further down this file), generalized here since mode 1 hits the
-   identical unfitted-row problem that fix was written for. */
+/* Default (mode 1) mobile header: `.header-controls-primary` (now
+   `ExperienceSwitch`) sits inline with the wordmark in `.shell`'s own flex
+   row — no fixed/overlay repositioning at this mode, unlike 2/3. 2026-09-14:
+   hidden below `lg` entirely here (not just shrunk) — the brief calls for
+   Layout/Theme living inside the mobile menu instead of the compact header;
+   `MobilePillNav`'s panel (chrome.tsx) renders its own `ExperienceSwitch`
+   copy for that. Scoped to `html[data-layout="1"]` only: mode 3 has no
+   mobile menu to move this into (`[data-mobile-pill-nav]` is
+   `display:none` there) — its own fixed-corner copy of this same
+   container (`.header-control-cluster`, below) is that mode's only mobile
+   access to Layout/Theme, so it must stay visible and untouched by this
+   rule. Mode 2's own overlay copy (`.layout-nav-overlay-controls`) is a
+   different container entirely, also unaffected. */
 @media (max-width: 63.999rem) {
-  .header-controls-primary .theme-switch-text {
+  html[data-layout="1"] .header-controls-primary {
     display: none;
-  }
-  .header-controls-primary button[aria-label^="Switch to"] {
-    padding-inline: 0.6rem;
   }
 }
 
@@ -1968,38 +1967,26 @@ html[data-layout="3"] .layout-nav-overlay-brand {
 }
 /* Below `64rem` the brand shares the top row with `.header-control-cluster`
    (relocated there too — see its own rule below, same breakpoint). A full
-   "MaCo" chip centered plus the layout/theme cluster in a corner don't
-   both fit a 390px viewport without overlapping. Text hides, mark stays —
+   "MaCo" chip centered plus the corner control don't both fit a 390px
+   viewport without overlapping. Text hides, mark stays —
    `maco-wordmark-text` (mark.tsx) — shrinking the chip to icon-only width.
    Desktop keeps the full wordmark; only this mode-3 mobile row is tight.
-   Confirmed live via `elementFromPoint` before this rule existed: the
-   cluster's OWN full footprint (LayoutSwitch's 3 buttons + ThemeSwitch's
-   swatch-plus-label, ~195px) still overlapped even the shrunk chip by
+   Confirmed live via `elementFromPoint` before this rule existed: the old
+   two-control cluster (LayoutSwitch's 3 buttons + ThemeSwitch's
+   swatch-plus-label, ~195px combined) overlapped even the shrunk chip by
    ~58px, and the brand's higher z-index ([data-nav-trigger-overlay] is
    z-[47] vs the header's z-[42]) meant it silently ate every click meant
-   for the theme button underneath — the two chips didn't look broken
-   overlapping, but the button in that zone stopped being clickable.
-   `.theme-switch-text` (chrome.tsx) hides ThemeSwitch's own label the same
-   way, closing the real gap rather than just the visual one. */
+   for the button underneath. 2026-09-14: the cluster is now one
+   `ExperienceSwitch` trigger (chrome.tsx) instead of four buttons combined
+   — the ThemeSwitch-label-hiding/gap-tightening rules this block used to
+   need are gone with it; re-measure before reintroducing similar rules if
+   "Experience" ever collides with the chip again at this width. */
 @media (max-width: 63.999rem) {
   html[data-layout="3"] .layout-nav-overlay-brand .maco-wordmark-text {
     display: none;
   }
   html[data-layout="3"] .layout-nav-overlay-brand {
     padding-inline: 0.6rem;
-  }
-  html[data-layout="3"] .header-control-cluster .theme-switch-text {
-    display: none;
-  }
-  html[data-layout="3"] .header-control-cluster button[aria-label^="Switch to"] {
-    padding-inline: 0.6rem;
-  }
-  /* Still 4px short after the two rules above — the remaining slack is
-     `.header-controls-primary`'s own `gap-3` (0.75rem) between LayoutSwitch
-     and ThemeSwitch (chrome.tsx), tightened here rather than shaving the
-     brand chip further (already at its own minimum comfortable padding). */
-  html[data-layout="3"] .header-controls-primary {
-    gap: 0.375rem;
   }
 }
 @media (min-width: 64rem) {
