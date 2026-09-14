@@ -16,13 +16,13 @@ export const Route = createFileRoute("/work/")({
       {
         name: "description",
         content:
-          "Case studies from MaCo: Ananta Nethralaya, Al Afzah Group, Soorath Autos and HeadGreen.",
+          "Case studies from MaCo: Ananta Nethralaya, Al Afzah Group, Soorath Autos, HeadGreen and Ozone Fitout & Contracting.",
       },
       { property: "og:title", content: "Work — MaCo" },
       {
         property: "og:description",
         content:
-          "Real client work across healthcare, construction, automotive retail and EV mobility.",
+          "Real client work across healthcare, construction, automotive retail, EV mobility and interior fit-out.",
       },
     ],
   }),
@@ -53,7 +53,7 @@ function WorkIndex() {
           <p className="label lg:col-span-3">Index / Client work</p>
           <div className="lg:col-span-9">
             <LineReveal as="h1" className="display-lg max-w-3xl">
-              Four clients. <span style={{ color: "var(--muted)" }}>Four different problems.</span>
+              Five clients. <span style={{ color: "var(--muted)" }}>Five different problems.</span>
             </LineReveal>
             <ScrubReveal as="p" hold className="mt-8 max-w-xl text-muted">
               Client work is kept separate from MaCo-owned products. Everything below was delivered
@@ -162,7 +162,7 @@ function WorkIndex() {
                       Case study
                     </Link>
                   </Magnetic>
-                  {activeProject.external_url && (
+                  {activeProject.external_url ? (
                     <Magnetic>
                       <a
                         href={activeProject.external_url}
@@ -173,6 +173,8 @@ function WorkIndex() {
                         Visit site ↗
                       </a>
                     </Magnetic>
+                  ) : (
+                    <span className="label self-center text-muted">Print / brand piece</span>
                   )}
                 </div>
               </div>

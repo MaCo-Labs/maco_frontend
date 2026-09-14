@@ -15,7 +15,7 @@ export const Route = createFileRoute("/clients")({
       {
         name: "description",
         content:
-          "Ananta Nethralaya, Al Afzah Group WLL, Soorath Autos and HeadGreen — the organisations behind MaCo's delivered work.",
+          "Ananta Nethralaya, Al Afzah Group WLL, Soorath Autos, HeadGreen and Ozone Fitout & Contracting — the organisations behind MaCo's delivered work.",
       },
       { property: "og:title", content: "Clients — MaCo" },
       {
@@ -74,7 +74,7 @@ function ClientRow({ c, i }: { c: (typeof clients)[number]; i: number }) {
               );
             })}
           </ul>
-          {c.website && (
+          {c.website ? (
             <a
               href={c.website}
               target="_blank"
@@ -83,6 +83,10 @@ function ClientRow({ c, i }: { c: (typeof clients)[number]; i: number }) {
             >
               {c.website.replace("https://", "").replace(/\/$/, "")} ↗
             </a>
+          ) : (
+            <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
+              Print / brand piece
+            </p>
           )}
         </div>
       </div>
