@@ -61,6 +61,154 @@ file list; treat `CONTEXT.md` (updated through all of them) as the current
 source of truth for what the homepage, `/services/$slug`, and `/about`
 look like, not just the last commit.
 
+**2026-09-15 correction:** the "uncommitted" framing above and in
+`PROJECT_STATUS.md`/`ROADMAP.md` is stale — every pass listed through the
+2026-09-05 entries is committed as of this session (`git log --oneline` on
+`homepage-reset` is authoritative, not this paragraph). This file was
+simply never revisited between the 2026-09-05 session and this one; no
+attempt was made this session to reconcile the ~9-day gap in narrative
+detail (commit messages after 2026-09-05 don't map 1:1 to the pass names
+above) — that would be its own cleanup pass, not a side effect of the work
+below.
+
+## 2026-09-14/15 session — external audit brief: Phase 1 shipped, Phase 2 partial, Signal Rail built then reverted (committed)
+
+An outside-written audit brief (not the owner directly) asked for a full
+site audit against 12 numbered items across 3 phases (trust/mobile quality,
+wayfinding/interaction, credibility/finishing) plus a new "Signal Rail"
+wayfinding concept. Worked through Phase 1 in full, part of Phase 2, and
+confirmed the rest needed no changes. **All committed** — 13 commits on
+`homepage-reset`, `git log --oneline` has the full list; summarized here,
+not narrated commit-by-commit.
+
+**Phase 1 (items 1-5), all shipped:**
+
+1. **Experience control.** `LayoutSwitch`/`ThemeSwitch` (two separate
+   controls) consolidated into one `ExperienceSwitch`
+   (`components/experience-switch.tsx`, new) — a single "Experience"
+   trigger opening a portaled popover with Appearance and Layout as
+   labeled option-groups, reusing the same border-line button language.
+   Drop-in at every prior call site. Hidden from the compact mobile header
+   in the default experience (mode 1) and moved into the mobile pill
+   nav's panel instead — modes 2/3 keep their existing fixed-corner
+   copies unchanged, since neither has a mobile menu to move it into. See
+   `CONTEXT.md` §10 for the full mechanism.
+2. **Mobile dock.** `MobilePillNav` now hides during active scroll and
+   slides back ~300ms after it settles (reuses `chrome.tsx`'s existing
+   per-frame ground-tracking ticker, no second scroll listener), skipped
+   entirely under reduced motion. `work.$slug.tsx`/`products.$slug.tsx`'s
+   closing sections (no `PageOutro` runway, unlike the index pages) got a
+   `dock-clearance-b` utility so their last link can always be scrolled
+   fully clear of the dock.
+3. **Content accuracy.** Three stale "four clients" spots fixed to five
+   (`work.index.tsx`'s H1 and meta description, `clients.tsx`'s meta
+   description, a stale code comment in `logo-reel.tsx`). Ozone's missing
+   visit-link on `work.index.tsx`'s hover-stage and `clients.tsx`'s roster
+   row now shows "Print / brand piece" (the label `work.$slug.tsx`
+   already used) instead of silently omitting the link. Also fixed:
+   `contact.tsx`'s meta description said "Email hello@maco.dev" — a
+   domain that appeared nowhere else in the repo; corrected to the real
+   `site.contact_email`.
+4. **Preloader.** `MIN_DURATION_MS` cut 2600ms → 1100ms; a "Skip" control
+   added beside Enter, auto-focused on mount and clickable/keyboard-
+   activatable immediately (Enter stays gated on `ready`). See
+   `CONTEXT.md` §10 for the exit-transition detail (Skip uses a 0.05s
+   collapse vs. Enter's 0.7s flourish).
+5. **Product proof.** `products.$slug.tsx` rendered zero media before this
+   — Driver's Diary and Bridge's real device/dashboard capture (already
+   proven on the `/products` index card, just never called from the
+   detail route) now appears in the hero, ordered first in the DOM so
+   mobile sees it before the CTA row. No new assets.
+
+**Phase 2 (items 6-8):**
+
+7. **Services capability rows** (`services.$slug.tsx`) were hover-only
+   CSS with no touch/keyboard path. Rows are now real
+   `<button aria-pressed>` elements — tap/click selects one and keeps it
+   visually active until another is chosen (same single-select shape
+   `home/accordion.tsx` already uses), desktop's existing `group-hover`
+   effect untouched.
+8. **Work index mobile image.** `work.index.tsx`'s hover-driven media
+   stage is desktop-only (`hidden lg:block`); mobile got no project image
+   at all. Each row now carries its own `CardMedia` directly below it (a
+   sibling of the row's `<Link>`, not nested inside — `MorphSlider`'s
+   controls are real `<button>`s, invalid inside an `<a>`), deliberately
+   without a `gallery` prop — five simultaneous `MorphSlider` WebGL
+   contexts on one mobile page measurably went black under context
+   pressure during testing. The swipeable multi-shot gallery moved to
+   `work.$slug.tsx` instead (only one project ever on that page, so one
+   WebGL instance, and a better fit for a deep-dive than a list view).
+6. **Signal Rail — built, then reverted.** Built the brief's four-stop
+   wayfinding concept (Scope→Model→Build→Hand over): a desktop right-edge
+   rail reusing `EdgeNav`'s exact dot CSS, plus phase dots baked into the
+   mobile pill nav's trigger button. Verified working correctly (every
+   route mapped to the right stop, hidden in modes 2/3, no new
+   dependencies) — **then explicitly reverted per the owner's direct
+   request** ("i dont want this remove them"). `git revert` applied
+   cleanly (`nav/signal-rail.tsx` and `lib/signal-rail.ts` deleted,
+   `chrome.tsx`/`__root.tsx`/`styles.css` restored) — the code no longer
+   exists in this checkout. Documented here only so a future session
+   doesn't re-propose the identical thing without knowing it was tried
+   and explicitly declined.
+
+**Phase 3:** items 9 (About) and 10 (Clients) needed **no code changes** —
+both already matched the brief on inspection (globe already
+supporting-scale not dominant, team data already real not invented,
+five-client roster and live/brochure distinction already correct once
+item 3 above landed). Item 11 (Contact budget currency): the owner chose
+to leave the INR-only wording as-is rather than invent AED/QAR band
+values with no source data behind them — see `ROADMAP.md`. A separate,
+directly-requested addition: an "Under ₹50K" budget tier (the smallest
+prior tier was "Under ₹1L", leaving no option for a smaller-scoped
+enquiry) — `budgets` in `contact.tsx` now starts `["Under ₹50K", "₹50K –
+₹1L", ...]`. Item 12 (metadata/a11y): every route already had unique
+`head()` metadata and one H1 per the original audit; `aria-live` added
+where this session's own new dynamic content needed it (the Work index
+desktop stage's caption, ExperienceSwitch's own state). **Not verified
+this session:** a formal colour-contrast audit — no tool for that
+available, and the existing token system was trusted as-is since nothing
+was flagged.
+
+**One real bug found and fixed along the way, not in the original
+brief:** `ExperienceSwitch`'s popover always opened downward and
+right-aligned — correct for the header/mobile-menu call sites (trigger
+near the top-right), but layout 3's desktop copy of this same control
+sits fixed bottom-left, where that fixed offset pushed the panel almost
+entirely below the viewport and off the left edge at once (owner-
+reported, screenshot with a green box around the misplaced panel).
+Positioning is now computed from the trigger's own `getBoundingClientRect()`
+each open — flips upward when there's no room below, clamps left/right so
+it can never run off either side.
+
+**A second investigation, after the owner reported an empty box on the
+homepage's closing section:** did not reproduce against a clean build —
+`home/outro.tsx` was untouched this session and renders correctly. Root
+cause was this session's own test hygiene: ~35 `node` processes had
+accumulated in the background over the session's many rebuild/preview
+cycles, two of them simultaneously bound to port 3000, one serving a
+stale SSR page whose CSS/JS asset references no longer matched what was
+on disk (500s on `styles-*.css`/`index-*.js`). Whatever the owner's
+browser hit was very likely that broken instance. Killed every `node.exe`
+process and confirmed a single clean server serves the section correctly
+— no code fix needed. A following scroll-smoothness pass (real
+`mouse.wheel()` events, not `window.scrollTo`, down and back up on `/`,
+`/about`, `/services/business-software`, `/work/ananta-nethralaya`,
+`/products/bridge`) found zero console errors, zero stuck
+`ScrollTrigger` pin-spacers, and visually clean section transitions at 5
+scroll depths on the homepage.
+
+Verified this session: `npx eslint` and `npx tsc --noEmit` clean after
+every commit (pre-existing `vite.config.ts` prettier issues and 3
+`react-refresh` warnings, both predating this session, left alone —
+outside its scope). `npm run build` clean throughout. Every change
+verified live via Playwright against **production builds**
+(`npm run build` + `node .output/server/index.mjs`), not just the dev
+server — the dev server's own hydration/HMR timing produced enough false
+positives during debugging (chased at length before being ruled out) that
+production builds became the trustworthy signal for anything preloader-
+or timing-sensitive. A 16-route × 3-viewport sweep (desktop, 375px,
+414px) with a hard refresh on every route came back clean.
+
 ## 2026-09-05 session, later — contact/client/fix pass (uncommitted)
 
 Owner supplied real contact details, a new client with a print-only
