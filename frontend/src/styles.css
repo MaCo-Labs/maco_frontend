@@ -266,6 +266,10 @@ html[data-preload="skip"] .maco-preloader {
   display: none;
 }
 
+.preloader-skip:hover {
+  color: var(--text-inverted);
+}
+
 /* Adaptive chrome — chrome.tsx's <Header> and <MobilePillNav>, both
    `position: fixed` and mounted outside every section's DOM subtree, so
    they never naturally inherit a [data-ground] remap. chrome.tsx's
