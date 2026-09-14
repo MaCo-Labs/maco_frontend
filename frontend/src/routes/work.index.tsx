@@ -6,6 +6,7 @@ import { Magnetic } from "@/components/motion/magnetic";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
 import { MorphSlider } from "@/components/media/morph-slider";
+import { CardMedia } from "@/components/home/summary";
 import { useSectionHandoff } from "@/hooks/use-section-handoff";
 import { PageOutro } from "@/components/inner/page-outro";
 
@@ -109,6 +110,24 @@ function WorkIndex() {
                       {p.short_description}
                     </p>
                   </Link>
+                  {/* Mobile only (`lg:hidden` — the sticky desktop stage
+                      below takes over at `lg`) — a sibling of the `<Link>`
+                      above, not nested inside it: `CardMedia` can render a
+                      real `<button>` (MorphSlider's controls), and
+                      `<button>` inside `<a>` is invalid HTML / breaks focus
+                      order. No `gallery` prop here deliberately — five
+                      simultaneous MorphSlider instances is five concurrent
+                      WebGL contexts on one mobile page (confirmed live:
+                      later ones went black, consistent with hitting a
+                      context-count ceiling). `media`/`brand` fall through
+                      to a plain video/poster or logo plate instead — one
+                      real, non-invented image per row, no WebGL. The
+                      swipeable multi-image sequence lives on the case-study
+                      page instead (work.$slug.tsx), where only one project
+                      is ever on screen at a time. */}
+                  <div className="relative z-[1] mt-4 lg:hidden">
+                    <CardMedia media={p.media} brand={p.brand} title={p.title} aspect="4 / 3" />
+                  </div>
                 </article>
               ))}
             </Stagger>
@@ -149,7 +168,11 @@ function WorkIndex() {
                     )
                   )}
                 </div>
-                <p className="mt-4 text-sm text-muted">
+                {/* Announces the swap to assistive tech — sighted users see
+                    the stage image change on hover/focus, but nothing
+                    told a screen-reader user which project that now
+                    matches without this. */}
+                <p aria-live="polite" className="mt-4 text-sm text-muted">
                   {activeProject.client} — {activeProject.short_description}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">

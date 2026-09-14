@@ -57,9 +57,15 @@ function WorkDetail() {
           <LineReveal as="h1" className="display-hero mt-8 -ml-[0.04em]">
             {p.title}
           </LineReveal>
+          {/* `gallery` passed here (item 8) — only one project is ever on
+              this page, so unlike the /work index list this is a single
+              MorphSlider instance, not several competing for WebGL
+              contexts. Real captures only (`p.gallery`, content/maco.ts) —
+              never invented. */}
           <CardMedia
             media={p.media}
             brand={p.brand}
+            gallery={p.gallery}
             title={p.title}
             aspect="16 / 9"
             className="mt-10"
