@@ -2462,22 +2462,6 @@ html[data-layout="3"] footer .shell {
   outline-offset: -2px;
 }
 
-/* SIGNAL RAIL — item 6's desktop wayfinding rail (nav/signal-rail.tsx).
-   Reuses `.edge-nav-col`/`.edge-nav-dot`/etc. wholesale (see that
-   component's own doc comment) — this block only gates WHEN it shows.
-   Mode 1 (the default experience) only, and only at `lg`+: mode 3 already
-   has EdgeNav's own column pair doing this same job, and mobile gets the
-   mobile pill nav's phase dots instead (chrome.tsx) rather than a second
-   fixed rail competing for the same edge. */
-.signal-rail {
-  display: none;
-}
-@media (min-width: 64rem) {
-  html[data-layout="1"] .signal-rail {
-    display: block;
-  }
-}
-
 /* Hero nav hint (top-head.tsx) — layout 3, desktop only, points at the
    edge-nav dot columns above. Same left/right inset as `.edge-nav-col`
    at this breakpoint so it reads as pointing at the real rail, not a

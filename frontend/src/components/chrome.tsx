@@ -14,7 +14,6 @@ import { getScrollRuntime } from "@/lib/scroll-runtime";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 import { DUR, EASE_EMPHASIS, EASE_EXIT } from "@/lib/motion";
 import { groundAt, SECTION_SELECTOR, type Ground } from "@/lib/ground";
-import { SIGNAL_RAIL_STOPS, getActiveSignalStop } from "@/lib/signal-rail";
 
 /**
  * Mobile floating pill — MaCo-native (React Bits Pill Nav evaluated;
@@ -22,7 +21,6 @@ import { SIGNAL_RAIL_STOPS, getActiveSignalStop } from "@/lib/signal-rail";
  */
 function MobilePillNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const activeStop = getActiveSignalStop(pathname);
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -147,30 +145,6 @@ function MobilePillNav() {
             <span className="flex items-center gap-2.5" style={{ color: "var(--text)" }}>
               <Mark size={20} />
               <span className="label">{open ? "Menu" : "MaCo"}</span>
-              {/* Item 6's mobile half of the Signal Rail — a compact,
-                  page-aware "which of the four stops am I on" strip baked
-                  into the dock's own collapsed trigger rather than a
-                  second fixed element (the brief's "do not permanently
-                  consume a large portion of the viewport"). Purely
-                  decorative: the real navigation is the six-link panel
-                  this button opens, so a screen reader gets that, not a
-                  redundant announcement of dot position. */}
-              {!open && (
-                <span className="ml-0.5 flex items-center gap-1" aria-hidden="true">
-                  {SIGNAL_RAIL_STOPS.map((stop) => (
-                    <span
-                      key={stop.id}
-                      className="block h-1 w-1 rounded-full transition-colors duration-300"
-                      style={{
-                        background:
-                          activeStop === stop.id
-                            ? "var(--text)"
-                            : "color-mix(in oklab, var(--muted) 55%, transparent)",
-                      }}
-                    />
-                  ))}
-                </span>
-              )}
             </span>
             <span className="relative block h-3 w-4" aria-hidden="true">
               <span
@@ -658,7 +632,6 @@ export function Header() {
     const mobileNav = document.querySelector<HTMLElement>("[data-mobile-pill-nav]");
     const triggerOverlay = document.querySelector<HTMLElement>("[data-nav-trigger-overlay]");
     const edgeNav = document.querySelector<HTMLElement>("[data-edge-nav]");
-    const signalRail = document.querySelector<HTMLElement>("[data-signal-rail]");
     // Carried across ticks as `groundAt`'s fallback (lib/ground.ts) — a
     // continuous tracker holding its own last value on a momentary
     // no-match gap (GroundHandoff's recede transforms are the main
@@ -716,7 +689,6 @@ export function Header() {
         if (mobileNav) mobileNav.dataset["over"] = topGround;
         if (triggerOverlay) triggerOverlay.dataset["over"] = topGround;
         if (edgeNav) edgeNav.dataset["over"] = edgeGround;
-        if (signalRail) signalRail.dataset["over"] = edgeGround;
         // `<body>`'s own backdrop (html[data-ground-now] in styles.css)
         // takes the CENTRE sample, not the top one: body shows through
         // wherever a section doesn't fully paint — a margin between two
