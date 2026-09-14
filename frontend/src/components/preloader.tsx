@@ -195,10 +195,21 @@ export function Preloader() {
     };
   }, [reduced]);
 
+  // Enter (after watching/waiting for the ring) keeps the 0.7s exit
+  // flourish below; Skip signals "get me out now" — that intent shouldn't
+  // still sit behind a 0.7s fade, so it collapses the same exit transition
+  // to instant instead of forking a second unmount path.
+  const [instantExit, setInstantExit] = useState(false);
+
   const enterSite = () => {
     getLiveScrollRuntime()?.lenis.start();
     document.body.style.overflow = prevOverflowRef.current;
     markDone();
+  };
+
+  const skipSite = () => {
+    setInstantExit(true);
+    enterSite();
   };
 
   const enterButtonRef = useRef<HTMLButtonElement>(null);
@@ -230,9 +241,13 @@ export function Preloader() {
           className="maco-preloader fixed inset-0 z-[110] flex items-center justify-center"
           style={{ background: "var(--surface-inverted)", color: "var(--text-inverted)" }}
           exit={{
+            // `scale` targets the same 1.06 regardless of path — only
+            // `transition` varies below. One less conditional, and the
+            // scale bump is imperceptible at 0.05s anyway.
             opacity: 0,
-            scale: reduced ? 1 : 1.06,
-            transition: reduced ? { duration: 0 } : { duration: 0.7, ease: EASE_EMPHASIS },
+            scale: 1.06,
+            transition:
+              reduced || instantExit ? { duration: 0.05 } : { duration: 0.7, ease: EASE_EMPHASIS },
           }}
         >
           <div className="flex flex-col items-center gap-10">
@@ -316,13 +331,14 @@ export function Preloader() {
               {/* Available from first paint, unlike Enter (gated on
                   `ready`) — the brief's "Enter available immediately, or a
                   clear skip action" requirement, satisfied without racing
-                  the ring's own minimum duration down to nothing. Shares
-                  `enterSite` so scroll/Lenis unlock the same way either
-                  path is taken. */}
+                  the ring's own minimum duration down to nothing.
+                  `skipSite` shares `enterSite`'s scroll/Lenis unlock but
+                  also collapses the exit transition to instant — see
+                  `instantExit` above. */}
               <button
                 ref={skipButtonRef}
                 type="button"
-                onClick={enterSite}
+                onClick={skipSite}
                 className="label preloader-skip transition-colors"
                 style={{ color: "var(--muted-inverted)" }}
               >

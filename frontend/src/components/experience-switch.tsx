@@ -39,7 +39,7 @@ export function ExperienceSwitch() {
   const { theme, setTheme } = useTheme();
   const { layout, setLayout } = useLayout();
   const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, right: 0 });
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -47,10 +47,30 @@ export function ExperienceSwitch() {
   useEffect(() => {
     if (!open) return;
 
+    // Viewport-aware, not a fixed "open downward, right-aligned" — the
+    // header call sites put the trigger near the top-right (downward/
+    // right-aligned is correct there), but layout 3's desktop copy of
+    // this same container sits fixed bottom-left (styles.css), where that
+    // fixed offset used to push the panel mostly below the viewport and
+    // off the left edge at once. Flip up when there's no room below;
+    // clamp left/right so it can never run off either side.
     const place = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      setCoords({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+      const panelWidth = panelRef.current?.offsetWidth ?? 240;
+      const panelHeight = panelRef.current?.offsetHeight ?? 220;
+      const margin = 12;
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUp = spaceBelow < panelHeight + margin && rect.top >= panelHeight + margin;
+      const top = openUp
+        ? Math.max(margin, rect.top - panelHeight - 8)
+        : Math.min(rect.bottom + 8, window.innerHeight - panelHeight - margin);
+
+      let left = rect.right - panelWidth;
+      left = Math.max(margin, Math.min(left, window.innerWidth - panelWidth - margin));
+
+      setCoords({ top, left });
     };
     place();
 
@@ -123,7 +143,7 @@ export function ExperienceSwitch() {
             className="fixed z-[90] w-60 border border-line p-4"
             style={{
               top: coords.top,
-              right: coords.right,
+              left: coords.left,
               background: "var(--surface)",
               borderRadius: "var(--radius-card)",
               boxShadow: "0 12px 40px color-mix(in oklab, var(--bg) 55%, transparent)",
