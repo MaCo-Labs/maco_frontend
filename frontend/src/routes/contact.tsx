@@ -26,7 +26,7 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
 });
 
-const budgets = ["Under ₹1L", "₹1L – ₹5L", "₹5L – ₹15L", "₹15L+", "Not decided"];
+const budgets = ["Under ₹50K", "₹50K – ₹1L", "₹1L – ₹5L", "₹5L – ₹15L", "₹15L+", "Not decided"];
 
 const HANDOFF_PAIRS = [["Contact form", "More ways to reach us", "sheet"]] as const;
 
