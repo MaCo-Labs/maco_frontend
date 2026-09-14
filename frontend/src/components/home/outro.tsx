@@ -62,7 +62,17 @@ export function Outro() {
               mode="scrub"
               start="top 95%"
               end="top 30%"
-              className="display-hero mt-4 max-w-xl"
+              // `max-w-xl` (576px) clipped this heading's own text: GSAP
+              // SplitText's per-line reveal mask (`overflow: clip`, needed
+              // for the yPercent rise) takes each line at face value and
+              // assumes it already fits its container — "software" alone
+              // measures ~597px at this font-size/tracking, so its last
+              // letter was being cut, and "earns its" (~592px) sat close
+              // enough to the same edge to clip under slightly different
+              // font-rendering. Bumped to a value with real headroom over
+              // both ("Good"/"place." are nowhere near the limit, so this
+              // doesn't change which words land on which line).
+              className="display-hero mt-4 max-w-[40rem]"
               style={{ color: "var(--text)" }}
             >
               Good software earns its place.
