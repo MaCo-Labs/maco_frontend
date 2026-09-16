@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { clients, getProject } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
@@ -22,7 +23,15 @@ export const Route = createFileRoute("/clients")({
         property: "og:description",
         content: "The organisations MaCo builds and maintains software for.",
       },
+      { property: "og:url", content: absoluteUrl("/clients") },
+      {
+        "script:ld+json": breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Clients", path: "/clients" },
+        ]),
+      },
     ],
+    links: [{ rel: "canonical", href: absoluteUrl("/clients") }],
   }),
   component: ClientsPage,
 });
@@ -67,7 +76,14 @@ function ClientRow({ c, i }: { c: (typeof clients)[number]; i: number }) {
               if (!proj) return null;
               return (
                 <li key={w}>
-                  <Link to="/work/$slug" params={{ slug: w }} className="link-draw text-lg">
+                  <Link
+                    to="/work/$slug"
+                    params={{ slug: w }}
+                    className="link-draw text-lg"
+                    data-cursor={proj.media?.poster ? "preview" : undefined}
+                    data-cursor-image={proj.media?.poster}
+                    data-cursor-label={proj.media?.poster ? "View" : undefined}
+                  >
                     {proj.title}
                   </Link>
                 </li>

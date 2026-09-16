@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getProduct, products, type Product } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd, ORGANIZATION_ID } from "@/lib/seo";
+import { NotFoundSection } from "@/components/inner/not-found-section";
 import { MaCoSystemField } from "@/components/system-field";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { LineReveal } from "@/components/motion/line-reveal";
@@ -55,15 +57,40 @@ export const Route = createFileRoute("/products/$slug")({
         meta: [{ title: "Product not found — MaCo" }, { name: "robots", content: "noindex" }],
       };
     }
+    const path = `/products/${p.slug}`;
     return {
       meta: [
         { title: p.seo_title },
         { name: "description", content: p.seo_description },
         { property: "og:title", content: p.seo_title },
         { property: "og:description", content: p.seo_description },
+        { property: "og:url", content: absoluteUrl(path) },
+        {
+          "script:ld+json": breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Products", path: "/products" },
+            { name: p.title, path },
+          ]),
+        },
+        {
+          "script:ld+json": {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: p.title,
+            description: p.short_description,
+            url: absoluteUrl(path),
+            applicationCategory: p.kind,
+            operatingSystem: "Web",
+            creator: { "@id": ORGANIZATION_ID },
+          },
+        },
       ],
+      links: [{ rel: "canonical", href: absoluteUrl(path) }],
     };
   },
+  notFoundComponent: () => (
+    <NotFoundSection label="Product not found" backTo="/products" backLabel="Back to products" />
+  ),
   component: ProductDetail,
 });
 

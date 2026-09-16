@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SITE_URL } from "@/lib/seo";
 import { TopHead } from "@/components/home/top-head";
 import { EvidenceExpand } from "@/components/home/evidence-expand";
 import { Overview } from "@/components/home/overview";
@@ -25,7 +26,9 @@ export const Route = createFileRoute("/")({
         content:
           "Client platforms, operational software and long-term support. Selected work: Ananta Nethralaya, Al Afzah, Soorath Autos, HeadGreen.",
       },
+      { property: "og:url", content: SITE_URL },
     ],
+    links: [{ rel: "canonical", href: SITE_URL }],
   }),
   component: Home,
 });

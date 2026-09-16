@@ -700,6 +700,61 @@ html::-webkit-scrollbar {
   }
 }
 
+/* ArrowGlyph (motion/arrow-glyph.tsx) — the animated replacement for the
+   plain "→" text every CTA above renders as its `[aria-hidden]` child.
+   Sits on top of that span's existing translateX(3px) hover rule (both
+   apply, composing a shift + an internal draw rather than conflicting)
+   since ArrowGlyph's root IS that `[aria-hidden]` element. Read straight
+   off `.btn-solid`/`.btn-line`'s own `:hover` — no `group` class needed
+   because every call site already wraps it in one of those two. */
+.arrow-glyph {
+  width: 1.05em;
+  height: 1.05em;
+  overflow: visible;
+}
+.arrow-glyph-shaft {
+  transform-origin: 4px center;
+  transform: scaleX(0.55);
+  transition: transform 0.35s var(--ease-emphasis);
+}
+.arrow-glyph-head {
+  transition: transform 0.35s var(--ease-emphasis);
+}
+.btn-solid:hover .arrow-glyph-shaft,
+.btn-line:hover .arrow-glyph-shaft {
+  transform: scaleX(1);
+}
+.btn-solid:hover .arrow-glyph-head,
+.btn-line:hover .arrow-glyph-head {
+  transform: translateX(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .arrow-glyph-shaft,
+  .arrow-glyph-head {
+    transition: none;
+  }
+}
+
+/* Experience trigger's accent swatch (experience-switch.tsx) — one full spin
+   on hover, landing back at its resting 0deg orientation rather than a
+   transition that would just snap between two static angles. */
+@keyframes experience-swatch-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.experience-trigger:hover .experience-swatch {
+  animation: experience-swatch-spin 0.5s var(--ease-emphasis);
+}
+@media (prefers-reduced-motion: reduce) {
+  .experience-trigger:hover .experience-swatch {
+    animation: none;
+  }
+}
+
 /* ---------- motion primitives ---------- */
 
 @keyframes maco-rise {
@@ -895,6 +950,30 @@ html::-webkit-scrollbar {
   margin-left: -32px;
   margin-top: -32px;
   background: color-mix(in oklab, var(--text) 8%, transparent);
+}
+
+/* preview: a text-only link (clients.tsx's "Delivered" list, work.$slug's
+   "Next case study") that has no image on screen anywhere near it — the
+   ring itself becomes that image, read off `--cursor-img`
+   (cursor.tsx's onOver), instead of just growing/labeling over content
+   that's already visible like "media" does. Rectangular, not a ring, so
+   it reads as a photo rather than an oversized dot. */
+.maco-cursor[data-state="preview"] {
+  width: 200px;
+  height: 140px;
+  margin-left: -100px;
+  margin-top: -70px;
+  border-radius: var(--radius-card);
+  background-color: var(--surface-2);
+  background-image: var(--cursor-img);
+  background-size: cover;
+  background-position: center;
+  border-color: transparent;
+  overflow: hidden;
+}
+.maco-cursor[data-state="preview"][data-label]::after {
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
 }
 
 /* Short word/phrase inside the ring (§15-19's "VIEW"/"EXPLORE") — `content:

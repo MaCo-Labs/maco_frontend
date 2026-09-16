@@ -5,6 +5,7 @@ import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { RuleDraw } from "@/components/motion/rule-draw";
 import { Magnetic } from "@/components/motion/magnetic";
+import { ArrowGlyph } from "@/components/motion/arrow-glyph";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 
 /**
@@ -99,7 +100,7 @@ export function PageOutro({
               {cta && (
                 <Magnetic>
                   <Link to={cta.to} className="btn-solid">
-                    {cta.label} <span aria-hidden="true">→</span>
+                    {cta.label} <ArrowGlyph />
                   </Link>
                 </Magnetic>
               )}

@@ -169,6 +169,15 @@ export function Cursor() {
         const label = hit.getAttribute("data-cursor-label");
         if (label) el.dataset["label"] = label;
         else delete el.dataset["label"];
+        // `data-state="preview"` ring (styles.css) — a text-only link (no
+        // media rendered anywhere near it, e.g. clients.tsx's "Delivered"
+        // list, work.$slug's "Next case study") pairs this with
+        // `data-cursor="preview"` to show the target's own image inside
+        // the ring itself, not just grow/label it like `"media"` does over
+        // content that's already on screen.
+        const image = hit.getAttribute("data-cursor-image");
+        if (image) el.style.setProperty("--cursor-img", `url("${image}")`);
+        else el.style.removeProperty("--cursor-img");
       };
       const onOut = (e: PointerEvent) => {
         const selector = CURSOR_SELECTOR;
@@ -185,6 +194,7 @@ export function Cursor() {
         delete el.dataset["state"];
         hoveredGround = null;
         delete el.dataset["label"];
+        el.style.removeProperty("--cursor-img");
       };
       const onLeaveWindow = () => {
         el.style.opacity = "0";

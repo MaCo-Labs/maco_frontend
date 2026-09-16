@@ -5,6 +5,7 @@ import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { RuleDraw } from "@/components/motion/rule-draw";
 import { Magnetic } from "@/components/motion/magnetic";
+import { ArrowGlyph } from "@/components/motion/arrow-glyph";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 
 /**
@@ -86,7 +87,7 @@ export function Outro() {
             <ScrubReveal className="mt-8 flex flex-wrap gap-3">
               <Magnetic>
                 <Link to="/contact" className="btn-solid">
-                  Start a project <span aria-hidden="true">→</span>
+                  Start a project <ArrowGlyph />
                 </Link>
               </Magnetic>
               <Magnetic>

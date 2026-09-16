@@ -1,11 +1,13 @@
 import { useState, type CSSProperties } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getService, getProject, getProduct, services, type Service } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd, ORGANIZATION_ID } from "@/lib/seo";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
 import { usePointerField } from "@/hooks/use-pointer-field";
+import { NotFoundSection } from "@/components/inner/not-found-section";
 
 /** One Evidence cell — project or product, same chrome either way. Carries
  *  its own `usePointerField` so `.evidence-spotlight`'s --px/--py glow is
@@ -58,15 +60,38 @@ export const Route = createFileRoute("/services/$slug")({
       };
     }
     const s = loaderData.service;
+    const path = `/services/${s.slug}`;
     return {
       meta: [
         { title: s.seo_title },
         { name: "description", content: s.seo_description },
         { property: "og:title", content: s.seo_title },
         { property: "og:description", content: s.seo_description },
+        { property: "og:url", content: absoluteUrl(path) },
+        {
+          "script:ld+json": breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Services", path: "/services" },
+            { name: s.title, path },
+          ]),
+        },
+        {
+          "script:ld+json": {
+            "@context": "https://schema.org",
+            "@type": "Service",
+            name: s.title,
+            description: s.description,
+            url: absoluteUrl(path),
+            provider: { "@id": ORGANIZATION_ID },
+          },
+        },
       ],
+      links: [{ rel: "canonical", href: absoluteUrl(path) }],
     };
   },
+  notFoundComponent: () => (
+    <NotFoundSection label="Service not found" backTo="/services" backLabel="Back to services" />
+  ),
   component: ServiceDetail,
 });
 

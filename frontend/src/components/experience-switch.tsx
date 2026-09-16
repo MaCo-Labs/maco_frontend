@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTheme, type Theme } from "./theme";
 import { useLayout, type LayoutMode } from "./layout-mode";
@@ -44,35 +44,58 @@ export function ExperienceSwitch() {
   const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
 
+  // Viewport-aware, not a fixed "open downward, right-aligned" — the
+  // header call sites put the trigger near the top-right (downward/
+  // right-aligned is correct there), but layout 3's desktop copy of
+  // this same container sits fixed bottom-left (styles.css), where that
+  // fixed offset used to push the panel mostly below the viewport and
+  // off the left edge at once. Flip up when there's no room below;
+  // clamp left/right so it can never run off either side.
+  const place = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    // Each layout mode renders its own `ExperienceSwitch` copy
+    // (`.header-controls-primary` for 1/3, `.layout-nav-overlay-controls`
+    // for 2 — chrome.tsx) and hides the others via `display: none`
+    // (styles.css). Switching layout while THIS copy's panel is open
+    // doesn't unmount it, so its now-hidden trigger reports an all-zero
+    // rect here — close instead of placing the panel at that meaningless
+    // (0, 0) corner.
+    if (rect.width === 0 && rect.height === 0) {
+      setOpen(false);
+      return;
+    }
+    const panelWidth = panelRef.current?.offsetWidth ?? 240;
+    const panelHeight = panelRef.current?.offsetHeight ?? 220;
+    const margin = 12;
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < panelHeight + margin && rect.top >= panelHeight + margin;
+    const top = openUp
+      ? Math.max(margin, rect.top - panelHeight - 8)
+      : Math.min(rect.bottom + 8, window.innerHeight - panelHeight - margin);
+
+    let left = rect.right - panelWidth;
+    left = Math.max(margin, Math.min(left, window.innerWidth - panelWidth - margin));
+
+    setCoords({ top, left });
+  }, [setOpen]);
+
+  // Separate from the listeners effect below and keyed on `layout` too:
+  // layout 3's trigger is `position: fixed` bottom-left
+  // (`html[data-layout="3"] .header-control-cluster`, styles.css) — picking
+  // it from the panel while already open moves the trigger without
+  // changing `open`, so a `[open]`-only effect never recalculates and the
+  // panel stays stuck at its old coordinates until the next resize/scroll/
+  // reopen. Kept out of the listeners effect so switching layout doesn't
+  // also re-steal focus or re-bind the pointerdown/keydown handlers below.
   useEffect(() => {
     if (!open) return;
-
-    // Viewport-aware, not a fixed "open downward, right-aligned" — the
-    // header call sites put the trigger near the top-right (downward/
-    // right-aligned is correct there), but layout 3's desktop copy of
-    // this same container sits fixed bottom-left (styles.css), where that
-    // fixed offset used to push the panel mostly below the viewport and
-    // off the left edge at once. Flip up when there's no room below;
-    // clamp left/right so it can never run off either side.
-    const place = () => {
-      const rect = triggerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const panelWidth = panelRef.current?.offsetWidth ?? 240;
-      const panelHeight = panelRef.current?.offsetHeight ?? 220;
-      const margin = 12;
-
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const openUp = spaceBelow < panelHeight + margin && rect.top >= panelHeight + margin;
-      const top = openUp
-        ? Math.max(margin, rect.top - panelHeight - 8)
-        : Math.min(rect.bottom + 8, window.innerHeight - panelHeight - margin);
-
-      let left = rect.right - panelWidth;
-      left = Math.max(margin, Math.min(left, window.innerWidth - panelWidth - margin));
-
-      setCoords({ top, left });
-    };
     place();
+  }, [open, layout, place]);
+
+  useEffect(() => {
+    if (!open) return;
 
     const focusable = () =>
       Array.from(panelRef.current?.querySelectorAll<HTMLElement>("button:not([disabled])") ?? []);
@@ -113,7 +136,7 @@ export function ExperienceSwitch() {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, place]);
 
   return (
     <>
@@ -124,10 +147,10 @@ export function ExperienceSwitch() {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={panelId}
-          className="label flex min-h-11 items-center gap-2 border border-line px-3 py-2 transition-colors hover:border-text hover:text-text"
+          className="experience-trigger label flex min-h-11 items-center gap-2 border border-line px-3 py-2 transition-colors hover:border-text hover:text-text"
         >
           <span
-            className="block h-2.5 w-2.5 border border-current"
+            className="experience-swatch block h-2.5 w-2.5 border border-current"
             style={{ background: "var(--accent)" }}
             aria-hidden="true"
           />

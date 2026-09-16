@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { projects } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
@@ -25,7 +26,15 @@ export const Route = createFileRoute("/work/")({
         content:
           "Real client work across healthcare, construction, automotive retail, EV mobility and interior fit-out.",
       },
+      { property: "og:url", content: absoluteUrl("/work") },
+      {
+        "script:ld+json": breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Work", path: "/work" },
+        ]),
+      },
     ],
+    links: [{ rel: "canonical", href: absoluteUrl("/work") }],
   }),
   component: WorkIndex,
 });

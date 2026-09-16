@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { site, services } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { Stagger } from "@/components/motion/stagger";
@@ -21,7 +22,15 @@ export const Route = createFileRoute("/contact")({
         property: "og:description",
         content: "Start a project with MaCo. Scope first, sales deck never.",
       },
+      { property: "og:url", content: absoluteUrl("/contact") },
+      {
+        "script:ld+json": breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Contact", path: "/contact" },
+        ]),
+      },
     ],
+    links: [{ rel: "canonical", href: absoluteUrl("/contact") }],
   }),
   component: ContactPage,
 });
@@ -31,6 +40,44 @@ const budgets = ["Under ₹50K", "₹50K – ₹1L", "₹1L – ₹5L", "₹5L �
 const HANDOFF_PAIRS = [["Contact form", "More ways to reach us", "sheet"]] as const;
 
 type State = "idle" | "sending" | "sent" | "error";
+
+type EnquiryFields = {
+  name: string;
+  email: string;
+  company: string;
+  phone: string;
+  serviceInterest: string;
+  budgetRange: string;
+  message: string;
+};
+
+const waDigits = (number: string) => number.replace(/\D/g, "");
+const QATAR_WA_NUMBER = waDigits(site.phones.find((p) => p.label === "Qatar")!.number);
+// First "India"-labelled entry (content/maco.ts) — the primary number, not
+// whichever one happens to be configured second.
+const INDIA_WA_NUMBER = waDigits(site.phones.find((p) => p.label === "India")!.number);
+
+function buildWhatsAppMessage(f: EnquiryFields): string {
+  const serviceTitle = services.find((s) => s.slug === f.serviceInterest)?.title;
+  const lines = ["*New enquiry — MaCo website*", "", `*Name:* ${f.name}`, `*Email:* ${f.email}`];
+  if (f.company) lines.push(`*Company:* ${f.company}`);
+  if (f.phone) lines.push(`*Phone:* ${f.phone}`);
+  if (serviceTitle) lines.push(`*Service interest:* ${serviceTitle}`);
+  if (f.budgetRange) lines.push(`*Budget range:* ${f.budgetRange}`);
+  lines.push("", "*Message:*", f.message);
+  return lines.join("\n");
+}
+
+// +974/974 in the visitor's own phone field routes to the Qatar number;
+// anything else defaults to India. Opened synchronously inside the submit
+// handler (before the `await fetch` below) so it rides the same click
+// gesture instead of getting popup-blocked, and independently of whether
+// the backend API is configured — WhatsApp still works even when it isn't.
+function openWhatsAppEnquiry(f: EnquiryFields) {
+  const target = waDigits(f.phone).startsWith("974") ? QATAR_WA_NUMBER : INDIA_WA_NUMBER;
+  const url = `https://wa.me/${target}?text=${encodeURIComponent(buildWhatsAppMessage(f))}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
 
 function ContactPage() {
   const [state, setState] = useState<State>("idle");
@@ -44,26 +91,36 @@ function ContactPage() {
     setState("sending");
     setError("");
 
+    const fd = new FormData(form);
+    const str = (key: string) => (fd.get(key) as string | null)?.trim() ?? "";
+
+    const fields: EnquiryFields = {
+      name: str("name"),
+      email: str("email"),
+      company: str("company"),
+      phone: str("phone"),
+      serviceInterest: str("service_interest"),
+      budgetRange: str("budget_range"),
+      message: str("message"),
+    };
+    openWhatsAppEnquiry(fields);
+
     if (!api) {
       setState("error");
       setError("Contact isn't wired up in this environment — email us directly instead.");
       return;
     }
 
-    const fd = new FormData(form);
-    const str = (key: string) => (fd.get(key) as string | null)?.trim() ?? "";
-
     // service_interest is a SlugRelatedField server-side — omit it entirely
     // when nothing was chosen rather than sending "", which the API would
     // reject as an unknown slug.
-    const serviceInterest = str("service_interest");
     const payload: Record<string, unknown> = {
-      name: str("name"),
-      email: str("email"),
-      company: str("company"),
-      phone: str("phone"),
-      budget_range: str("budget_range"),
-      message: str("message"),
+      name: fields.name,
+      email: fields.email,
+      company: fields.company,
+      phone: fields.phone,
+      budget_range: fields.budgetRange,
+      message: fields.message,
       // FormData reports a checked checkbox as "on", not a boolean — the API
       // needs a real boolean.
       consent: fd.get("consent") === "on",
@@ -71,7 +128,7 @@ function ContactPage() {
       // Honeypot — real visitors never see or fill this field.
       website: str("website"),
     };
-    if (serviceInterest) payload["service_interest"] = serviceInterest;
+    if (fields.serviceInterest) payload["service_interest"] = fields.serviceInterest;
 
     try {
       const res = await fetch(`${api}/api/v1/contact/`, {
@@ -122,7 +179,7 @@ function ContactPage() {
 
       <section data-ground="paper" aria-label="Contact form">
         <div className="shell grid gap-14 py-14 lg:grid-cols-12 lg:gap-10 lg:py-20">
-          <div className="lg:col-span-4">
+          <div className="order-2 lg:order-none lg:col-span-4">
             <p className="label">Direct</p>
             <a
               href={`mailto:${site.contact_email}`}
@@ -155,7 +212,7 @@ function ContactPage() {
 
           <form
             onSubmit={onSubmit}
-            className="relative lg:col-span-7 lg:col-start-6"
+            className="relative order-1 lg:order-none lg:col-span-7 lg:col-start-6"
             noValidate={false}
           >
             {state === "sent" ? (

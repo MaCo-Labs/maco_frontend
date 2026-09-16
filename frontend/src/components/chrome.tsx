@@ -10,6 +10,9 @@ import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
 import { usePointerField } from "@/hooks/use-pointer-field";
 import { useOverlayMenu } from "@/hooks/use-overlay-menu";
 import { Magnetic } from "@/components/motion/magnetic";
+import { ArrowGlyph } from "@/components/motion/arrow-glyph";
+import { TextRoll } from "@/components/motion/text-roll";
+import { EdgeFade } from "@/components/motion/edge-fade";
 import { getScrollRuntime } from "@/lib/scroll-runtime";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 import { DUR, EASE_EMPHASIS, EASE_EXIT } from "@/lib/motion";
@@ -452,6 +455,7 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
             initial="hidden"
             animate="visible"
           >
+            <EdgeFade position="top" />
             <motion.div variants={itemVariants}>
               <Link
                 to="/"
@@ -494,6 +498,7 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
                 Start a project
               </Link>
             </motion.div>
+            <EdgeFade position="bottom" />
           </motion.nav>
         </motion.div>
       )}
@@ -776,7 +781,7 @@ export function Header() {
                   style={{ color: active ? "var(--text)" : "var(--muted)" }}
                   aria-current={active ? "page" : undefined}
                 >
-                  {item.label}
+                  <TextRoll>{item.label}</TextRoll>
                 </Link>
               );
             })}
@@ -905,8 +910,11 @@ export function Footer() {
           <Wordmark size={44} />
         </div>
 
-        <div className="grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-12">
-          <div className="lg:col-span-3">
+        {/* Three EQUAL thirds at desktop, not the old 3/3/6 split. Every
+            column carries the same `lg:px-8` so the three stay evenly
+            spaced without a grid `gap` at that breakpoint. */}
+        <div className="grid gap-x-12 gap-y-12 py-16 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-0">
+          <div className="lg:px-8">
             <p className="label">Index</p>
             <ul className="mt-5 space-y-1">
               {site.nav.map((n) => (
@@ -915,14 +923,14 @@ export function Footer() {
                     to={n.to}
                     className="link-draw -mx-1 block px-1 py-1.5 text-sm text-muted hover:opacity-100"
                   >
-                    {n.label}
+                    <TextRoll>{n.label}</TextRoll>
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="lg:col-span-3">
+          <div className="lg:px-8">
             <p className="label">Contact</p>
             <ul className="mt-5 space-y-1 text-sm text-muted">
               <li>
@@ -950,38 +958,46 @@ export function Footer() {
 
           {/* Fills the 6 columns the two link lists leave empty on desktop
               (lg:col-span-3 twice, of 12) — real site copy + the one action
-              a footer should end on, not filler. */}
-          <div className="lg:col-span-6 lg:col-start-7">
+              a footer should end on, not filler. `flex h-full flex-col` +
+              `mt-auto` on the CTA: Contact's 6-line list is taller than
+              this column's own content, and the grid row's default stretch
+              already gives every column that same full height — without
+              this, "Brief us" sat wherever the tagline's line count left
+              it, well short of Contact's last line, so the row read as
+              bottom-ragged instead of resolving on one shared baseline. */}
+          <div className="flex h-full flex-col lg:px-8">
             <p className="label">Start a project</p>
             <p className="mt-5 max-w-sm text-lg" style={{ color: "var(--text)" }}>
               {site.tagline}
             </p>
-            <Magnetic className="mt-6 inline-block">
+            <Magnetic className="mt-auto inline-block pt-6">
               <Link to="/contact" className="btn-line">
-                Brief us <span aria-hidden="true">→</span>
+                Brief us <ArrowGlyph />
               </Link>
             </Magnetic>
           </div>
         </div>
 
-        <div className="label rule-t flex flex-col gap-2 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
-            <span>
-              © {new Date().getFullYear()} MaCo — {site.category}
-            </span>
-            {/* Decorative only (aria-hidden) — dropped below `sm` rather than
-                fighting the copyright line for a 320px row; the theme label
-                stays since it's the one bit of real state here. */}
-            <span
-              ref={scriptRef}
-              className="hidden normal-case tracking-normal opacity-70 sm:inline"
-              style={{ fontFamily: "var(--font-script-fallback)" }}
-              aria-hidden="true"
-            >
-              {nameScripts.map((s) => s.text).join(" · ")}
-            </span>
-          </div>
-          <span>Obsidian / Cobalt</span>
+        {/* Same three-way split as the row above (lg:grid-cols-3, same
+            lg:px-8 per cell) so copyright/script/theme-label land under
+            Index/Contact/Start-a-project respectively instead of the
+            script reel just trailing the copyright line off to one side. */}
+        <div className="label rule-t flex flex-col gap-2 py-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-x-0">
+          <span className="lg:px-8">
+            © {new Date().getFullYear()} MaCo — {site.category}
+          </span>
+          {/* Decorative only (aria-hidden) — dropped below `sm` rather than
+              fighting the copyright line for a 320px row; the theme label
+              stays since it's the one bit of real state here. */}
+          <span
+            ref={scriptRef}
+            className="hidden normal-case tracking-normal opacity-70 sm:inline lg:px-8 lg:text-center"
+            style={{ fontFamily: "var(--font-script-fallback)" }}
+            aria-hidden="true"
+          >
+            {nameScripts.map((s) => s.text).join(" · ")}
+          </span>
+          <span className="sm:ml-auto lg:ml-0 lg:px-8 lg:text-right">Obsidian / Cobalt</span>
         </div>
       </div>
 
@@ -993,11 +1009,11 @@ export function Footer() {
           the custom cursor into the light source while hovering here —
           see cursor.tsx's CURSOR_SELECTOR and styles.css's
           `[data-state="torch"]` rule. */}
-      <div className="shell footer-giant-shell overflow-hidden">
+      <div className="shell footer-giant-shell relative overflow-hidden">
         <div
           ref={giantMarkRef}
           data-cursor="torch"
-          className="footer-giant-mark wordmark-trace"
+          className="footer-giant-mark wordmark-trace relative"
           aria-hidden="true"
         >
           MaCo
