@@ -658,12 +658,6 @@ export interface TeamMember {
 export const team: TeamMember[] = [
   { slug: "syed-mahroof", name: "Syed Mahroof", role: "Role — pending", bio: "Bio — pending." },
   {
-    slug: "muhammed-sheffin-khan-p-a",
-    name: "Muhammed Sheffin Khan P A",
-    role: "Role — pending",
-    bio: "Bio — pending.",
-  },
-  {
     slug: "alshid-mohammed",
     name: "Alshid Mohammed",
     role: "Role — pending",
