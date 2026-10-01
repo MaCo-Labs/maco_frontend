@@ -59,9 +59,8 @@ function TeamGrid({ people }: { people: typeof team }) {
               }}
             >
               <div
-                className={`flex aspect-[4/5] items-center justify-center bg-[var(--surface-2)] transition-[filter] duration-400 ease-[var(--ease-emphasis)] ${
-                  isActive ? "contrast-125 brightness-105" : ""
-                }`}
+                className={`flex items-center justify-center transition-[filter] duration-400 ease-[var(--ease-emphasis)] ${isActive ? "contrast-125 brightness-105" : ""
+                  }`}
               >
                 {person.portrait ? (
                   <img
@@ -69,11 +68,11 @@ function TeamGrid({ people }: { people: typeof team }) {
                     alt={person.portrait.alt}
                     width={person.portrait.width}
                     height={person.portrait.height}
-                    className="h-full w-full object-cover grayscale"
+                    className="h-44 w-44 object-contain"
                     loading="lazy"
                   />
                 ) : (
-                  <span className="font-display text-3xl tracking-[-0.02em] text-muted">
+                  <span className="font-display text-3xl text-muted">
                     {initials(person.name)}
                   </span>
                 )}

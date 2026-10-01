@@ -637,8 +637,8 @@ export const principles = [
  *  team, built alongside other work, no founding year or metric attached. */
 export const origin = {
   eyebrow: "Origin",
-  heading: "Eight people, one discipline, built between other jobs.",
-  body: "MaCo started as work done alongside separate careers — hours spent building for clients who needed something that actually shipped. The team stayed small on purpose: people covering frontend, full-stack, infrastructure and the business side, all still hands-on. What began as extra hours became the standard the rest of the company runs on.",
+  heading: "Eight people, one team, building with purpose.",
+  body: "MaCo is built around a focused team covering development, infrastructure, quality, support and the business side. Different roles come together around the same goal: creating reliable software, solving real problems and delivering work that is built to last.",
 };
 
 /** A real MaCo team member. `role`/`bio`/`portrait` are per AGENTS.md's
@@ -657,18 +657,102 @@ export interface TeamMember {
 }
 
 export const team: TeamMember[] = [
-  { slug: "syed-mahroof", name: "Syed Mahroof", role: "Role — pending", bio: "Bio — pending." },
+  {
+    slug: "syed-mahroof",
+    name: "S Y D",
+    role: "Lead Developer",
+    bio: "Leading development efforts and building reliable, scalable software solutions.",
+    portrait: {
+      poster: "/media/founders/syed-mahroof.png",
+      alt: "S Y D",
+      width: 512,
+      height: 512,
+    },
+  },
   {
     slug: "alshid-mohammed",
-    name: "Alshid Mohammed",
-    role: "Role — pending",
-    bio: "Bio — pending.",
+    name: "A D",
+    role: "System Administrator",
+    bio: "Managing infrastructure, system reliability, server operations, and security.",
+    portrait: {
+      poster: "/media/founders/alshid-mohammed.png",
+      alt: "A D",
+      width: 512,
+      height: 512,
+    },
   },
-  { slug: "minhaj-v-shams", name: "Minhaj V Shams", role: "Role — pending", bio: "Bio — pending." },
-  { slug: "sonu-mirza-a", name: "Sonu Mirza A", role: "Role — pending", bio: "Bio — pending." },
-  { slug: "akshai-n-v", name: "Akshai N V", role: "Role — pending", bio: "Bio — pending." },
-  { slug: "sahal-siyad", name: "Sahal Siyad", role: "Role — pending", bio: "Bio — pending." },
-  { slug: "arfin-nassar", name: "Arfin Nassar", role: "Role — pending", bio: "Bio — pending." },
+  {
+    slug: "minhaj-v-shams",
+    name: "M V S",
+    role: "Technical Lead",
+    bio: "Driving technical decisions, architecture, and engineering best practices.",
+    portrait: {
+      poster: "/media/founders/minhaj-v-shams.png",
+      alt: "M V S",
+      width: 512,
+      height: 512,
+    },
+  },
+  {
+    slug: "sonu-mirza-a",
+    name: "S M A",
+    role: "QA Lead",
+    bio: "Ensuring software quality through testing, validation, and continuous improvement.",
+    portrait: {
+      poster: "/media/founders/sonu-mirza-a.png",
+      alt: "S M A",
+      width: 512,
+      height: 512,
+    },
+  },
+  {
+    slug: "akshai-n-v",
+    name: "A N V",
+    role: "Full-Stack Developer",
+    bio: "Developing end-to-end applications across frontend interfaces and backend systems.",
+    portrait: {
+      poster: "/media/founders/akshai-n-v.png",
+      alt: "A N V",
+      width: 512,
+      height: 512,
+    },
+  },
+  {
+    slug: "sahal-siyad",
+    name: "S H S",
+    role: "Technical Support",
+    bio: "Troubleshooting technical issues and helping maintain smooth system operations.",
+    portrait: {
+      poster: "/media/founders/sahal-siyad.png",
+      alt: "S H S",
+      width: 512,
+      height: 512,
+    },
+  },
+  {
+    slug: "arfin-nassar",
+    name: "A R N",
+    role: "Marketing Head",
+    bio: "Leading marketing initiatives, brand growth, and customer engagement.",
+    portrait: {
+      poster: "/media/founders/arfin-nassar.png",
+      alt: "A R N",
+      width: 512,
+      height: 512,
+    },
+  },
+  {
+    slug: "unknown",
+    name: "M D",
+    role: "Full-Stack Developer & DevOps",
+    bio: "Building full-stack applications and streamlining deployment and infrastructure workflows.",
+    portrait: {
+      poster: "/media/founders/unknown.png",
+      alt: "M S",
+      width: 512,
+      height: 512,
+    },
+  },
 ];
 
 export const getService = (slug: string) => services.find((s) => s.slug === slug);
