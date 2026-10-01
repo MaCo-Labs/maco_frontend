@@ -1,11 +1,14 @@
 import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getProduct, products, type Product } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd, ORGANIZATION_ID } from "@/lib/seo";
+import { NotFoundSection } from "@/components/inner/not-found-section";
 import { MaCoSystemField } from "@/components/system-field";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
+import { CardMedia } from "@/components/home/summary";
 
 /** Wires MaCoSystemField to how far its own panel has travelled through
  *  the viewport, the same live-progress pattern every pinned homepage
@@ -54,15 +57,40 @@ export const Route = createFileRoute("/products/$slug")({
         meta: [{ title: "Product not found — MaCo" }, { name: "robots", content: "noindex" }],
       };
     }
+    const path = `/products/${p.slug}`;
     return {
       meta: [
         { title: p.seo_title },
         { name: "description", content: p.seo_description },
         { property: "og:title", content: p.seo_title },
         { property: "og:description", content: p.seo_description },
+        { property: "og:url", content: absoluteUrl(path) },
+        {
+          "script:ld+json": breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Products", path: "/products" },
+            { name: p.title, path },
+          ]),
+        },
+        {
+          "script:ld+json": {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: p.title,
+            description: p.short_description,
+            url: absoluteUrl(path),
+            applicationCategory: p.kind,
+            operatingSystem: "Web",
+            creator: { "@id": ORGANIZATION_ID },
+          },
+        },
       ],
+      links: [{ rel: "canonical", href: absoluteUrl(path) }],
     };
   },
+  notFoundComponent: () => (
+    <NotFoundSection label="Product not found" backTo="/products" backLabel="Back to products" />
+  ),
   component: ProductDetail,
 });
 
@@ -90,22 +118,51 @@ function ProductDetail() {
               ← All products
             </Link>
           </div>
-          {isBridge && <p className="mt-6 max-w-xl text-sm text-muted">{p.positioning}</p>}
-          <LineReveal as="h1" className="display-hero mt-8 -ml-[0.04em]">
-            {p.title}
-          </LineReveal>
-          <p className="mt-8 max-w-2xl text-lg leading-snug">{p.short_description}</p>
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Magnetic>
-              <a href={p.live_url} target="_blank" rel="noreferrer noopener" className="btn-solid">
-                Open {p.title} ↗
-              </a>
-            </Magnetic>
-            <Magnetic>
-              <Link to="/contact" className="btn-line">
-                Request a walkthrough
-              </Link>
-            </Magnetic>
+
+          {/* Media goes first in source order (`order-1`) so it's in the
+              opening viewport on mobile, not buried below the CTA row;
+              desktop reflows it to the right via `lg:order-2` instead. Real
+              capture already proven on the /products index card (screen →
+              PhoneMockup for Driver's Diary, media → ProductVideo for
+              Bridge) — same component, same content fields, no new assets. */}
+          <div className="mt-8 grid gap-10 lg:grid-cols-12 lg:items-start lg:gap-16">
+            <div className="order-2 lg:order-1 lg:col-span-7">
+              {isBridge && <p className="max-w-xl text-sm text-muted">{p.positioning}</p>}
+              <LineReveal as="h1" className={`display-hero -ml-[0.04em] ${isBridge ? "mt-6" : ""}`}>
+                {p.title}
+              </LineReveal>
+              <p className="mt-8 max-w-2xl text-lg leading-snug">{p.short_description}</p>
+              <div className="mt-10 flex flex-wrap gap-3">
+                <Magnetic>
+                  <a
+                    href={p.live_url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="btn-solid"
+                  >
+                    Open {p.title} ↗
+                  </a>
+                </Magnetic>
+                <Magnetic>
+                  <Link to="/contact" className="btn-line">
+                    Request a walkthrough
+                  </Link>
+                </Magnetic>
+              </div>
+            </div>
+
+            <div className="order-1 lg:order-2 lg:col-span-5">
+              <CardMedia
+                media={p.media}
+                screen={p.screen}
+                brand={p.brand}
+                title={p.title}
+                aspect="4 / 3"
+              />
+              {(p.screen?.alt ?? p.media?.alt) && (
+                <p className="mt-4 text-sm text-muted">{p.screen?.alt ?? p.media?.alt}</p>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -213,7 +270,7 @@ function ProductDetail() {
       )}
 
       <section data-ground="paper" aria-label="Other product">
-        <div className="shell py-14 lg:py-20">
+        <div className="shell dock-clearance-b py-14 lg:py-20">
           <p className="label">Other product</p>
           <Link
             to="/products/$slug"

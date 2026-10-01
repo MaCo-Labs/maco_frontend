@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { products } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
@@ -24,7 +25,15 @@ export const Route = createFileRoute("/products/")({
         content:
           "Driver's Diary and Bridge — software MaCo owns and productises, not client one-offs.",
       },
+      { property: "og:url", content: absoluteUrl("/products") },
+      {
+        "script:ld+json": breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Products", path: "/products" },
+        ]),
+      },
     ],
+    links: [{ rel: "canonical", href: absoluteUrl("/products") }],
   }),
   component: ProductsIndex,
 });

@@ -47,6 +47,7 @@ export function EvidenceExpand() {
   const vignetteRef = useRef<HTMLDivElement>(null);
   const captionInRef = useRef<HTMLParagraphElement>(null);
   const captionOutRef = useRef<HTMLParagraphElement>(null);
+  const captionScrimRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const lightboxTriggerRef = useRef<HTMLButtonElement>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -58,12 +59,19 @@ export function EvidenceExpand() {
     const vignette = vignetteRef.current;
     const captionIn = captionInRef.current;
     const captionOut = captionOutRef.current;
+    const captionScrim = captionScrimRef.current;
     if (!section || !frame) return;
 
     rt.ScrollTrigger.create({
       trigger: section,
       start: "top top",
-      end: "+=160%",
+      // Function form so ScrollTrigger re-resolves it on refresh (resize,
+      // orientation change) via invalidateOnRefresh below. Under 768px the
+      // full 160% pin read as dead scrolling on a phone flick — the frame
+      // has much less visual growth to cover on a narrow viewport anyway
+      // (wStart/wMax are both viewport-relative), so the pin doesn't need
+      // the same scroll distance to earn its payoff.
+      end: () => (window.innerWidth < 768 ? "+=90%" : "+=160%"),
       pin: true,
       anticipatePin: 1,
       scrub: 0.3,
@@ -102,6 +110,12 @@ export function EvidenceExpand() {
           const out = clamp01((p - 0.72) / 0.23);
           captionOut.style.opacity = String(out);
           captionOut.style.transform = `translate3d(0, ${(1 - out) * 1.5}rem, 0)`;
+          // Own fade, independent of the frame's scrimRef (which is most of
+          // the way to fully transparent by the time this caption arrives,
+          // per its 0.62->0.1 fade over the same progress range) — without
+          // this, the caption's light `--text` color sits almost bare
+          // against whatever bright footage is under it.
+          if (captionScrim) captionScrim.style.opacity = String(out);
         }
       },
     });
@@ -138,7 +152,7 @@ export function EvidenceExpand() {
             />
           </div>
         ) : (
-          <SurfaceMedia label={caption} aspect="16/9" />
+          <SurfaceMedia label={caption} aspect="16/9" shape="notch" />
         )}
       </section>
     );
@@ -164,6 +178,12 @@ export function EvidenceExpand() {
           of text SurfaceMedia already renders unconditionally (its own
           small `label`, always visible) — a blocked import loses the
           enhancement, not the content. */}
+      <div
+        ref={captionScrimRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[9] h-48"
+        style={{ background: "linear-gradient(to top, black, transparent)", opacity: 0 }}
+      />
       <p
         ref={captionOutRef}
         className="lead shell absolute bottom-14 left-0 right-0 z-10 text-center"

@@ -3,92 +3,20 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { nameScripts, site } from "@/content/maco";
 import { Mark, Wordmark } from "./mark";
-import { useTheme } from "./theme";
-import { useLayout, type LayoutMode } from "./layout-mode";
+import { ExperienceSwitch } from "./experience-switch";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
 import { usePointerField } from "@/hooks/use-pointer-field";
 import { useOverlayMenu } from "@/hooks/use-overlay-menu";
 import { Magnetic } from "@/components/motion/magnetic";
+import { ArrowGlyph } from "@/components/motion/arrow-glyph";
+import { TextRoll } from "@/components/motion/text-roll";
+import { EdgeFade } from "@/components/motion/edge-fade";
 import { getScrollRuntime } from "@/lib/scroll-runtime";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 import { DUR, EASE_EMPHASIS, EASE_EXIT } from "@/lib/motion";
 import { groundAt, SECTION_SELECTOR, type Ground } from "@/lib/ground";
-
-function ThemeSwitch() {
-  const { theme, setTheme } = useTheme();
-  const btnRef = useRef<HTMLButtonElement>(null);
-  return (
-    <Magnetic>
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={() => {
-          const rect = btnRef.current?.getBoundingClientRect();
-          const origin = rect
-            ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
-            : undefined;
-          setTheme(theme === "obsidian" ? "cobalt" : "obsidian", origin);
-        }}
-        aria-label={`Switch to ${theme === "obsidian" ? "Cobalt (blue on white)" : "Obsidian (black on white)"} theme`}
-        className="label group flex min-h-11 items-center gap-2 border border-line px-3 py-2 transition-colors hover:border-text hover:text-text"
-      >
-        <span
-          className="block h-2.5 w-2.5 border border-current transition-transform duration-300 group-hover:rotate-90"
-          style={{ background: "var(--accent)" }}
-        />
-        {/* Classed (not a bare text node) so layout 3's mobile control
-            cluster (styles.css) can hide it — measured live: the cluster's
-            full "1 2 3 [swatch] Obsidian" footprint (~195px) genuinely
-            overlapped the centered brand chip's hit area on a 390px
-            viewport (elementFromPoint confirmed the brand's own higher
-            z-index was swallowing clicks meant for this button). Text
-            hides, swatch stays — same pattern as `maco-wordmark-text`. */}
-        <span className="theme-switch-text">{theme === "obsidian" ? "Obsidian" : "Cobalt"}</span>
-      </button>
-    </Magnetic>
-  );
-}
-
-const LAYOUT_MODES: readonly LayoutMode[] = ["1", "2", "3"];
-
-/**
- * Small numbered layout switcher, studied from by-kin.com's own LAYOUT 1/2
- * toggle — MaCo's own type/tokens throughout, three modes instead of two.
- * Always visible (every mode, every viewport) since it's the only way back
- * out of modes 2/3 once chosen. Persists via `setLayout` (localStorage +
- * the pre-paint script in __root.tsx), same anti-FOUC shape as ThemeSwitch.
- */
-function LayoutSwitch() {
-  const { layout, setLayout } = useLayout();
-  return (
-    <div role="group" aria-label="Layout" className="label flex items-center border border-line">
-      {LAYOUT_MODES.map((mode) => {
-        const active = layout === mode;
-        return (
-          <button
-            key={mode}
-            type="button"
-            onClick={() => setLayout(mode)}
-            aria-pressed={active}
-            aria-label={`Layout ${mode}`}
-            // Height only, not width: growing width here re-adds to the
-            // ~195px mode-3 mobile footprint styles.css:1930-1936 already
-            // fought to shrink below the centered brand chip's overlap.
-            className="flex h-11 w-8 items-center justify-center border-r border-line transition-colors last:border-r-0 hover:text-text"
-            style={{
-              background: active ? "var(--text)" : "transparent",
-              color: active ? "var(--bg)" : "var(--muted)",
-            }}
-          >
-            {mode}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 /**
  * Mobile floating pill — MaCo-native (React Bits Pill Nav evaluated;
@@ -130,6 +58,7 @@ function MobilePillNav() {
       <div
         data-mobile-pill-nav
         data-over="paper"
+        data-open={open || undefined}
         suppressHydrationWarning
         className="chrome-adaptive fixed inset-x-0 bottom-0 z-50 hidden max-lg:flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       >
@@ -154,7 +83,7 @@ function MobilePillNav() {
                     <Mark size={18} />
                     MaCo
                   </span>
-                  <ThemeSwitch />
+                  <ExperienceSwitch />
                 </div>
                 <nav aria-label="Mobile">
                   <Link
@@ -526,6 +455,7 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
             initial="hidden"
             animate="visible"
           >
+            <EdgeFade position="top" />
             <motion.div variants={itemVariants}>
               <Link
                 to="/"
@@ -568,6 +498,7 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
                 Start a project
               </Link>
             </motion.div>
+            <EdgeFade position="bottom" />
           </motion.nav>
         </motion.div>
       )}
@@ -723,6 +654,12 @@ export function Header() {
     // attribute as a hydration mismatch — confirmed live by toggling this
     // write off and on. Skipping the no-op write removes the race.
     let lastVel = 0;
+    // MobilePillNav hide-on-scroll: last tick where velocity exceeded the
+    // threshold below. Plain elapsed-time comparison on every tick, not a
+    // setTimeout — a timer re-armed every scrolling frame is no different
+    // in effect but adds a second clock to reason about; this reuses the
+    // ticker's own clock the same way `lastTop`/`lastEdge` above do.
+    let lastActiveAt = 0;
 
     getScrollRuntime().then((rt) => {
       if (cancelled || !rt) return;
@@ -793,6 +730,16 @@ export function Header() {
             el.style.setProperty("--vel", String(vel));
           }
         }
+
+        // Dock hide-on-scroll (item 2): 1.5px/frame is a fraction of a
+        // single wheel notch (~8-12, per the `vel` comment above) — enough
+        // to catch the very start of a scroll without false-triggering on
+        // sub-pixel Lenis settle jitter at rest. `data-open` (set by
+        // MobilePillNav itself) always wins over this in CSS, so the open
+        // panel is never hidden mid-interaction even on stale velocity.
+        const now = performance.now();
+        if (Math.abs(rawVel) > 1.5) lastActiveAt = now;
+        if (mobileNav) mobileNav.dataset["scrolling"] = String(now - lastActiveAt < 200);
       };
       rt.gsap.ticker.add(applyGround);
     });
@@ -834,7 +781,7 @@ export function Header() {
                   style={{ color: active ? "var(--text)" : "var(--muted)" }}
                   aria-current={active ? "page" : undefined}
                 >
-                  {item.label}
+                  <TextRoll>{item.label}</TextRoll>
                 </Link>
               );
             })}
@@ -849,8 +796,7 @@ export function Header() {
                 copy. Everywhere else (modes 1 and 3, which have no such
                 backdrop) this is the only copy and stays visible. */}
             <div className="header-controls-primary flex items-center gap-3">
-              <LayoutSwitch />
-              <ThemeSwitch />
+              <ExperienceSwitch />
             </div>
             {/* Same reservation as the brand-group spacer above, for the
                 mode-3 (top-right) trigger placement. */}
@@ -902,20 +848,19 @@ export function Header() {
           {/* Mode 2 only (styles.css) — the wipe covers everything BEHIND
               this overlay, but this overlay itself is the layer that must
               stay visible throughout, per the reference: CLOSE (left,
-              LayoutNavTrigger above) / wordmark (center) / layout switch +
-              theme toggle + CTA (right) never disappear under the panel.
-              LayoutSwitch/ThemeSwitch's real copy lives in the header below
-              (`.header-controls-primary`) for modes 1/3, which have no
-              backdrop here to hide behind — this is the working copy for
-              mode 2 specifically, not a second independent instance
-              visible at the same time as that one (CSS shows exactly one
-              per mode). `ml-auto` here (not on the CTA) is what pushes the
-              whole right-hand group away from centre; harmless in mode 3,
-              where this stays `display:none` (as does the right trigger,
-              which also carries an `ml-auto` for that mode). */}
+              LayoutNavTrigger above) / wordmark (center) / Experience +
+              CTA (right) never disappear under the panel. ExperienceSwitch's
+              other copy lives in the header below (`.header-controls-primary`)
+              for modes 1/3, which have no backdrop here to hide behind —
+              this is the working copy for mode 2 specifically, not a second
+              independent instance visible at the same time as that one (CSS
+              shows exactly one per mode). `ml-auto` here (not on the CTA) is
+              what pushes the whole right-hand group away from centre;
+              harmless in mode 3, where this stays `display:none` (as does
+              the right trigger, which also carries an `ml-auto` for that
+              mode). */}
           <div className="layout-nav-overlay-controls pointer-events-auto ml-auto hidden items-center gap-3">
-            <LayoutSwitch />
-            <ThemeSwitch />
+            <ExperienceSwitch />
           </div>
           <Magnetic className="layout-nav-overlay-cta pointer-events-auto hidden">
             <Link to="/contact" className="btn-solid !px-4 !py-2.5">
@@ -965,8 +910,11 @@ export function Footer() {
           <Wordmark size={44} />
         </div>
 
-        <div className="grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-12">
-          <div className="lg:col-span-3">
+        {/* Three EQUAL thirds at desktop, not the old 3/3/6 split. Every
+            column carries the same `lg:px-8` so the three stay evenly
+            spaced without a grid `gap` at that breakpoint. */}
+        <div className="grid gap-x-12 gap-y-12 py-16 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-0">
+          <div className="lg:px-8">
             <p className="label">Index</p>
             <ul className="mt-5 space-y-1">
               {site.nav.map((n) => (
@@ -975,14 +923,14 @@ export function Footer() {
                     to={n.to}
                     className="link-draw -mx-1 block px-1 py-1.5 text-sm text-muted hover:opacity-100"
                   >
-                    {n.label}
+                    <TextRoll>{n.label}</TextRoll>
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="lg:col-span-3">
+          <div className="lg:px-8">
             <p className="label">Contact</p>
             <ul className="mt-5 space-y-1 text-sm text-muted">
               <li>
@@ -1010,38 +958,46 @@ export function Footer() {
 
           {/* Fills the 6 columns the two link lists leave empty on desktop
               (lg:col-span-3 twice, of 12) — real site copy + the one action
-              a footer should end on, not filler. */}
-          <div className="lg:col-span-6 lg:col-start-7">
+              a footer should end on, not filler. `flex h-full flex-col` +
+              `mt-auto` on the CTA: Contact's 6-line list is taller than
+              this column's own content, and the grid row's default stretch
+              already gives every column that same full height — without
+              this, "Brief us" sat wherever the tagline's line count left
+              it, well short of Contact's last line, so the row read as
+              bottom-ragged instead of resolving on one shared baseline. */}
+          <div className="flex h-full flex-col lg:px-8">
             <p className="label">Start a project</p>
             <p className="mt-5 max-w-sm text-lg" style={{ color: "var(--text)" }}>
               {site.tagline}
             </p>
-            <Magnetic className="mt-6 inline-block">
+            <Magnetic className="mt-auto inline-block pt-6">
               <Link to="/contact" className="btn-line">
-                Brief us <span aria-hidden="true">→</span>
+                Brief us <ArrowGlyph />
               </Link>
             </Magnetic>
           </div>
         </div>
 
-        <div className="label rule-t flex flex-col gap-2 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
-            <span>
-              © {new Date().getFullYear()} MaCo — {site.category}
-            </span>
-            {/* Decorative only (aria-hidden) — dropped below `sm` rather than
-                fighting the copyright line for a 320px row; the theme label
-                stays since it's the one bit of real state here. */}
-            <span
-              ref={scriptRef}
-              className="hidden normal-case tracking-normal opacity-70 sm:inline"
-              style={{ fontFamily: "var(--font-script-fallback)" }}
-              aria-hidden="true"
-            >
-              {nameScripts.map((s) => s.text).join(" · ")}
-            </span>
-          </div>
-          <span>Obsidian / Cobalt</span>
+        {/* Same three-way split as the row above (lg:grid-cols-3, same
+            lg:px-8 per cell) so copyright/script/theme-label land under
+            Index/Contact/Start-a-project respectively instead of the
+            script reel just trailing the copyright line off to one side. */}
+        <div className="label rule-t flex flex-col gap-2 py-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-x-0">
+          <span className="lg:px-8">
+            © {new Date().getFullYear()} MaCo — {site.category}
+          </span>
+          {/* Decorative only (aria-hidden) — dropped below `sm` rather than
+              fighting the copyright line for a 320px row; the theme label
+              stays since it's the one bit of real state here. */}
+          <span
+            ref={scriptRef}
+            className="hidden normal-case tracking-normal opacity-70 sm:inline lg:px-8 lg:text-center"
+            style={{ fontFamily: "var(--font-script-fallback)" }}
+            aria-hidden="true"
+          >
+            {nameScripts.map((s) => s.text).join(" · ")}
+          </span>
+          <span className="sm:ml-auto lg:ml-0 lg:px-8 lg:text-right">Obsidian / Cobalt</span>
         </div>
       </div>
 
@@ -1053,11 +1009,11 @@ export function Footer() {
           the custom cursor into the light source while hovering here —
           see cursor.tsx's CURSOR_SELECTOR and styles.css's
           `[data-state="torch"]` rule. */}
-      <div className="shell footer-giant-shell overflow-hidden">
+      <div className="shell footer-giant-shell relative overflow-hidden">
         <div
           ref={giantMarkRef}
           data-cursor="torch"
-          className="footer-giant-mark wordmark-trace"
+          className="footer-giant-mark wordmark-trace relative"
           aria-hidden="true"
         >
           MaCo

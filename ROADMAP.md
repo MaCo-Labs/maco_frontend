@@ -1,6 +1,14 @@
 # MaCo Website — Roadmap
 
-Last updated: 2026-09-03, later — the 2026-09-01-through-09-03 backlog (item 0 below) is now committed, and a new homepage premium pass landed on top: 4 UI bugs fixed, the two "About" sections merged into one (homepage 11→10 sections), GroundHandoff's transitions rebuilt. See `AI_HANDOFF.md`'s newest entry. **Top priority now: live-browser-verify this pass** — see item 0 below, which replaces the old commit-the-backlog item now that it's done.
+Last updated: 2026-09-15 — an external audit brief's Phase 1 (items 1-5)
+and part of Phase 2 (items 7-8) shipped and committed; see `AI_HANDOFF.md`'s
+newest entry and item -1 below for what's still open from that brief.
+Everything from 2026-09-03 and earlier described as an open priority below
+is stale in the same way `AI_HANDOFF.md`/`PROJECT_STATUS.md` are — it's all
+long committed; `git log --oneline` is authoritative, not this file's own
+"Last updated" history.
+
+Previously: 2026-09-03, later — the 2026-09-01-through-09-03 backlog (item 0 below) is now committed, and a new homepage premium pass landed on top: 4 UI bugs fixed, the two "About" sections merged into one (homepage 11→10 sections), GroundHandoff's transitions rebuilt. See `AI_HANDOFF.md`'s newest entry.
 
 The homepage creative reset (`HOMEPAGE_REDESIGN_PLAN.md`, historical) is
 **implemented and shipped** — current architecture is `CONTEXT.md` §10, not
@@ -16,6 +24,24 @@ OPEN → SURFACE → EVIDENCE → WORK → CLIENTS → CAPABILITY
 See `CONTEXT.md` §10 for the full per-section table (ground, file, pin behavior).
 
 ## What's left, roughly in order
+
+-1. **What's left from the 2026-09-15 external audit brief** (12 items
+    across 3 phases — full detail in `AI_HANDOFF.md`'s newest entry):
+    - Phase 1 (items 1-5) and Phase 2 items 7-8: **done, committed.**
+    - Phase 2 item 6, Signal Rail wayfinding: built and verified working,
+      then **explicitly reverted per direct request** — this is a
+      declined feature, not a pending TODO. Don't re-propose it without
+      new direction.
+    - Phase 3 items 9 (About) and 10 (Clients): needed no code changes,
+      both already matched the brief.
+    - Item 11 (Contact budget currency): resolved — owner chose to keep
+      the INR-only wording rather than invent AED/QAR band values with
+      no source data behind them. Not open.
+    - Item 12 (metadata/a11y): unique titles/one H1/alt text were already
+      correct per the original audit. **Genuinely still open:** a formal
+      colour-contrast audit — no tool for it was available in that
+      session. Low priority unless a specific contrast complaint comes
+      in; the token system hasn't flagged anything on inspection.
 
 0. **Live-browser-verify the 2026-09-03 homepage premium pass.** (Was:
    "commit the backlog" — done, see `git log`.) Preloader numeral/button

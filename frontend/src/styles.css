@@ -266,6 +266,30 @@ html[data-preload="skip"] .maco-preloader {
   display: none;
 }
 
+.preloader-skip:hover {
+  color: var(--text-inverted);
+}
+
+/* Item 2 — MobilePillNav hides during active scroll (chrome.tsx's shared
+   ticker writes `data-scrolling` onto this same element) and slides back
+   ~200ms after scroll settles, so it stops permanently eating ~4.5rem of
+   viewport height on every mobile page. `data-open` is set by
+   MobilePillNav itself (React state, not the ticker) and always wins —
+   the open panel must never hide mid-interaction, even on a stale
+   velocity read the instant `lenis.stop()` (useOverlayMenu) takes hold. */
+/* Reduced motion: the dock stays put, full stop — a disappearing/
+   reappearing fixed element reads as motion regardless of whether the
+   transform between the two states is eased or instant. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-mobile-pill-nav] {
+    transition: transform 0.3s var(--ease-standard);
+  }
+  [data-mobile-pill-nav][data-scrolling="true"]:not([data-open]) {
+    transform: translateY(150%);
+    pointer-events: none;
+  }
+}
+
 /* Adaptive chrome — chrome.tsx's <Header> and <MobilePillNav>, both
    `position: fixed` and mounted outside every section's DOM subtree, so
    they never naturally inherit a [data-ground] remap. chrome.tsx's
@@ -676,6 +700,61 @@ html::-webkit-scrollbar {
   }
 }
 
+/* ArrowGlyph (motion/arrow-glyph.tsx) — the animated replacement for the
+   plain "→" text every CTA above renders as its `[aria-hidden]` child.
+   Sits on top of that span's existing translateX(3px) hover rule (both
+   apply, composing a shift + an internal draw rather than conflicting)
+   since ArrowGlyph's root IS that `[aria-hidden]` element. Read straight
+   off `.btn-solid`/`.btn-line`'s own `:hover` — no `group` class needed
+   because every call site already wraps it in one of those two. */
+.arrow-glyph {
+  width: 1.05em;
+  height: 1.05em;
+  overflow: visible;
+}
+.arrow-glyph-shaft {
+  transform-origin: 4px center;
+  transform: scaleX(0.55);
+  transition: transform 0.35s var(--ease-emphasis);
+}
+.arrow-glyph-head {
+  transition: transform 0.35s var(--ease-emphasis);
+}
+.btn-solid:hover .arrow-glyph-shaft,
+.btn-line:hover .arrow-glyph-shaft {
+  transform: scaleX(1);
+}
+.btn-solid:hover .arrow-glyph-head,
+.btn-line:hover .arrow-glyph-head {
+  transform: translateX(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .arrow-glyph-shaft,
+  .arrow-glyph-head {
+    transition: none;
+  }
+}
+
+/* Experience trigger's accent swatch (experience-switch.tsx) — one full spin
+   on hover, landing back at its resting 0deg orientation rather than a
+   transition that would just snap between two static angles. */
+@keyframes experience-swatch-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.experience-trigger:hover .experience-swatch {
+  animation: experience-swatch-spin 0.5s var(--ease-emphasis);
+}
+@media (prefers-reduced-motion: reduce) {
+  .experience-trigger:hover .experience-swatch {
+    animation: none;
+  }
+}
+
 /* ---------- motion primitives ---------- */
 
 @keyframes maco-rise {
@@ -871,6 +950,30 @@ html::-webkit-scrollbar {
   margin-left: -32px;
   margin-top: -32px;
   background: color-mix(in oklab, var(--text) 8%, transparent);
+}
+
+/* preview: a text-only link (clients.tsx's "Delivered" list, work.$slug's
+   "Next case study") that has no image on screen anywhere near it — the
+   ring itself becomes that image, read off `--cursor-img`
+   (cursor.tsx's onOver), instead of just growing/labeling over content
+   that's already visible like "media" does. Rectangular, not a ring, so
+   it reads as a photo rather than an oversized dot. */
+.maco-cursor[data-state="preview"] {
+  width: 200px;
+  height: 140px;
+  margin-left: -100px;
+  margin-top: -70px;
+  border-radius: var(--radius-card);
+  background-color: var(--surface-2);
+  background-image: var(--cursor-img);
+  background-size: cover;
+  background-position: center;
+  border-color: transparent;
+  overflow: hidden;
+}
+.maco-cursor[data-state="preview"][data-label]::after {
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
 }
 
 /* Short word/phrase inside the ring (§15-19's "VIEW"/"EXPLORE") — `content:
@@ -1614,23 +1717,37 @@ html[data-theme="cobalt"] .footer-giant-mark {
   --radius-pill: 1000px;
 }
 
-/* Default (mode 1) mobile header: `.header-controls-primary` (LayoutSwitch
-   + ThemeSwitch) sits inline with the wordmark in `.shell`'s own flex row —
-   no fixed/overlay repositioning at this mode, unlike 2/3. Below `lg` the
-   nav row and CTA already hide (Tailwind's `lg:flex`/`lg:inline-flex` in
-   chrome.tsx), but ThemeSwitch's text label ("Obsidian"/"Cobalt") didn't:
-   wordmark + LayoutSwitch's three buttons + that label together overflowed
-   past a mobile `.shell` width — confirmed live, the label ran off the
-   right edge under the browser's own tab-count chip. Same icon-only fix
-   mode 3 already applies to this exact button below the same breakpoint
-   (further down this file), generalized here since mode 1 hits the
-   identical unfitted-row problem that fix was written for. */
+/* Default (mode 1) mobile header: `.header-controls-primary` (now
+   `ExperienceSwitch`) sits inline with the wordmark in `.shell`'s own flex
+   row — no fixed/overlay repositioning at this mode, unlike 2/3. 2026-09-14:
+   hidden below `lg` entirely here (not just shrunk) — the brief calls for
+   Layout/Theme living inside the mobile menu instead of the compact header;
+   `MobilePillNav`'s panel (chrome.tsx) renders its own `ExperienceSwitch`
+   copy for that. Scoped to `html[data-layout="1"]` only: mode 3 has no
+   mobile menu to move this into (`[data-mobile-pill-nav]` is
+   `display:none` there) — its own fixed-corner copy of this same
+   container (`.header-control-cluster`, below) is that mode's only mobile
+   access to Layout/Theme, so it must stay visible and untouched by this
+   rule. Mode 2's own overlay copy (`.layout-nav-overlay-controls`) is a
+   different container entirely, also unaffected. */
 @media (max-width: 63.999rem) {
-  .header-controls-primary .theme-switch-text {
+  html[data-layout="1"] .header-controls-primary {
     display: none;
   }
-  .header-controls-primary button[aria-label^="Switch to"] {
-    padding-inline: 0.6rem;
+}
+
+/* Item 2 — extra trailing clearance for a route's LAST section on pages
+   that don't end in `<PageOutro>` (which already runs into the deep-ground
+   Footer's own generous `pb-28`). `work.$slug.tsx`/`products.$slug.tsx`'s
+   closing "Next case study"/"Other product" link previously had only the
+   section's own `py-14` (3.5rem) before the Footer began — enough for
+   MobilePillNav (hide-on-scroll above helps, but the dock is still VISIBLE
+   at rest) to sit directly over that link at some scroll positions. Scoped
+   to match the dock's own visibility exactly (hidden in modes 2/3, so no
+   extra clearance needed there either). */
+@media (max-width: 63.999rem) {
+  html:not([data-layout="2"]):not([data-layout="3"]) .dock-clearance-b {
+    padding-bottom: max(6.5rem, calc(env(safe-area-inset-bottom) + 6rem));
   }
 }
 
@@ -1964,38 +2081,26 @@ html[data-layout="3"] .layout-nav-overlay-brand {
 }
 /* Below `64rem` the brand shares the top row with `.header-control-cluster`
    (relocated there too — see its own rule below, same breakpoint). A full
-   "MaCo" chip centered plus the layout/theme cluster in a corner don't
-   both fit a 390px viewport without overlapping. Text hides, mark stays —
+   "MaCo" chip centered plus the corner control don't both fit a 390px
+   viewport without overlapping. Text hides, mark stays —
    `maco-wordmark-text` (mark.tsx) — shrinking the chip to icon-only width.
    Desktop keeps the full wordmark; only this mode-3 mobile row is tight.
-   Confirmed live via `elementFromPoint` before this rule existed: the
-   cluster's OWN full footprint (LayoutSwitch's 3 buttons + ThemeSwitch's
-   swatch-plus-label, ~195px) still overlapped even the shrunk chip by
+   Confirmed live via `elementFromPoint` before this rule existed: the old
+   two-control cluster (LayoutSwitch's 3 buttons + ThemeSwitch's
+   swatch-plus-label, ~195px combined) overlapped even the shrunk chip by
    ~58px, and the brand's higher z-index ([data-nav-trigger-overlay] is
    z-[47] vs the header's z-[42]) meant it silently ate every click meant
-   for the theme button underneath — the two chips didn't look broken
-   overlapping, but the button in that zone stopped being clickable.
-   `.theme-switch-text` (chrome.tsx) hides ThemeSwitch's own label the same
-   way, closing the real gap rather than just the visual one. */
+   for the button underneath. 2026-09-14: the cluster is now one
+   `ExperienceSwitch` trigger (chrome.tsx) instead of four buttons combined
+   — the ThemeSwitch-label-hiding/gap-tightening rules this block used to
+   need are gone with it; re-measure before reintroducing similar rules if
+   "Experience" ever collides with the chip again at this width. */
 @media (max-width: 63.999rem) {
   html[data-layout="3"] .layout-nav-overlay-brand .maco-wordmark-text {
     display: none;
   }
   html[data-layout="3"] .layout-nav-overlay-brand {
     padding-inline: 0.6rem;
-  }
-  html[data-layout="3"] .header-control-cluster .theme-switch-text {
-    display: none;
-  }
-  html[data-layout="3"] .header-control-cluster button[aria-label^="Switch to"] {
-    padding-inline: 0.6rem;
-  }
-  /* Still 4px short after the two rules above — the remaining slack is
-     `.header-controls-primary`'s own `gap-3` (0.75rem) between LayoutSwitch
-     and ThemeSwitch (chrome.tsx), tightened here rather than shaving the
-     brand chip further (already at its own minimum comfortable padding). */
-  html[data-layout="3"] .header-controls-primary {
-    gap: 0.375rem;
   }
 }
 @media (min-width: 64rem) {

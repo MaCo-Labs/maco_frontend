@@ -1,11 +1,13 @@
 import { useState, type CSSProperties } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { projects } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
 import { MorphSlider } from "@/components/media/morph-slider";
+import { CardMedia } from "@/components/home/summary";
 import { useSectionHandoff } from "@/hooks/use-section-handoff";
 import { PageOutro } from "@/components/inner/page-outro";
 
@@ -16,15 +18,23 @@ export const Route = createFileRoute("/work/")({
       {
         name: "description",
         content:
-          "Case studies from MaCo: Ananta Nethralaya, Al Afzah Group, Soorath Autos and HeadGreen.",
+          "Case studies from MaCo: Ananta Nethralaya, Al Afzah Group, Soorath Autos, HeadGreen and Ozone Fitout & Contracting.",
       },
       { property: "og:title", content: "Work — MaCo" },
       {
         property: "og:description",
         content:
-          "Real client work across healthcare, construction, automotive retail and EV mobility.",
+          "Real client work across healthcare, construction, automotive retail, EV mobility and interior fit-out.",
+      },
+      { property: "og:url", content: absoluteUrl("/work") },
+      {
+        "script:ld+json": breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Work", path: "/work" },
+        ]),
       },
     ],
+    links: [{ rel: "canonical", href: absoluteUrl("/work") }],
   }),
   component: WorkIndex,
 });
@@ -53,7 +63,7 @@ function WorkIndex() {
           <p className="label lg:col-span-3">Index / Client work</p>
           <div className="lg:col-span-9">
             <LineReveal as="h1" className="display-lg max-w-3xl">
-              Four clients. <span style={{ color: "var(--muted)" }}>Four different problems.</span>
+              Five clients. <span style={{ color: "var(--muted)" }}>Five different problems.</span>
             </LineReveal>
             <ScrubReveal as="p" hold className="mt-8 max-w-xl text-muted">
               Client work is kept separate from MaCo-owned products. Everything below was delivered
@@ -109,6 +119,24 @@ function WorkIndex() {
                       {p.short_description}
                     </p>
                   </Link>
+                  {/* Mobile only (`lg:hidden` — the sticky desktop stage
+                      below takes over at `lg`) — a sibling of the `<Link>`
+                      above, not nested inside it: `CardMedia` can render a
+                      real `<button>` (MorphSlider's controls), and
+                      `<button>` inside `<a>` is invalid HTML / breaks focus
+                      order. No `gallery` prop here deliberately — five
+                      simultaneous MorphSlider instances is five concurrent
+                      WebGL contexts on one mobile page (confirmed live:
+                      later ones went black, consistent with hitting a
+                      context-count ceiling). `media`/`brand` fall through
+                      to a plain video/poster or logo plate instead — one
+                      real, non-invented image per row, no WebGL. The
+                      swipeable multi-image sequence lives on the case-study
+                      page instead (work.$slug.tsx), where only one project
+                      is ever on screen at a time. */}
+                  <div className="relative z-[1] mt-4 lg:hidden">
+                    <CardMedia media={p.media} brand={p.brand} title={p.title} aspect="4 / 3" />
+                  </div>
                 </article>
               ))}
             </Stagger>
@@ -149,7 +177,11 @@ function WorkIndex() {
                     )
                   )}
                 </div>
-                <p className="mt-4 text-sm text-muted">
+                {/* Announces the swap to assistive tech — sighted users see
+                    the stage image change on hover/focus, but nothing
+                    told a screen-reader user which project that now
+                    matches without this. */}
+                <p aria-live="polite" className="mt-4 text-sm text-muted">
                   {activeProject.client} — {activeProject.short_description}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
@@ -162,7 +194,7 @@ function WorkIndex() {
                       Case study
                     </Link>
                   </Magnetic>
-                  {activeProject.external_url && (
+                  {activeProject.external_url ? (
                     <Magnetic>
                       <a
                         href={activeProject.external_url}
@@ -173,6 +205,8 @@ function WorkIndex() {
                         Visit site ↗
                       </a>
                     </Magnetic>
+                  ) : (
+                    <span className="label self-center text-muted">Print / brand piece</span>
                   )}
                 </div>
               </div>

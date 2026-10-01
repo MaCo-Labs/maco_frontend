@@ -5,6 +5,7 @@ import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { RuleDraw } from "@/components/motion/rule-draw";
 import { Magnetic } from "@/components/motion/magnetic";
+import { ArrowGlyph } from "@/components/motion/arrow-glyph";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 
 /**
@@ -74,7 +75,17 @@ export function PageOutro({
               mode="scrub"
               start="top 95%"
               end="top 30%"
-              className="display-hero mt-4 max-w-xl"
+              // `max-w-xl` (576px) clipped real text here: GSAP SplitText's
+              // per-line reveal mask (`overflow: clip`) takes each
+              // auto-wrapped line at face value and assumes it already
+              // fits — confirmed live, `/products`' "Own software next,
+              // not just build it." lost part of "software" (measures
+              // ~597px at this font-size/tracking, wider than the 576px
+              // box). Same fix as home/outro.tsx's identical heading
+              // pattern — every other current `heading` prop here already
+              // fit, but this is shared across 4 routes with copy that can
+              // change, so the fix belongs at the component, not per-page.
+              className="display-hero mt-4 max-w-[40rem]"
               style={{ color: "var(--text)" }}
             >
               {heading}
@@ -89,7 +100,7 @@ export function PageOutro({
               {cta && (
                 <Magnetic>
                   <Link to={cta.to} className="btn-solid">
-                    {cta.label} <span aria-hidden="true">→</span>
+                    {cta.label} <ArrowGlyph />
                   </Link>
                 </Magnetic>
               )}

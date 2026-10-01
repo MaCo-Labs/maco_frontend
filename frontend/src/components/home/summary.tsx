@@ -5,6 +5,7 @@ import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
 import { Magnetic } from "@/components/motion/magnetic";
+import { CardTilt } from "@/components/motion/card-tilt";
 import { ProductVideo } from "@/components/media/product-video";
 import { MorphSlider } from "@/components/media/morph-slider";
 import { PhoneMockup } from "@/components/media/phone-mockup";
@@ -192,7 +193,15 @@ function SummaryCard({
           data-cursor-label={cursorLabel}
           className="group block transition-transform duration-300 hover:-translate-y-1.5"
         >
-          <CardMedia media={media} brand={brand} gallery={gallery} screen={screen} title={title} />
+          <CardTilt>
+            <CardMedia
+              media={media}
+              brand={brand}
+              gallery={gallery}
+              screen={screen}
+              title={title}
+            />
+          </CardTilt>
           <div className="mt-6 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               {brand && (

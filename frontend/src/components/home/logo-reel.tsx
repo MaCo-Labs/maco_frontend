@@ -15,15 +15,16 @@ import { ScrubReveal } from "@/components/motion/scrub-reveal";
  *
  * The track is rendered twice and translated -50%, which is what makes
  * the loop seamless — the second copy is `aria-hidden` so a screen reader
- * hears four clients, not eight. It is CSS-only (`cb-reel` in styles.css,
+ * hears five clients, not ten. It is CSS-only (`cb-reel` in styles.css,
  * matching Cuberto's own pure-CSS motion): no ScrollTrigger, no rAF, and
  * it stops dead under `prefers-reduced-motion`.
  *
  * The two-copy -50% loop only reads as seamless while the visible window
- * is narrower than one copy: 4 cards x (w-72 288px + mx-3 24px) = 1248px.
- * `.cb-reel-mask` (styles.css) caps at 76rem for exactly this reason — do
- * not remove that max-width without re-deriving the bound, or the seam
- * becomes visible above ~1248px and a client logo appears to duplicate.
+ * is narrower than one copy: 5 cards x (w-72 288px + mx-3 24px) = 1560px.
+ * `.cb-reel-mask` (styles.css) caps at 76rem (1216px) for exactly this
+ * reason — do not remove that max-width without re-deriving the bound, or
+ * the seam becomes visible above the cap and a client logo appears to
+ * duplicate.
  *
  * Each card carries its `client.industry` under the mark — this is now
  * the ONLY client display on the page (Record's logo wall was

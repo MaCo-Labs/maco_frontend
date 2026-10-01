@@ -118,6 +118,7 @@ export const site = {
     { label: "Qatar", number: "+974 3126 6690" },
     { label: "Dubai", number: "+971 54 321 0907" },
     { label: "India", number: "+91 73067 94846" },
+    { label: "India (2)", number: "+91 70251 95638" },
   ],
   location: "Kochi, Kerala, India",
   nav: [

@@ -71,8 +71,19 @@ if (!existsSync(src)) {
   process.exit(1);
 }
 
-/** VP9/WebM + H.264/MP4 pair at one width. `audio: false` drops the track. */
-function encodePair(width, base, audio) {
+/**
+ * VP9/WebM + H.264/MP4 pair at one width. `audio: false` drops the track.
+ *
+ * 2026-09-17: CRF tightened (VP9 36->30/26, H.264 24->20/18) — the previous
+ * values read as visibly over-compressed on the actual dashboard/kanban UI
+ * this is a recording of (fine text, thin grid lines), the one thing on
+ * the whole site that's real footage rather than a designed surface.
+ * Quality only, not reach: still the same 1280w/1920w, same lazy-mount +
+ * connection-gated fetch in `product-video.tsx`/`video-lightbox.tsx` — a
+ * visitor who wouldn't have fetched the old file still doesn't fetch this
+ * one, they just get a sharper result on the runs where they do.
+ */
+function encodePair(width, base, audio, { vp9Crf, h264Crf }) {
   const vf = `scale=${width}:-2,format=yuv420p`;
   run(
     [
@@ -89,7 +100,7 @@ function encodePair(width, base, audio) {
       "-c:v",
       "libvpx-vp9",
       "-crf",
-      "36",
+      String(vp9Crf),
       "-b:v",
       "0",
       "-deadline",
@@ -98,7 +109,7 @@ function encodePair(width, base, audio) {
       "2",
       path.join(outVideo, `${base}.webm`),
     ],
-    `bridge/${base}.webm (VP9${audio ? " + Opus" : ", silent"})`,
+    `bridge/${base}.webm (VP9${audio ? " + Opus" : ", silent"}, crf ${vp9Crf})`,
   );
 
   run(
@@ -118,19 +129,24 @@ function encodePair(width, base, audio) {
       "-preset",
       "slow",
       "-crf",
-      "24",
+      String(h264Crf),
       "-profile:v",
       "high",
       "-movflags",
       "+faststart",
       path.join(outVideo, `${base}.mp4`),
     ],
-    `bridge/${base}.mp4 (H.264${audio ? " + AAC" : ", silent"}, Safari fallback)`,
+    `bridge/${base}.mp4 (H.264${audio ? " + AAC" : ", silent"}, Safari fallback, crf ${h264Crf})`,
   );
 }
 
-encodePair(INLINE_W, "capture", false);
-encodePair(FEATURE_W, "feature", true);
+// capture: inline scroll-scrub frame, still lazy/connection-gated, so a
+// quality bump costs nothing on the runs that never fetch it.
+encodePair(INLINE_W, "capture", false, { vp9Crf: 30, h264Crf: 20 });
+// feature: the fullscreen/audio lightbox encode — never fetched until the
+// visitor clicks to expand, so it can afford to be the sharpest file on
+// the site.
+encodePair(FEATURE_W, "feature", true, { vp9Crf: 26, h264Crf: 18 });
 
 // Poster: 1s into the trimmed segment (clean dashboard frame, no cursor
 // mid-drag) — matches the video's first visible frame so there's no

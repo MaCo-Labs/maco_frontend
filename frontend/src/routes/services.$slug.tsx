@@ -1,11 +1,13 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getService, getProject, getProduct, services, type Service } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd, ORGANIZATION_ID } from "@/lib/seo";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
 import { usePointerField } from "@/hooks/use-pointer-field";
+import { NotFoundSection } from "@/components/inner/not-found-section";
 
 /** One Evidence cell — project or product, same chrome either way. Carries
  *  its own `usePointerField` so `.evidence-spotlight`'s --px/--py glow is
@@ -58,15 +60,38 @@ export const Route = createFileRoute("/services/$slug")({
       };
     }
     const s = loaderData.service;
+    const path = `/services/${s.slug}`;
     return {
       meta: [
         { title: s.seo_title },
         { name: "description", content: s.seo_description },
         { property: "og:title", content: s.seo_title },
         { property: "og:description", content: s.seo_description },
+        { property: "og:url", content: absoluteUrl(path) },
+        {
+          "script:ld+json": breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Services", path: "/services" },
+            { name: s.title, path },
+          ]),
+        },
+        {
+          "script:ld+json": {
+            "@context": "https://schema.org",
+            "@type": "Service",
+            name: s.title,
+            description: s.description,
+            url: absoluteUrl(path),
+            provider: { "@id": ORGANIZATION_ID },
+          },
+        },
       ],
+      links: [{ rel: "canonical", href: absoluteUrl(path) }],
     };
   },
+  notFoundComponent: () => (
+    <NotFoundSection label="Service not found" backTo="/services" backLabel="Back to services" />
+  ),
   component: ServiceDetail,
 });
 
@@ -76,6 +101,12 @@ function ServiceDetail() {
   const next = services[
     (services.findIndex((s) => s.slug === slug) + 1) % services.length
   ] as Service;
+  // Desktop's `:hover` gives every capability row this same highlight for
+  // free — this only exists for touch, where hover never fires, and for
+  // keyboard, where a real `<button>` gets it too. Single-select and
+  // sticky (item 7 — stays active until another row is chosen), same
+  // "one active at a time" shape `Accordion` already uses elsewhere.
+  const [active, setActive] = useState<number | null>(null);
 
   return (
     <>
@@ -106,21 +137,31 @@ function ServiceDetail() {
           <p className="label lg:col-span-3">Capabilities</p>
           <div className="lg:col-span-9">
             <Stagger as="div" gap={0.1} band={0.35}>
-              {service.capabilities.map((c, i) => (
-                <div
-                  key={c.title}
-                  className="stagger-item group rule-t grid gap-2 py-6 md:grid-cols-12 md:gap-6"
-                  style={{ "--i": i } as CSSProperties}
-                >
-                  <span className="label md:col-span-1">{String(i + 1).padStart(2, "0")}</span>
-                  <h2 className="font-display text-xl tracking-[-0.03em] transition-transform duration-300 ease-[var(--ease-emphasis)] group-hover:translate-x-1 md:col-span-4">
-                    {c.title}
-                  </h2>
-                  <p className="max-w-xl text-sm text-muted transition-[color,transform] duration-300 ease-[var(--ease-emphasis)] group-hover:translate-x-1 group-hover:text-[var(--text)] md:col-span-7">
-                    {c.description}
-                  </p>
-                </div>
-              ))}
+              {service.capabilities.map((c, i) => {
+                const isActive = active === i;
+                return (
+                  <button
+                    key={c.title}
+                    type="button"
+                    onClick={() => setActive(i)}
+                    aria-pressed={isActive}
+                    className="stagger-item group rule-t grid w-full gap-2 py-6 text-left md:grid-cols-12 md:gap-6"
+                    style={{ "--i": i } as CSSProperties}
+                  >
+                    <span className="label md:col-span-1">{String(i + 1).padStart(2, "0")}</span>
+                    <h2
+                      className={`font-display text-xl tracking-[-0.03em] transition-transform duration-300 ease-[var(--ease-emphasis)] group-hover:translate-x-1 md:col-span-4 ${isActive ? "translate-x-1" : ""}`}
+                    >
+                      {c.title}
+                    </h2>
+                    <p
+                      className={`max-w-xl text-sm text-muted transition-[color,transform] duration-300 ease-[var(--ease-emphasis)] group-hover:translate-x-1 group-hover:text-[var(--text)] md:col-span-7 ${isActive ? "translate-x-1 text-[var(--text)]" : ""}`}
+                    >
+                      {c.description}
+                    </p>
+                  </button>
+                );
+              })}
             </Stagger>
             <div className="rule-t" />
           </div>

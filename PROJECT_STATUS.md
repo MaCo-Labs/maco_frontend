@@ -1,6 +1,18 @@
 # MaCo Website — Project Status
 
-Last updated: 2026-09-05, later — "contact/client/fix" pass: real contact
+Last updated: 2026-09-15 — external audit brief, Phase 1 (Experience
+control consolidation, mobile dock hide-on-scroll, five-client content
+fixes, shortened preloader + Skip, product proof in the product hero) and
+part of Phase 2 (Services capability tap/keyboard, Work index mobile
+image) shipped and committed; a Signal Rail wayfinding concept was built,
+verified working, then explicitly reverted per direct request (code no
+longer exists in this checkout — see `AI_HANDOFF.md`'s newest entry and
+`ROADMAP.md`). **Committed** — see "Verified this pass" below. The
+"uncommitted" framing on every entry below this point is stale: those
+passes are now committed too, just never resynced here — `git log
+--oneline` is authoritative for what landed when.
+
+Previously: 2026-09-05, later — "contact/client/fix" pass: real contact
 email + 3 phone numbers wired into `/contact` and the footer; a 5th
 client/project (Ozone Fitout & Contracting W.L.L., a brochure-only
 engagement with no live site, which made `Project.external_url` and
@@ -40,13 +52,53 @@ Statuses: **DONE** | **PARTIAL** | **NOT STARTED**
 | Homepage (10 sections, Cuberto-parity structure) | DONE — full structural rebuild 2026-08-28, same-day §13 refinement pass, a 2026-08-29 pass (dark-first ground sequence, Capabilities dark-panel accordion, masked video-in-text hero, custom cursor + word-reveal text device), a tenth pass (clients reel geometry fix, Lenis retune, IDENTITY script curation + footer sync, first-paint preloader, full-width footer wordmark, three-mode layout switcher), an eleventh pass (`/about` SSR fix, cursor generalized to a semantic per-state/theme/ground-aware system + footer torch, layout modes 2/3 rebuilt to match their references, 15-unit premium audit, `?v2=` flags flipped to default and removed), a 2026-08-31 motion/nav pass (all five non-homepage routes migrated off the deprecated `MotionSection`; Layout 3's nav replaced twice same day — first with boxed split rails, then with `EdgeNav`'s unboxed page-indicator dots once the owner reviewed the rails live; mode 3 gained the same compact menu mode 2 has; the menu panel and edge dots now defer to each other instead of both showing at once; Layout 2's panel made translucent; hero corner marks removed; preloader gated on a click-through Enter action; cursor word labels; motion tokens centralized), a 2026-09-01 chrome/motion/reveal pass (Layout 2 rebuilt to iventions.com's actual diagonal-wipe silhouette with a persistent CLOSE/wordmark/CTA row above it, EdgeNav narrowed to mode 3 only, preloader retimed and enlarged, FEATURE's accordion temporarily replaced with a scroll-driven sequential reveal, GroundHandoff's recede weighted by structural role, cursor color made ground-aware everywhere instead of only while hovering), two 2026-09-02 passes (FEATURE pacing/Layout 2 wipe/mobile collision fixes from 3 owner screen recordings, then a separate six-item pass: dynamic Layout 2 panel tone, logo mark cropped to its real content, Layout 3 mobile control-cluster/wordmark/TOPHEAD-padding hygiene), and a 2026-09-03 pass (FEATURE reverted from the scroll-driven reveal back to `Accordion`'s hover-to-open — the scroll version lagged real scroll gestures; `groundAt()` gained a `fallback` param fixing a ground-tone flash at deep-to-deep section seams), plus 3 bug-fix passes + 6 motion-audit fixes from 2026-08-27 predating it, and a 2026-09-03 later pass (4 UI bugs fixed, the two "About" sections merged into one — Record deleted, homepage 11→10 sections — GroundHandoff rebuilt as opacity-only fades + real rounded overlaps at the 2 ground-flip boundaries) | See `CONTEXT.md` §10 for the current architecture. All layout modes/cursor/torch ship as default, no preview flag. Everything through the earlier 2026-09-03 pass is committed (`git log`); the later homepage-premium-pass commit is **not yet live-browser-verified** (see "Not yet verified" below). One pre-existing, out-of-scope finding remains open: a headless-screenshot-only artifact noted in the ninth-pass entry |
 | Two-theme system (Obsidian/Cobalt) | DONE | Separate font set per theme, radial clip-path wipe on switch |
 | Contact form → backend | DEGRADED (by design) | Posts to `VITE_API_BASE_URL` (throttled + honeypot) when set; backend moved to `../maco-backend`, var unset here so form shows mailto fallback |
-| Mobile nav | DONE | Focus trap, Escape, backdrop dismiss |
+| Mobile nav | DONE | Focus trap, Escape, backdrop dismiss; mobile dock now also hides during active scroll (2026-09-15) |
+| External audit brief (Phase 1/2 items) | PARTIAL | Phase 1 (items 1-5) and part of Phase 2 (items 7-8) done — see `AI_HANDOFF.md`'s 2026-09-15 entry. Phase 2 item 6 (Signal Rail) built, verified, then reverted per direct request. Phase 3 items 9/10 needed no changes; item 11 resolved (owner kept INR-only); item 12's contrast audit not done — see `ROADMAP.md` |
 | Dead-code / dependency cleanup | DONE | 2026-08-21 pass — see `CONTEXT.md` §11 |
-| Docs resynced to code | DONE | This pass |
+| Docs resynced to code | PARTIAL | This pass added a new session entry + fixed specific stale facts (preloader timing, ExperienceSwitch); did not attempt the full 2026-09-05→09-15 historical resync — see the "Last updated" note above |
 | `tsc --noEmit` | PARTIAL | One pre-existing error in `MaCoGlobe.tsx` (react-globe.gl type mismatch), unrelated to any recent change |
 | Test suite | NOT STARTED | No test runner installed. Verification gate is `bun run build` + `bun run lint` |
 | Deployment config | NOT STARTED | No CI, no `vercel.json`/`amplify.yml`/`Dockerfile`. Host not yet decided. Repo is frontend-only now |
 | Cross-browser / real-device motion audit | NOT STARTED | Only desktop-viewport Playwright checks have been run historically |
+
+## Verified this pass (2026-09-15 — external audit brief)
+
+- `npx eslint` and `npx tsc --noEmit` clean after every one of the 13
+  commits (same pre-existing `vite.config.ts` prettier issues and 3
+  `react-refresh` warnings, unrelated, left alone)
+- `npm run build` clean throughout
+- **Real browser passes performed against production builds**
+  (`npm run build` + `node .output/server/index.mjs`), not the dev
+  server — dev-mode's own hydration/HMR timing produced enough false
+  positives while debugging the preloader's Skip control that production
+  became the only trustworthy signal for anything timing-sensitive:
+  - ExperienceSwitch: panel opens/closes correctly and stays fully
+    on-screen in all 4 contexts (header desktop, mobile menu, layout-3
+    mobile, layout-3 desktop — the last one was the bug found and fixed
+    this pass)
+  - Mobile dock: hides during a real wheel-scroll, reappears ~300-400ms
+    after it settles, never hides while its panel is open, stays put
+    under `prefers-reduced-motion`
+  - Preloader: Skip and Enter both correctly dismiss (Skip ~600ms, Enter
+    per its existing 0.7s exit), keyboard-Enter-on-Skip works (focus
+    lands there on mount), reduced-motion still CSS-pre-hidden
+  - Services capability rows: tap selects/deselects, single-select holds
+    across rows, keyboard Enter activates the focused row
+  - Work index: all 5 rows show distinct real screenshots on mobile with
+    zero WebGL contention (confirmed 0 `.morph-slider` instances there);
+    the case-study detail page's gallery correctly shows exactly 1
+    instance with working swipe/arrow/dot controls
+  - Signal Rail (before revert): every route mapped to the correct stop,
+    hidden in layout modes 2/3, mobile trigger showed all 4 phase dots
+  - A 16-route × 3-viewport (1440px, 375px, 414px) sweep with a hard
+    refresh on every route — 47/48 clean on first pass, the one timeout
+    confirmed a transient load artifact on isolated re-check
+  - A scroll-smoothness pass (real `mouse.wheel()` events, not
+    `window.scrollTo`) down and back up on 5 pages — zero console errors,
+    zero stuck `ScrollTrigger` pin-spacers, visually clean at 5 scroll
+    depths on the homepage
+- **Not verified this pass:** formal colour-contrast audit (no tool
+  available this session)
 
 ## Verified this pass (2026-09-05, later — contact/client/fix pass)
 

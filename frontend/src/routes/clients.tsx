@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { clients, getProject } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
@@ -15,14 +16,22 @@ export const Route = createFileRoute("/clients")({
       {
         name: "description",
         content:
-          "Ananta Nethralaya, Al Afzah Group WLL, Soorath Autos and HeadGreen — the organisations behind MaCo's delivered work.",
+          "Ananta Nethralaya, Al Afzah Group WLL, Soorath Autos, HeadGreen and Ozone Fitout & Contracting — the organisations behind MaCo's delivered work.",
       },
       { property: "og:title", content: "Clients — MaCo" },
       {
         property: "og:description",
         content: "The organisations MaCo builds and maintains software for.",
       },
+      { property: "og:url", content: absoluteUrl("/clients") },
+      {
+        "script:ld+json": breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Clients", path: "/clients" },
+        ]),
+      },
     ],
+    links: [{ rel: "canonical", href: absoluteUrl("/clients") }],
   }),
   component: ClientsPage,
 });
@@ -67,14 +76,21 @@ function ClientRow({ c, i }: { c: (typeof clients)[number]; i: number }) {
               if (!proj) return null;
               return (
                 <li key={w}>
-                  <Link to="/work/$slug" params={{ slug: w }} className="link-draw text-lg">
+                  <Link
+                    to="/work/$slug"
+                    params={{ slug: w }}
+                    className="link-draw text-lg"
+                    data-cursor={proj.media?.poster ? "preview" : undefined}
+                    data-cursor-image={proj.media?.poster}
+                    data-cursor-label={proj.media?.poster ? "View" : undefined}
+                  >
                     {proj.title}
                   </Link>
                 </li>
               );
             })}
           </ul>
-          {c.website && (
+          {c.website ? (
             <a
               href={c.website}
               target="_blank"
@@ -83,6 +99,10 @@ function ClientRow({ c, i }: { c: (typeof clients)[number]; i: number }) {
             >
               {c.website.replace("https://", "").replace(/\/$/, "")} ↗
             </a>
+          ) : (
+            <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
+              Print / brand piece
+            </p>
           )}
         </div>
       </div>

@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "vite dev",
     "dev:fresh": "vite dev --port 5174",
-    "build": "vite build",
+    "build": "npm run sitemap && vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "sitemap": "node --experimental-strip-types scripts/generate-sitemap.mjs",
     "media": "node scripts/build-media.mjs",
-    "shoot": "node scripts/shoot.mjs"
+    "shoot": "node scripts/shoot.mjs",
+    "lighthouse": "lhci autorun"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",
@@ -31,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.62.1",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",

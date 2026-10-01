@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getProject, getService, projects, type Project } from "@/content/maco";
+import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
+import { NotFoundSection } from "@/components/inner/not-found-section";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
@@ -19,15 +21,28 @@ export const Route = createFileRoute("/work/$slug")({
         meta: [{ title: "Case study not found — MaCo" }, { name: "robots", content: "noindex" }],
       };
     }
+    const path = `/work/${p.slug}`;
     return {
       meta: [
         { title: p.seo_title },
         { name: "description", content: p.seo_description },
         { property: "og:title", content: p.seo_title },
         { property: "og:description", content: p.seo_description },
+        { property: "og:url", content: absoluteUrl(path) },
+        {
+          "script:ld+json": breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Work", path: "/work" },
+            { name: p.title, path },
+          ]),
+        },
       ],
+      links: [{ rel: "canonical", href: absoluteUrl(path) }],
     };
   },
+  notFoundComponent: () => (
+    <NotFoundSection label="Case study not found" backTo="/work" backLabel="Back to work" />
+  ),
   component: WorkDetail,
 });
 
@@ -57,9 +72,15 @@ function WorkDetail() {
           <LineReveal as="h1" className="display-hero mt-8 -ml-[0.04em]">
             {p.title}
           </LineReveal>
+          {/* `gallery` passed here (item 8) — only one project is ever on
+              this page, so unlike the /work index list this is a single
+              MorphSlider instance, not several competing for WebGL
+              contexts. Real captures only (`p.gallery`, content/maco.ts) —
+              never invented. */}
           <CardMedia
             media={p.media}
             brand={p.brand}
+            gallery={p.gallery}
             title={p.title}
             aspect="16 / 9"
             className="mt-10"
@@ -144,12 +165,15 @@ function WorkDetail() {
       </section>
 
       <section data-ground="paper" aria-label="Next case study">
-        <div className="shell py-14 lg:py-20">
+        <div className="shell dock-clearance-b py-14 lg:py-20">
           <p className="label">Next case study</p>
           <Link
             to="/work/$slug"
             params={{ slug: next.slug }}
             className="display-lg link-draw mt-4 inline-block"
+            data-cursor={next.media?.poster ? "preview" : undefined}
+            data-cursor-image={next.media?.poster}
+            data-cursor-label={next.media?.poster ? "View" : undefined}
           >
             {next.title}
           </Link>

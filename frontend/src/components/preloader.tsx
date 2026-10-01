@@ -9,11 +9,12 @@ import { DUR, EASE_EMPHASIS } from "@/lib/motion";
 
 const RADIUS = 86;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-// 2026-09-01: how long the counter takes to visibly tick through numbers
-// on a fast connection, where the old 1.6s ceiling read as "very fast"
-// with most integers skipped. See the tween below for how this interacts
-// with the 92 ceiling and the real readiness signal.
-const MIN_DURATION_MS = 2600;
+// 2026-09-14: shortened from 2600ms — the ceremony was costing every
+// visitor 3s+ before Enter regardless of connection speed. A Skip control
+// (see enterSite/skipButtonRef below) now covers anyone who doesn't want
+// to wait even this long; this constant just sets how long the ring still
+// gets to play out for everyone else.
+const MIN_DURATION_MS = 1100;
 
 /**
  * First-paint loader: a percentage ring around MaCo's mark, on `deep`
@@ -47,15 +48,14 @@ const MIN_DURATION_MS = 2600;
  *
  * Progress is a proxy tween, not byte-accounted.
  * ponytail: time-based illusion, swap for real resource tracking only if
- * it visibly misreports. It runs toward 92 over MIN_DURATION_MS (2.6s,
+ * it visibly misreports. It runs toward 92 over MIN_DURATION_MS (1.1s,
  * linear — a constant tick rate is what makes the counter visibly pass
  * through nearly every integer instead of skipping) and only starts its
  * snap to 100 once BOTH that duration and the real readiness signal (web
- * fonts + the hero's poster image decoded) have resolved — 2026-09-01,
- * previously gated on readiness alone at a faster ~1.6s pace, which read
- * as rushed on a fast connection. A slow connection still shows real
- * progress past 92 instead of stalling at a fixed number; a fast one
- * still gets the full deliberate ~2.6s+0.45s beat rather than finishing
+ * fonts + the hero's poster image decoded) have resolved. A slow
+ * connection still shows real progress past 92 instead of stalling at a
+ * fixed number; a fast one still gets the full ~1.1s+0.45s beat rather
+ * than finishing
  * the instant assets resolve.
  *
  * The ring's `stroke-dashoffset` is written directly via ref on every
@@ -195,18 +195,34 @@ export function Preloader() {
     };
   }, [reduced]);
 
+  // Enter (after watching/waiting for the ring) keeps the 0.7s exit
+  // flourish below; Skip signals "get me out now" — that intent shouldn't
+  // still sit behind a 0.7s fade, so it collapses the same exit transition
+  // to instant instead of forking a second unmount path.
+  const [instantExit, setInstantExit] = useState(false);
+
   const enterSite = () => {
     getLiveScrollRuntime()?.lenis.start();
     document.body.style.overflow = prevOverflowRef.current;
     markDone();
   };
 
+  const skipSite = () => {
+    setInstantExit(true);
+    enterSite();
+  };
+
   const enterButtonRef = useRef<HTMLButtonElement>(null);
+  const skipButtonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    // The preloader is the only interactive surface on screen while it's
-    // up (scroll is locked) — move focus to the one action that exists
-    // the moment it appears, rather than leaving a keyboard visitor to
-    // hunt for it.
+    // Skip is the only interactive surface while the ring is still
+    // running — focus it immediately so a keyboard visitor never has to
+    // wait for Enter to become the first reachable control.
+    if (!reduced) skipButtonRef.current?.focus();
+  }, [reduced]);
+  useEffect(() => {
+    // Once Enter becomes real (ready), it's the more useful default
+    // target — move focus there.
     if (ready) enterButtonRef.current?.focus();
   }, [ready]);
 
@@ -225,9 +241,13 @@ export function Preloader() {
           className="maco-preloader fixed inset-0 z-[110] flex items-center justify-center"
           style={{ background: "var(--surface-inverted)", color: "var(--text-inverted)" }}
           exit={{
+            // `scale` targets the same 1.06 regardless of path — only
+            // `transition` varies below. One less conditional, and the
+            // scale bump is imperceptible at 0.05s anyway.
             opacity: 0,
-            scale: reduced ? 1 : 1.06,
-            transition: reduced ? { duration: 0 } : { duration: 0.7, ease: EASE_EMPHASIS },
+            scale: 1.06,
+            transition:
+              reduced || instantExit ? { duration: 0.05 } : { duration: 0.7, ease: EASE_EMPHASIS },
           }}
         >
           <div className="flex flex-col items-center gap-10">
@@ -283,27 +303,47 @@ export function Preloader() {
                 moment where the numeral and button can occupy the same
                 geometry. `min-h` reserves the button's own rendered height
                 so the slot doesn't collapse to 0 before `ready`. */}
-            <div className="flex min-h-[3.25rem] items-center justify-center">
-              <motion.div
-                initial={false}
-                animate={{
-                  opacity: ready ? 1 : 0,
-                  y: ready ? 0 : 16,
-                  transition: reduced ? { duration: 0 } : { duration: DUR.ui, ease: EASE_EMPHASIS },
-                }}
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex min-h-[3.25rem] items-center justify-center">
+                <motion.div
+                  initial={false}
+                  animate={{
+                    opacity: ready ? 1 : 0,
+                    y: ready ? 0 : 16,
+                    transition: reduced
+                      ? { duration: 0 }
+                      : { duration: DUR.ui, ease: EASE_EMPHASIS },
+                  }}
+                >
+                  <Magnetic>
+                    <button
+                      ref={enterButtonRef}
+                      type="button"
+                      onClick={enterSite}
+                      disabled={!ready}
+                      className="btn-solid"
+                    >
+                      Enter <span aria-hidden="true">→</span>
+                    </button>
+                  </Magnetic>
+                </motion.div>
+              </div>
+              {/* Available from first paint, unlike Enter (gated on
+                  `ready`) — the brief's "Enter available immediately, or a
+                  clear skip action" requirement, satisfied without racing
+                  the ring's own minimum duration down to nothing.
+                  `skipSite` shares `enterSite`'s scroll/Lenis unlock but
+                  also collapses the exit transition to instant — see
+                  `instantExit` above. */}
+              <button
+                ref={skipButtonRef}
+                type="button"
+                onClick={skipSite}
+                className="label preloader-skip transition-colors"
+                style={{ color: "var(--muted-inverted)" }}
               >
-                <Magnetic>
-                  <button
-                    ref={enterButtonRef}
-                    type="button"
-                    onClick={enterSite}
-                    disabled={!ready}
-                    className="btn-solid"
-                  >
-                    Enter <span aria-hidden="true">→</span>
-                  </button>
-                </Magnetic>
-              </motion.div>
+                Skip <span aria-hidden="true">→</span>
+              </button>
             </div>
           </div>
         </motion.div>

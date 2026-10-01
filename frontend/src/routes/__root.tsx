@@ -19,6 +19,7 @@ import { Preloader } from "@/components/preloader";
 import { ScrollRuntimeProvider } from "@/components/scroll-runtime-provider";
 import { skipToMain } from "@/lib/skip-to-main";
 import { site } from "@/content/maco";
+import { SITE_URL, absoluteUrl, ORGANIZATION_ID, WEBSITE_ID } from "@/lib/seo";
 
 function NotFoundComponent() {
   return (
@@ -73,10 +74,14 @@ const SITE_DESCRIPTION =
   "MaCo builds and maintains software that carries operational weight: client platforms, web development, app development and long-term support.";
 // Interim social-share image: the Bridge capture poster (1280x660, see
 // scripts/build-media.mjs) — not a purpose-built 1200x630 card. Flagged in
-// PROJECT_STATUS.md as a follow-up once real OG art exists. No canonical/
-// og:url/sitemap.xml yet either — no production domain exists to anchor
-// them to, and a wrong canonical is worse than none (see PROJECT_STATUS.md).
-const OG_IMAGE = { url: "/media/bridge/poster.jpg", width: 1280, height: 660 };
+// PROJECT_STATUS.md as a follow-up once real OG art exists. Absolute URL
+// (SITE_URL) is required — OG/Twitter crawlers don't resolve relative
+// image URLs. Canonical/og:url are per-route now (2026-09-15 SEO pass,
+// see each route's head()); this default og:url covers the homepage since
+// index.tsx doesn't override it — leaf meta wins over root on a
+// name/property match (headContentUtils.js), so any route that does
+// override still gets its own value, never a duplicate tag.
+const OG_IMAGE = { url: absoluteUrl("/media/bridge/poster.jpg"), width: 1280, height: 660 };
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -92,6 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: site.name },
       { property: "og:locale", content: "en_US" },
+      { property: "og:url", content: SITE_URL },
       { property: "og:image", content: OG_IMAGE.url },
       { property: "og:image:width", content: String(OG_IMAGE.width) },
       { property: "og:image:height", content: String(OG_IMAGE.height) },
@@ -104,11 +110,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         "script:ld+json": {
           "@context": "https://schema.org",
           "@type": "Organization",
+          "@id": ORGANIZATION_ID,
           name: site.name,
+          url: SITE_URL,
+          logo: absoluteUrl("/logo-mark.png"),
           description: site.statement,
           email: site.contact_email,
           telephone: site.phones[0]?.number,
           address: { "@type": "PostalAddress", addressLocality: site.location },
+        },
+      },
+      {
+        "script:ld+json": {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "@id": WEBSITE_ID,
+          name: site.name,
+          url: SITE_URL,
+          publisher: { "@id": ORGANIZATION_ID },
         },
       },
     ],
