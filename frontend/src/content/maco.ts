@@ -672,8 +672,8 @@ export const team: TeamMember[] = [
   {
     slug: "alshid-mohammed",
     name: "A D",
-    role: "System Administrator",
-    bio: "Managing infrastructure, system reliability, server operations, and security.",
+    role: "Product Development Executive",
+    bio: "Defining product features, user workflows, system functionality, and requirements for seamless digital product development.",
     portrait: {
       poster: "/media/founders/alshid-mohammed.png",
       alt: "A D",
