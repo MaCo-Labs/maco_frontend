@@ -520,6 +520,7 @@ function LayoutNavPanel({ nav }: { nav: LayoutNavState }) {
  * exact `aria-label` match, not a ref prop threaded down from the route.
  */
 export function Header() {
+  const reduced = useReducedMotion();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const headerRef = useRef<HTMLElement>(null);
   const layoutNav = useLayoutNavState();
@@ -661,6 +662,46 @@ export function Header() {
     // ticker's own clock the same way `lastTop`/`lastEdge` above do.
     let lastActiveAt = 0;
 
+    // Reduced motion uses native scrolling, so it still needs adaptive chrome.
+    if (reduced) {
+      let observers: IntersectionObserver[] = [];
+      const sync = () => {
+        const grounds = [...document.querySelectorAll<HTMLElement>(SECTION_SELECTOR)];
+        lastTop = groundAt(grounds, 48, lastTop);
+        lastEdge = groundAt(grounds, window.innerHeight / 2, lastEdge);
+        const bottomGround = groundAt(grounds, window.innerHeight - 42, lastTop);
+        if (headerRef.current) headerRef.current.dataset["over"] = lastTop;
+        if (mobileNav) mobileNav.dataset["over"] = bottomGround;
+        if (triggerOverlay) triggerOverlay.dataset["over"] = lastTop;
+        if (edgeNav) edgeNav.dataset["over"] = lastEdge;
+        document.documentElement.dataset["groundNow"] = lastEdge;
+      };
+      const observe = () => {
+        observers.forEach((observer) => observer.disconnect());
+        const grounds = [...document.querySelectorAll<HTMLElement>(SECTION_SELECTOR)];
+        observers = [48, Math.round(window.innerHeight / 2), window.innerHeight - 42].map((y) => {
+          const observer = new IntersectionObserver(sync, {
+            rootMargin:
+              "-" + (y - 1) + "px 0px -" + Math.max(0, window.innerHeight - y - 1) + "px 0px",
+          });
+          grounds.forEach((section) => observer.observe(section));
+          return observer;
+        });
+        sync();
+      };
+      const mutation = new MutationObserver(observe);
+      const main = document.getElementById("main");
+      if (main) mutation.observe(main, { childList: true, subtree: true });
+      window.addEventListener("resize", observe);
+      observe();
+      return () => {
+        mutation.disconnect();
+        observers.forEach((observer) => observer.disconnect());
+        window.removeEventListener("resize", observe);
+        delete document.documentElement.dataset["groundNow"];
+      };
+    }
+
     getScrollRuntime().then((rt) => {
       if (cancelled || !rt) return;
       rt_ = rt;
@@ -691,7 +732,8 @@ export function Header() {
         lastEdge = edgeGround;
         const header = headerRef.current;
         if (header) header.dataset["over"] = topGround;
-        if (mobileNav) mobileNav.dataset["over"] = topGround;
+        if (mobileNav)
+          mobileNav.dataset["over"] = groundAt(grounds, window.innerHeight - 42, topGround);
         if (triggerOverlay) triggerOverlay.dataset["over"] = topGround;
         if (edgeNav) edgeNav.dataset["over"] = edgeGround;
         // `<body>`'s own backdrop (html[data-ground-now] in styles.css)
@@ -749,17 +791,17 @@ export function Header() {
       if (rt_ && applyGround) rt_.gsap.ticker.remove(applyGround);
       delete document.documentElement.dataset["groundNow"];
     };
-  }, []);
+  }, [reduced, pathname]);
 
   return (
     <>
       <header
         ref={headerRef}
-        data-over="paper"
+        data-over={pathname === "/" ? "deep" : "paper"}
         suppressHydrationWarning
         className="header-scroll chrome-adaptive fixed inset-x-0 top-0 z-[42] rule-b"
       >
-        <div className="shell flex h-20 items-center justify-between gap-6 md:h-24">
+        <div className="shell flex h-18 items-center justify-between gap-6 md:h-20">
           <div className="header-brand-group flex items-center gap-4">
             {/* Reserves the trigger's old flex slot so the wordmark doesn't
                 shift left into where the real (now sibling-rendered, see
@@ -839,7 +881,7 @@ export function Header() {
         suppressHydrationWarning
         className="chrome-adaptive pointer-events-none fixed inset-x-0 top-0 z-[47]"
       >
-        <div className="shell flex h-20 items-center gap-3 md:h-24">
+        <div className="shell flex h-18 items-center gap-3 md:h-20">
           <LayoutNavTrigger nav={layoutNav} className="layout-hamburger-left pointer-events-auto" />
           <LayoutNavTrigger
             nav={layoutNav}
@@ -953,6 +995,26 @@ export function Footer() {
                 </li>
               ))}
               <li className="py-1.5">{site.location}</li>
+              <li>
+                <a
+                  href="https://www.instagram.com/maco.codes/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center link-draw"
+                >
+                  MaCo on Instagram ↗
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.instagram.com/bridge.maco/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center link-draw"
+                >
+                  Bridge on Instagram ↗
+                </a>
+              </li>
             </ul>
           </div>
 

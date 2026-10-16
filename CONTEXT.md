@@ -1,5 +1,47 @@
 # MaCo Website — CONTEXT
 
+## Release refinement — 2026-10-16
+
+This entry supersedes earlier local-only status below. The owner authorized a main-branch push after final checks. Working checkout remains E:\Downloads\maco-website-v2 on homepage-reset, based on c988e2f; use Git history and origin/main for the release commit. No hosting configuration or separate deployment action was performed.
+
+Final follow-up: the hero rotates Websites → Business software → Mobile platforms every 6.5 seconds, advancing each category's real example on its next visit. The four website examples are main pages; HeadGreen uses capture 2 because capture 1 shows loading. Mobile alternates Driver's Diary and Bridge. Slideshow buttons and counter were removed at the owner's request. Rotation suspends for mouse hover, keyboard focus, hidden tabs, offscreen content and reduced motion; pointer selection does not leave rotation permanently paused.
+
+Bridge's Safari frame now derives its height from the actual 3:2 screenshot, including its toolbar separately, so the screen fills without side gutters, cropping or deformation. Work detail pages now have a chaptered Challenge / Solution / Outcome reading layout, sticky desktop chapter links and active-section feedback; mobile retains normal document flow. Contact now labels the no-backend path Continue in WhatsApp and explains the draft handoff instead of displaying a backend error. No enquiry was transmitted during QA.
+
+Final source validation: TypeScript passed; bun run lint passed with 0 errors and the 3 existing react-refresh warnings; bun run build passed; git diff --check passed before release. Production browser checks cover all 16 routes at 1440px and 375px in both themes, plus Home at 1280/1024/768/430/390: one H1, no horizontal overflow, no broken loaded images. Automatic category changes, keyboard suspension, reduced-motion still view, manual category selection and chapter anchor positioning were checked. Safari's displayed screen ratio is approximately 1.502 including pixel rounding versus native 1.5. No production console errors were observed. Earlier full interaction QA remains recorded in docs/DESIGN_REFINEMENT_2026-10-16.md.
+
+Research decisions and actual implementation are mapped in [docs/DESIGN_RESEARCH_IMPLEMENTATION_MAP.md](docs/DESIGN_RESEARCH_IMPLEMENTATION_MAP.md). Optional ideas there are not completion claims. No new runtime dependency. Existing globe bundle advisory remains. Formal Lighthouse, automated contrast, physical-device testing and production contact delivery were not performed; this is not an assertion that every possible issue is absent.
+
+---
+
+## Current implementation — 2026-10-16
+
+**Locally implemented and verified; uncommitted, unpushed, not deployed.** Working checkout is E:\Downloads\maco-website-v2, homepage-reset, based on c988e2f after the requested main pull. This entry supersedes earlier design/status descriptions below.
+
+The final hero now represents MaCo as a whole: “Built around your business,” with real website, business-software and mobile-platform examples, keyboard-operated selection and pointer springs. Default view is client work, with Bridge one example. Safari/iPhone frames are adapted from the owner’s official Magic UI references, with unique SVG IDs, safe screen presentation and the MIT license retained. Bridge screenshots stay uncropped and labelled as demo content. Driver’s Diary uses a real interface still from the existing recording, with controllable playback that pauses offscreen.
+
+Home and Services share a two-line service explorer with real evidence; Home and Work share an asymmetric editorial project collection. Five concurrent homepage project WebGL galleries were removed. About’s human character portraits, real-photo switch and biographies remain. Reduced-motion navigation colours now track native scrolling; headline reveals clean up on live preference changes. Copy correctly distinguishes software work from Ozone’s print project and HeadGreen ownership.
+
+Build, TypeScript and lint pass (0 lint errors, 3 existing Fast Refresh warnings). All 16 routes were checked at desktop/mobile widths in both themes; the final hero was checked across 1440/1280/1024/768/430/390/375 widths, plus device playback, keyboard tabs, reduced motion and alternative mobile navigation. Existing globe bundle advisory remains; no formal Lighthouse/automated contrast/physical-device audit. Full detail, provenance and exact limits: [docs/DESIGN_REFINEMENT_2026-10-16.md](docs/DESIGN_REFINEMENT_2026-10-16.md).
+
+Homepage remains 9 sections: TopHead → Overview → FeatureAccordion (now ServiceExplorer) → LogoReel → FeaturedWork → ProductSummary → Identity → Faq → Outro, plus GroundHandoff. No new runtime dependency. Preserve Lovable history in any later release; no release was performed here.
+
+---
+
+## Current implementation — 2026-10-15
+
+Authoritative current checkout: **E:\Downloads\maco-website-v2** (owner correction), branch homepage-reset, main fast-forwarded to c988e2f. The older E:\Downloads\maco-website\maco source export served only as a preparation area. The refinement described here is local, uncommitted and unpushed; no deployment. Historical status prose below is superseded where it conflicts.
+
+The homepage has 9 sections: product-led TopHead with real Bridge dashboard/board switch → Overview → FeatureAccordion → LogoReel → FeaturedWork → ProductSummary with Bridge tour plus Driver's Diary → Identity → Faq → Outro. GroundHandoff still manages section boundaries. The standalone long pinned EvidenceExpand is not rendered. Identity uses a shorter desktop pin and no mobile pin.
+
+About uses components/about/team-grid.tsx and about.css: eight illustrated human character portraits based on supplied photographs, spring pointer response, person-controlled profiles, original-portrait switch, mobile inline bios and reduced-motion behavior. Team identity/copy are unchanged. Assets: public/media/team/characters-{a,b}.webp.
+
+Bridge tour: components/products/bridge-tour.tsx and products.css; real demo workspace captures from D:\TaskFlow, 3 keyboard-operable views and an optional portal film from the lightweight original-music/CC0 promo. Driver's Diary remains built for HeadGreen with its existing on-device recording; capabilities checked against D:\HG. Full provenance and design research: docs/DESIGN_REFINEMENT_2026-10-15.md.
+
+The intro auto-dismisses (1.6s maximum readiness gate); dismissal prevents late scroll locks. Motion scenes react to preference changes, overlays restore focus, collapsed accordions are inert, work controls are outside navigation links and native scrollbar position is visible. No new dependency. Build/type/lint checks passed; see PROJECT_STATUS.md for exact checks and remaining formal-audit limits.
+
+---
+
 Complete project context for developers and AI agents.
 Last updated: 2026-09-05, later pass (contact/client/fix pass — real contact
 email `info@maco.codes` + three phone numbers wired into `/contact` and the
@@ -743,7 +785,7 @@ The codebase and docs had drifted apart over several redesign passes — compone
 
 **Pruned:** 45 of 52 `package.json` dependencies (everything that only the dead `ui/` tree used — all Radix packages, `zod`, `react-hook-form`, `recharts`, `cmdk`, `vaul`, `sonner`, `date-fns`, etc.)
 
-**Untracked from git (kept on disk where needed as build input):** `.playwright-cli/` verification dumps (both root and `frontend/`), `frontend/package-lock.json` (duplicate of `bun.lock`), `frontend/src/assets/Bridge Demo.mp4` (36MB raw video, ffmpeg input for `scripts/build-media.mjs` — its ~7.1MB output across capture+feature ×{mp4,webm} in `public/media/bridge/` is what ships, lazy-loaded per `product-video.tsx`)
+**Untracked from git (kept on disk where needed as build input):** `.playwright-cli/` verification dumps (both root and `frontend/`), `frontend/package-lock.json` (duplicate of `bun.lock`), `frontend/src/assets/Bridge Demo.mp4` (36MB raw video, ffmpeg input for `scripts/build-media.mjs` — its ~14.6MB output across capture+feature ×{mp4,webm} in `public/media/bridge/` is what ships, lazy-loaded per `product-video.tsx`; CRF tightened 2026-09-17 for clarity — see that script's own comment)
 
 **Verified:** `bun run build`, `bun run lint`, and `tsc --noEmit` all pass after every deletion (one pre-existing `tsc` error in `MaCoGlobe.tsx` unrelated to this pass, left alone).
 

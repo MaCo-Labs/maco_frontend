@@ -41,7 +41,7 @@ export function LogoReel() {
           <ScrubReveal hold>
             <p className="label">Clients</p>
             <h2 className="display-lg mt-3 max-w-2xl" style={{ color: "var(--text)" }}>
-              Companies who trusted us with production software.
+              Good work starts with trust.
             </h2>
           </ScrubReveal>
         </div>

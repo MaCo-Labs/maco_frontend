@@ -39,7 +39,7 @@ const budgets = ["Under ₹50K", "₹50K – ₹1L", "₹1L – ₹5L", "₹5L �
 
 const HANDOFF_PAIRS = [["Contact form", "More ways to reach us", "sheet"]] as const;
 
-type State = "idle" | "sending" | "sent" | "error";
+type State = "idle" | "sending" | "sent" | "draft" | "error";
 
 type EnquiryFields = {
   name: string;
@@ -82,6 +82,7 @@ function openWhatsAppEnquiry(f: EnquiryFields) {
 function ContactPage() {
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState<string>("");
+  const hasContactApi = Boolean(import.meta.env["VITE_API_BASE_URL"]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -106,8 +107,7 @@ function ContactPage() {
     openWhatsAppEnquiry(fields);
 
     if (!api) {
-      setState("error");
-      setError("Contact isn't wired up in this environment — email us directly instead.");
+      setState("draft");
       return;
     }
 
@@ -390,12 +390,18 @@ function ContactPage() {
                       disabled={state === "sending"}
                       className="btn-solid disabled:opacity-50"
                     >
-                      {state === "sending" ? "Sending…" : "Send enquiry"}
+                      {state === "sending"
+                        ? "Sending…"
+                        : hasContactApi
+                          ? "Send enquiry"
+                          : "Continue in WhatsApp"}
                       <span aria-hidden="true">→</span>
                     </button>
                   </Magnetic>
 
-                  <p aria-live="polite" className="label">
+                  <p aria-live="polite" className="max-w-sm text-sm text-muted">
+                    {state === "draft" &&
+                      "Review and send your draft in WhatsApp. Nothing is sent until you confirm there."}
                     {state === "error" && (
                       <span style={{ color: "var(--accent)" }}>
                         Couldn't send: {error}. Email {site.contact_email} instead.

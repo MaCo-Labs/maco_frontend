@@ -30,16 +30,17 @@ export function useOverlayMenu({
 
   useEffect(() => {
     if (!open) return;
+    const trigger = triggerRef.current;
     const focusable = () =>
       Array.from(
         panelRef.current?.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), video[controls], [tabindex]:not([tabindex="-1"])',
         ) ?? [],
       );
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setOpen(false);
-        triggerRef.current?.focus();
+        trigger?.focus();
         return;
       }
       if (e.key !== "Tab") return;
@@ -61,14 +62,13 @@ export function useOverlayMenu({
     rt?.lenis.stop();
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    requestAnimationFrame(() => {
-      const first = panelRef.current?.querySelector<HTMLElement>("a");
-      first?.focus();
-    });
+    const focusFrame = requestAnimationFrame(() => focusable()[0]?.focus());
     return () => {
+      cancelAnimationFrame(focusFrame);
       document.removeEventListener("keydown", onKey);
       rt?.lenis.start();
       document.body.style.overflow = prev;
+      trigger?.focus({ preventScroll: true });
     };
   }, [open, panelRef, setOpen, triggerRef]);
 }

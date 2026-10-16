@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { Link } from "@tanstack/react-router";
-import { site, services, projects, products, clients } from "@/content/maco";
+import { site, services, projects, products } from "@/content/maco";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
@@ -10,9 +10,8 @@ import { Magnetic } from "@/components/motion/magnetic";
  *  numbers can never drift out of step with what the page below shows. */
 const FIGURES = [
   { value: String(services.length), label: "Service lines" },
-  { value: String(clients.length), label: "Clients" },
-  { value: String(projects.length), label: "Client platforms" },
-  { value: String(products.length), label: "Own products" },
+  { value: String(projects.length), label: "Client projects" },
+  { value: String(products.length), label: "Product platforms" },
 ] as const;
 
 /**
@@ -53,26 +52,21 @@ export function Overview() {
             <ScrubReveal hold>
               <p className="label">About</p>
             </ScrubReveal>
-            <LineReveal
-              as="h2"
-              mode="words"
-              className="display-lg mt-4"
-              style={{ color: "var(--text)" }}
-            >
+            <LineReveal as="h2" className="display-lg mt-4" style={{ color: "var(--text)" }}>
               We build the systems a business actually runs on.
             </LineReveal>
           </div>
 
           <div className="md:pt-16">
             <ScrubReveal as="p" hold className="lead">
-              Two service lines, two products of our own, and client platforms that have to keep
-              working long after launch. Everything we ship is handed over with an admin a
-              non-technical team can operate, documentation, and a named support route.
+              Business software, digital experiences, and platforms that keep working long after
+              launch. Every platform is handed over with an admin a non-technical team can operate,
+              documentation, and a named support route.
             </ScrubReveal>
 
             <Stagger
               as="dl"
-              className="mt-10 grid grid-cols-2 gap-x-8 gap-y-8"
+              className="mt-10 grid grid-cols-3 gap-x-6 gap-y-8"
               gap={0.12}
               band={0.4}
             >

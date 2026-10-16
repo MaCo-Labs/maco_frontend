@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { createPortal } from "react-dom";
 import type { Media } from "@/content/maco";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useOverlayMenu } from "@/hooks/use-overlay-menu";
@@ -38,11 +39,11 @@ export function VideoLightbox({
   useOverlayMenu({ open, setOpen, panelRef, triggerRef });
 
   const feature = media.feature ?? media.video;
-  if (!feature) return null;
+  if (!feature || typeof document === "undefined") return null;
 
   const transition = reduced ? { duration: 0 } : { duration: 0.35, ease: EASE_EMPHASIS };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -107,6 +108,7 @@ export function VideoLightbox({
           </button>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

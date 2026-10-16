@@ -1,5 +1,43 @@
 # MaCo Website — Roadmap
 
+## Release refinement — 2026-10-16
+
+This entry supersedes earlier local-only status below. The owner authorized a main-branch push after final checks. Working checkout remains E:\Downloads\maco-website-v2 on homepage-reset, based on c988e2f; use Git history and origin/main for the release commit. No hosting configuration or separate deployment action was performed.
+
+Final follow-up: the hero rotates Websites → Business software → Mobile platforms every 6.5 seconds, advancing each category's real example on its next visit. The four website examples are main pages; HeadGreen uses capture 2 because capture 1 shows loading. Mobile alternates Driver's Diary and Bridge. Slideshow buttons and counter were removed at the owner's request. Rotation suspends for mouse hover, keyboard focus, hidden tabs, offscreen content and reduced motion; pointer selection does not leave rotation permanently paused.
+
+Bridge's Safari frame now derives its height from the actual 3:2 screenshot, including its toolbar separately, so the screen fills without side gutters, cropping or deformation. Work detail pages now have a chaptered Challenge / Solution / Outcome reading layout, sticky desktop chapter links and active-section feedback; mobile retains normal document flow. Contact now labels the no-backend path Continue in WhatsApp and explains the draft handoff instead of displaying a backend error. No enquiry was transmitted during QA.
+
+Final source validation: TypeScript passed; bun run lint passed with 0 errors and the 3 existing react-refresh warnings; bun run build passed; git diff --check passed before release. Production browser checks cover all 16 routes at 1440px and 375px in both themes, plus Home at 1280/1024/768/430/390: one H1, no horizontal overflow, no broken loaded images. Automatic category changes, keyboard suspension, reduced-motion still view, manual category selection and chapter anchor positioning were checked. Safari's displayed screen ratio is approximately 1.502 including pixel rounding versus native 1.5. No production console errors were observed. Earlier full interaction QA remains recorded in docs/DESIGN_REFINEMENT_2026-10-16.md.
+
+Research decisions and actual implementation are mapped in [docs/DESIGN_RESEARCH_IMPLEMENTATION_MAP.md](docs/DESIGN_RESEARCH_IMPLEMENTATION_MAP.md). Optional ideas there are not completion claims. No new runtime dependency. Existing globe bundle advisory remains. Formal Lighthouse, automated contrast, physical-device testing and production contact delivery were not performed; this is not an assertion that every possible issue is absent.
+
+---
+
+## Current implementation — 2026-10-16
+
+**Locally implemented and verified; uncommitted, unpushed, not deployed.** Working checkout is E:\Downloads\maco-website-v2, homepage-reset, based on c988e2f after the requested main pull. This entry supersedes earlier design/status descriptions below.
+
+The final hero now represents MaCo as a whole: “Built around your business,” with real website, business-software and mobile-platform examples, keyboard-operated selection and pointer springs. Default view is client work, with Bridge one example. Safari/iPhone frames are adapted from the owner’s official Magic UI references, with unique SVG IDs, safe screen presentation and the MIT license retained. Bridge screenshots stay uncropped and labelled as demo content. Driver’s Diary uses a real interface still from the existing recording, with controllable playback that pauses offscreen.
+
+Home and Services share a two-line service explorer with real evidence; Home and Work share an asymmetric editorial project collection. Five concurrent homepage project WebGL galleries were removed. About’s human character portraits, real-photo switch and biographies remain. Reduced-motion navigation colours now track native scrolling; headline reveals clean up on live preference changes. Copy correctly distinguishes software work from Ozone’s print project and HeadGreen ownership.
+
+Build, TypeScript and lint pass (0 lint errors, 3 existing Fast Refresh warnings). All 16 routes were checked at desktop/mobile widths in both themes; the final hero was checked across 1440/1280/1024/768/430/390/375 widths, plus device playback, keyboard tabs, reduced motion and alternative mobile navigation. Existing globe bundle advisory remains; no formal Lighthouse/automated contrast/physical-device audit. Full detail, provenance and exact limits: [docs/DESIGN_REFINEMENT_2026-10-16.md](docs/DESIGN_REFINEMENT_2026-10-16.md).
+
+Homepage remains 9 sections: TopHead → Overview → FeatureAccordion (now ServiceExplorer) → LogoReel → FeaturedWork → ProductSummary → Identity → Faq → Outro, plus GroundHandoff. No new runtime dependency. Preserve Lovable history in any later release; no release was performed here.
+
+---
+
+## Current roadmap — 2026-10-15
+
+The owner's requested local refinement is implemented in E:\Downloads\maco-website-v2 on homepage-reset (base c988e2f). Product-led hero, real Bridge tour/film, human-character team profiles, responsive refinements and scroll/overlay reliability fixes are complete and locally verified. No commit, push or deployment. See PROJECT_STATUS.md and docs/DESIGN_REFINEMENT_2026-10-15.md.
+
+Current homepage architecture: TopHead → Overview → FeatureAccordion → LogoReel → FeaturedWork → ProductSummary → Identity → Faq → Outro (9 sections). This supersedes historical diagrams and completed-task backlogs below. Do not restore the declined Signal Rail without owner direction.
+
+Remaining release work, when requested: review/commit the local diff, choose the existing deployment workflow, and run formal Lighthouse/contrast and physical-device audits if required. Existing lazy globe bundle advisory and three react-refresh lint warnings remain. No unsupported product or metric claims should be added.
+
+---
+
 Last updated: 2026-09-15 — an external audit brief's Phase 1 (items 1-5)
 and part of Phase 2 (items 7-8) shipped and committed; see `AI_HANDOFF.md`'s
 newest entry and item -1 below for what's still open from that brief.

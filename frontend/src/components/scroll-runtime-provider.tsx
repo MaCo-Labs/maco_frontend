@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { getScrollRuntime, type ScrollRuntime } from "@/lib/scroll-runtime";
 
 /**
@@ -15,6 +16,7 @@ import { getScrollRuntime, type ScrollRuntime } from "@/lib/scroll-runtime";
  * would misfire on the new page.
  */
 export function ScrollRuntimeProvider() {
+  const reduced = useReducedMotion();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const runtimeRef = useRef<ScrollRuntime | null>(null);
   const prevPathname = useRef(pathname);
@@ -34,7 +36,9 @@ export function ScrollRuntimeProvider() {
       // Layout height changes after first paint (web fonts swapping in,
       // the hero video's real dimensions arriving) are the classic cause
       // of a pin's start/end drifting out from under the scrub.
-      document.fonts?.ready?.then(() => rt.ScrollTrigger.refresh());
+      document.fonts?.ready?.then(() => {
+        if (!cancelled) rt.scheduleRefresh();
+      });
       onHeroVideoReady = () => rt.ScrollTrigger.refresh();
       document.addEventListener("maco:media-ready", onHeroVideoReady);
     });
@@ -48,7 +52,7 @@ export function ScrollRuntimeProvider() {
       rt.destroy();
       runtimeRef.current = null;
     };
-  }, []);
+  }, [reduced]);
 
   useEffect(() => {
     if (prevPathname.current === pathname) return;

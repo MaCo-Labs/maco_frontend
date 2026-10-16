@@ -5,7 +5,7 @@ import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 import { NotFoundSection } from "@/components/inner/not-found-section";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
-import { ScrubReveal } from "@/components/motion/scrub-reveal";
+import { CaseStory } from "@/components/work/case-story";
 import { Stagger } from "@/components/motion/stagger";
 import { CardMedia } from "@/components/home/summary";
 
@@ -118,20 +118,7 @@ function WorkDetail() {
         </div>
       </section>
 
-      {blocks.map(([title, body], i) => (
-        <section key={title} data-ground="paper" aria-label={title} className="rule-b">
-          <ScrubReveal
-            hold
-            as="div"
-            className="shell grid gap-6 py-12 lg:grid-cols-12 lg:gap-10 lg:py-16"
-          >
-            <p className="label lg:col-span-3">
-              {String(i + 1).padStart(2, "0")} — {title}
-            </p>
-            <p className="max-w-2xl text-lg leading-snug text-muted lg:col-span-8">{body}</p>
-          </ScrubReveal>
-        </section>
-      ))}
+      <CaseStory chapters={blocks} />
 
       <section data-ground="paper" aria-label="Services applied" className="rule-b">
         <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">

@@ -3,9 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { products } from "@/content/maco";
 import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 import { LineReveal } from "@/components/motion/line-reveal";
-import { Magnetic } from "@/components/motion/magnetic";
-import { ScrubReveal } from "@/components/motion/scrub-reveal";
-import { Stagger } from "@/components/motion/stagger";
+import { BridgeTour } from "@/components/products/bridge-tour";
 import { CardMedia } from "@/components/home/summary";
 import { useSectionHandoff } from "@/hooks/use-section-handoff";
 import { PageOutro } from "@/components/inner/page-outro";
@@ -23,7 +21,7 @@ export const Route = createFileRoute("/products/")({
       {
         property: "og:description",
         content:
-          "Driver's Diary and Bridge — software MaCo owns and productises, not client one-offs.",
+          "Bridge by MaCo and Driver's Diary for HeadGreen. Products built around everyday work.",
       },
       { property: "og:url", content: absoluteUrl("/products") },
       {
@@ -38,107 +36,81 @@ export const Route = createFileRoute("/products/")({
   component: ProductsIndex,
 });
 
-const HANDOFF_PAIRS = [[products[products.length - 1]!.title, "Start a project", "sheet"]] as const;
+const HANDOFF_PAIRS = [
+  [products.find((product) => product.slug === "drivers-diary")!.title, "Start a project", "sheet"],
+] as const;
 
 function ProductsIndex() {
   useSectionHandoff(HANDOFF_PAIRS);
-
+  const ordered = [...products].sort(
+    (a, b) => Number(b.slug === "bridge") - Number(a.slug === "bridge"),
+  );
   return (
     <>
       <section data-ground="paper" aria-label="Introduction" className="rule-b">
-        <div className="shell grid gap-8 page-intro lg:grid-cols-12">
-          <p className="label lg:col-span-3">Index / Products</p>
-          <div className="lg:col-span-9">
-            <LineReveal as="h1" className="display-lg max-w-3xl">
-              Software we own,{" "}
-              <span style={{ color: "var(--muted)" }}>run and keep improving.</span>
-            </LineReveal>
-            <ScrubReveal as="p" hold className="mt-8 max-w-xl text-muted">
-              A product is not a client project. These are platforms with roadmaps, releases and
-              users who depend on them during a working day.
-            </ScrubReveal>
-          </div>
+        <div className="shell page-intro">
+          <p className="label">Products</p>
+          <LineReveal as="h1" className="display-lg mt-6 max-w-4xl">
+            Made for the working day.
+          </LineReveal>
+          <p className="mt-8 max-w-2xl text-lg text-muted">
+            Bridge brings teams together. Driver's Diary keeps HeadGreen's fleet records connected.
+            Explore the software and the work behind it.
+          </p>
         </div>
       </section>
-
-      {products.map((pr, i) => (
-        <section
-          key={pr.slug}
-          data-ground="paper"
-          aria-label={pr.title}
-          className={i % 2 === 0 ? "rule-b" : "rule-b grid-field"}
-        >
-          <ScrubReveal as="div" hold className="shell grid gap-10 py-16 lg:grid-cols-12 lg:py-24">
-            <div className="lg:sticky lg:top-28 lg:col-span-4 lg:self-start">
-              <p className="label">
-                {pr.index} / {pr.kind}
-              </p>
-              <h2 className="display-lg mt-5">
-                <Link to="/products/$slug" params={{ slug: pr.slug }} className="link-draw">
-                  {pr.title}
-                </Link>
-              </h2>
-              <p className="mt-6 max-w-md text-lg leading-snug">{pr.short_description}</p>
-              <p className="mt-4 max-w-md text-sm text-muted">{pr.positioning}</p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Magnetic>
+      {ordered.map((pr) => (
+        <section key={pr.slug} data-ground="paper" aria-label={pr.title} className="rule-b">
+          <div className="shell cb-section">
+            <div className="product-chapter">
+              <div>
+                <p className="product-ownership">
+                  {pr.owner === "MaCo" ? "A product by MaCo" : `Built for ${pr.owner}`}
+                </p>
+                <h2 className="product-chapter-title">{pr.title}</h2>
+                <p className="product-chapter-copy">{pr.short_description}</p>
+                <div className="product-chapter-links">
                   <Link to="/products/$slug" params={{ slug: pr.slug }} className="btn-solid">
-                    Product overview
+                    Explore {pr.title} <span aria-hidden="true">↗</span>
                   </Link>
-                </Magnetic>
-                <Magnetic>
                   <a
                     href={pr.live_url}
                     target="_blank"
-                    rel="noreferrer noopener"
+                    rel="noopener noreferrer"
                     className="btn-line"
                   >
-                    Open live ↗
+                    Open live
                   </a>
-                </Magnetic>
+                </div>
               </div>
+              {pr.slug === "bridge" ? (
+                <BridgeTour />
+              ) : (
+                <div className="product-diary-visual">
+                  <CardMedia
+                    screen={pr.screen}
+                    media={pr.media}
+                    brand={pr.brand}
+                    title={pr.title}
+                  />
+                </div>
+              )}
             </div>
-
-            <div className="lg:col-span-4">
-              <CardMedia
-                media={pr.media}
-                brand={pr.brand}
-                screen={pr.screen}
-                title={pr.title}
-                aspect="4 / 3"
-              />
+            <div className="mt-12 grid gap-x-12 gap-y-8 md:grid-cols-2">
+              {pr.features.slice(0, 4).map((feature) => (
+                <div key={feature.title} className="border-t border-line pt-5">
+                  <h3 className="text-xl leading-snug">{feature.title}</h3>
+                  <p className="mt-3 max-w-xl text-muted">{feature.description}</p>
+                </div>
+              ))}
             </div>
-
-            <div className="lg:col-span-4">
-              <Stagger
-                as="div"
-                className="grid gap-px"
-                style={{ background: "var(--line)" }}
-                gap={0.1}
-              >
-                {pr.features.map((f, fi) => (
-                  <div
-                    key={f.title}
-                    className="stagger-item flex gap-5 p-5"
-                    style={{ background: "var(--bg)", "--i": fi } as CSSProperties}
-                  >
-                    <span className="label pt-1">{String(fi + 1).padStart(2, "0")}</span>
-                    <div>
-                      <p className="font-display text-lg tracking-[-0.02em]">{f.title}</p>
-                      <p className="mt-1 text-sm text-muted">{f.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </Stagger>
-            </div>
-          </ScrubReveal>
+          </div>
         </section>
       ))}
-
       <PageOutro
         ariaLabel="Start a project"
-        heading="Own software next, not just build it."
-        body="Bridge and Driver's Diary both started as a client problem MaCo kept solving after launch. Talk to us about what yours needs."
+        heading="What should your software make possible?"
+        body="Tell us how your team works. We will work out what to build together."
         cta={{ label: "Start a project", to: "/contact" }}
       />
     </>

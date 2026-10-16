@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SITE_URL } from "@/lib/seo";
 import { TopHead } from "@/components/home/top-head";
-import { EvidenceExpand } from "@/components/home/evidence-expand";
 import { Overview } from "@/components/home/overview";
 import { FeatureAccordion } from "@/components/home/feature-accordion";
 import { LogoReel } from "@/components/home/logo-reel";
@@ -18,7 +17,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "MaCo is a software and IT solutions company. Web and app development, technical and software support, plus our own products: Driver's Diary and Bridge.",
+          "MaCo is a software and IT solutions company. Web and app development, technical and software support, Bridge, our connected workspace, and Driver's Diary for HeadGreen.",
       },
       { property: "og:title", content: "MaCo — Software & IT solutions" },
       {
@@ -33,53 +32,28 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-/**
- * Ten-slot Cuberto-parity structure (docs/REFACTOR_PLAN.md §12, plan
- * "Cuberto-parity homepage rebuild", 2026-08-28; originally eleven
- * slots, down to ten 2026-09-03 when the page's second "About" section
- * — Record — was merged into Overview, see Overview's own doc comment).
- * Section order, spacing rhythm and ground alternation are cloned from
- * cuberto.com's own homepage (measured in docs/references/cuberto/
- * skillui/); every colour, typeface and word is MaCo's. The remaining
- * ten aria-labels are unchanged from the previous architecture — only
- * which component renders each one, and in what order — so
- * scripts/shoot.mjs needed reordering, not renaming.
- */
+/** Product-led opening, real client evidence and an interactive product tour. */
 function Home() {
   return (
     <>
-      {/* 1. TOPHEAD — headline, subtext, entry action */}
       <TopHead />
 
-      {/* 2. PREVIEW — showreel, unchanged from the prior architecture */}
-      <EvidenceExpand />
-
-      {/* 3. OVERVIEW — positioning, counted figures, and (2026-09-03) the
-          page's one About paragraph, absorbed from the deleted Record */}
       <Overview />
 
-      {/* 4. FEATURE — every capability, one accordion */}
       <FeatureAccordion />
 
-      {/* 5. LOGOREEL — client logos, continuous drift */}
       <LogoReel />
 
-      {/* 6. SUMMARY (inverse) — featured client work */}
       <FeaturedWork />
 
-      {/* 7. SUMMARY — MaCo's own products */}
       <ProductSummary />
 
-      {/* 8. OVERVIEW (2nd) — identity, now on paper ground */}
       <Identity />
 
-      {/* 9. FAQ (inverse) — the four-step method, as an accordion */}
       <Faq />
 
-      {/* 10. OUTRO — final statement + intake */}
       <Outro />
 
-      {/* Cross-section continuity — renders nothing itself */}
       <GroundHandoff />
     </>
   );

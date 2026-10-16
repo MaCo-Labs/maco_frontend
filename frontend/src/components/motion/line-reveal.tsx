@@ -1,5 +1,6 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { getScrollRuntime } from "@/lib/scroll-runtime";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import type { SplitText } from "gsap/SplitText";
 
 type Tag = "h1" | "h2" | "h3" | "p";
@@ -52,10 +53,11 @@ export function LineReveal({
   end?: string;
 }) {
   const ref = useRef<HTMLHeadingElement | HTMLParagraphElement>(null);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || reduced) return;
     let cancelled = false;
     let split: SplitText | null = null;
 
@@ -75,9 +77,9 @@ export function LineReveal({
           onSplit: (self) =>
             rt.gsap.from(self.words, {
               opacity: 0,
-              filter: "blur(8px)",
+              filter: "blur(3px)",
               yPercent: 25,
-              duration: 0.7,
+              duration: 0.5,
               ease: "power2.out",
               stagger: 0.035,
               scrollTrigger: { trigger: el, start, once: true },
@@ -106,7 +108,7 @@ export function LineReveal({
           return rt.gsap.from(self.lines, {
             yPercent: 110,
             opacity: 0,
-            duration: 0.9,
+            duration: 0.6,
             ease: "expo.out",
             stagger: 0.08,
             scrollTrigger: { trigger: el, start, once: true },
@@ -119,7 +121,7 @@ export function LineReveal({
       cancelled = true;
       split?.revert();
     };
-  }, [mode, start, end]);
+  }, [reduced, mode, start, end]);
 
   return (
     <As ref={ref as never} className={className} style={style}>

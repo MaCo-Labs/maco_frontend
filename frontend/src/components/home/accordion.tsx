@@ -1,5 +1,5 @@
-import { useId, useState, type ReactNode } from "react";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useEffect, useId, useState, type ReactNode } from "react";
+import { getLiveScrollRuntime } from "@/lib/scroll-runtime";
 
 export interface AccordionItem {
   /** Stable key + the value tracked as "which one is open". */
@@ -53,24 +53,27 @@ export function Accordion({
 }) {
   const uid = useId();
   const [open, setOpen] = useState<string | undefined>(defaultOpen);
+  useEffect(() => {
+    getLiveScrollRuntime()?.scheduleRefresh();
+  }, [open]);
   // Same query Magnetic already gates its own hover behaviour on
   // (magnetic.tsx) — a real mouse, not a synthetic mouseenter a touch
   // browser fires after tap, which click already handles everywhere.
-  const canHover = useMediaQuery("(hover: hover) and (pointer: fine)");
-  const hoverToOpen = panel === "inverted" && canHover;
 
   return (
     <div>
       {items.map((item) => {
         const isOpen = open === item.id;
-        const openThis = () => setOpen(item.id);
         return (
           <div
             key={item.id}
             data-open={isOpen}
             className="border-t border-line last:border-b"
             style={{ borderColor: "var(--line)" }}
-            onMouseEnter={hoverToOpen ? openThis : undefined}
+            onTransitionEnd={(event) => {
+              if (event.propertyName === "grid-template-rows")
+                getLiveScrollRuntime()?.scheduleRefresh();
+            }}
           >
             <h3>
               <button
@@ -95,6 +98,8 @@ export function Accordion({
             <div
               id={`${uid}-${item.id}-panel`}
               role="region"
+              inert={!isOpen}
+              aria-hidden={!isOpen}
               aria-labelledby={`${uid}-${item.id}-btn`}
               className="cb-panel"
               data-open={isOpen}

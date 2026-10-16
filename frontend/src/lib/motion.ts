@@ -85,8 +85,12 @@ function applyUrlMotionOverride(): StoredMotionPreference | null {
  *  a stored override from a previous visit > the OS `prefers-reduced-motion`
  *  setting. Client-only — callers must guard SSR themselves. */
 export function resolveMotionPreference(): StoredMotionPreference {
-  const fromUrl = applyUrlMotionOverride();
-  const stored = fromUrl ?? readStoredMotionPreference();
-  if (stored) return stored;
+  try {
+    const fromUrl = applyUrlMotionOverride();
+    const stored = fromUrl ?? readStoredMotionPreference();
+    if (stored) return stored;
+  } catch {
+    // Private browsing can deny storage; the system preference still works.
+  }
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "reduced" : "full";
 }

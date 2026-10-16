@@ -9,6 +9,7 @@ import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 import { CardMedia } from "@/components/home/summary";
+import { BridgeTour } from "@/components/products/bridge-tour";
 
 /** Wires MaCoSystemField to how far its own panel has travelled through
  *  the viewport, the same live-progress pattern every pinned homepage
@@ -166,6 +167,15 @@ function ProductDetail() {
           </div>
         </div>
       </section>
+
+      {isBridge && (
+        <section data-ground="paper" aria-label="Explore Bridge" className="rule-b">
+          <div className="shell cb-section">
+            <h2 className="display-md mb-8">A closer look at your workspace.</h2>
+            <BridgeTour />
+          </div>
+        </section>
+      )}
 
       <section data-ground="paper" aria-label="Product details" className="rule-b">
         <div

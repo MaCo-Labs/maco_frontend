@@ -40,8 +40,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const reduced = useReducedMotion();
 
   useIsomorphicLayoutEffect(() => {
-    const stored = window.localStorage.getItem(KEY) as Theme | null;
-    if (stored === "obsidian" || stored === "cobalt") setThemeState(stored);
+    try {
+      const stored = window.localStorage.getItem(KEY) as Theme | null;
+      if (stored === "obsidian" || stored === "cobalt") setThemeState(stored);
+    } catch {
+      // The default theme remains usable when storage is unavailable.
+    }
   }, []);
 
   useEffect(() => {

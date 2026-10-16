@@ -1,174 +1,337 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { AnimatePresence, motion, useMotionValue, useSpring } from "motion/react";
 import { Link } from "@tanstack/react-router";
-import { site, getProduct } from "@/content/maco";
-import { Mark } from "@/components/mark";
-import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
-import { MaskedHeading } from "@/components/motion/masked-heading";
-import { autoplayAllowed } from "@/components/media/product-video";
+import { Safari } from "@/components/media/safari";
+import { Iphone } from "@/components/media/iphone";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { usePointerField } from "@/hooks/use-pointer-field";
+import "./studio.css";
 
-/**
- * TOPHEAD — `section.cb-tophead`, the first section of Cuberto's
- * homepage. Their measured box is `padding: 180px 0 108px` with a single
- * child: a brand row, one very large left-aligned statement, a short
- * subtext, and the entry action. Not a full-viewport centred logo lockup
- * — the page starts reading immediately and the fold cuts mid-statement,
- * which is what makes the scroll feel like it has somewhere to go.
- *
- * That shape replaces the previous OPEN section (a full-height centred
- * mark + ghost wordmark). Adopted 2026-08-28 at the owner's explicit
- * direction to clone Cuberto's structure; the words are MaCo's
- * (`site.tagline` / `site.statement`), the mark is MaCo's, and the type
- * runs the active theme's own display face. Nothing of Cuberto's
- * palette, type or copy is here.
- *
- * No `<RakingSurface>` here (2026-08-29, masked-video-hero pass) — it
- * wrapped the whole section before, but its `light-pass` sweep
- * `mix-blend-mode: overlay`-s with whatever's beneath it, and once the
- * `<h1>` below started rendering a graded video instead of solid text,
- * that blend re-tinted the video off-palette on Cobalt (tried three
- * fixes on the heading side — z-index, isolation, regrading — none of
- * them stopped it; see `masked-heading.tsx`'s own comment). Simplest
- * correct fix, and the owner's explicit call: no light-pass on this
- * section at all, not just on the heading — confirmed live that the
- * eyebrow/brand-row/statement read cleanly without it.
- *
- * Brand row is the mark alone (2026-09-01) — the header's own `<Wordmark>`
- * already spells "MaCo" out in text ~120px above this row (chrome.tsx),
- * so a second spelled-out instance directly under it doubled up in the
- * same viewport for no reason; `site.name` stays in the accessible name
- * (`sr-only`) rather than disappearing. Eyebrow above it is
- * `site.category` — real copy, not invented.
- *
- * `data-ground="deep"` since the 2026-08-28 dark-first pass — the page
- * now opens on the material rather than the page, closing the loop with
- * `Record`/`Faq`/`Outro`/`Footer` at the bottom, also `deep` (`CONTEXT.md`
- * §10).
- *
- * The `<h1>` itself has two renders, deliberately never blended:
- *
- * - **Server / first paint / reduced motion**: a plain heading carrying
- *   `display-hero display-glow hero-reveal` — the static `display-glow`
- *   gradient fill, `hero-backlight`/`hero-grain` behind it, a one-shot
- *   scale-in. This is the ONLY thing SSR ever renders for the headline;
- *   see below for why.
- * - **Client, motion allowed, after mount**: `<MaskedHeading>` — the
- *   Bridge screen capture playing inside `site.tagline`'s letterforms, a
- *   single wipe, no cycling (a prior pass cycled through several lines
- *   every ~5s; cut to the one strongest statement per the "fewer, heavier
- *   moments" direction of the premium-motion pass).
- *
- * The swap is gated on `mounted && entered` rather than just
- * `useReducedMotion()` (which is itself SSR-safe but defaults to `false`,
- * i.e. "motion allowed", on the server), for two independent reasons:
- * `MaskedHeading`'s SVG clip-path coordinates are only correct once its
- * own layout-measuring effect has run client-side — server-rendering it
- * would clip to word positions of (0,0), a visible misaligned flash
- * before hydration catches up (`mounted` keeps the first client render
- * identical to the server's) — and the wipe itself should land AFTER the
- * preloader gate, not finish behind the overlay before the visitor ever
- * sees it (`entered`, set by a `maco:entered` event `preloader.tsx`
- * dispatches from both its skip branch and its Enter click, so a visitor
- * who never sees the preloader at all reads as entered immediately).
- */
+const websiteExamples = [
+  {
+    title: "Ananta Nethralaya",
+    note: "A digital home for an eye clinic",
+    src: "/media/work/ananta-nethralaya/1.webp",
+    url: "anantanethralaya.org",
+    to: "/work/$slug",
+    slug: "ananta-nethralaya",
+  },
+  {
+    title: "Al Afzah",
+    note: "A website for a Qatar-based construction company",
+    src: "/media/work/al-afzah/1.webp",
+    url: "al-afzahgroup.com",
+    to: "/work/$slug",
+    slug: "al-afzah",
+  },
+  {
+    title: "Soorath Autos",
+    note: "A digital showroom for a pre-owned car dealership",
+    src: "/media/work/soorath-autos/1.webp",
+    url: "soorathautos.in",
+    to: "/work/$slug",
+    slug: "soorath-autos",
+  },
+  {
+    title: "HeadGreen",
+    note: "A website for corporate EV mobility",
+    src: "/media/work/headgreen/2.webp",
+    url: "headgreen.in",
+    to: "/work/$slug",
+    slug: "headgreen",
+  },
+] as const;
+const mobileExamples = [
+  {
+    title: "Driver’s Diary",
+    note: "A fleet operations platform, built for HeadGreen",
+    src: "/media/products/drivers-diary/interface.webp",
+    url: "",
+    to: "/products/$slug",
+    slug: "drivers-diary",
+  },
+  {
+    title: "Bridge mobile",
+    note: "Our connected workspace, on the move · Demo shown",
+    src: "/media/bridge/tour-mobile.webp",
+    url: "",
+    to: "/products/$slug",
+    slug: "bridge",
+  },
+] as const;
+const builds = [
+  { label: "Websites", examples: websiteExamples },
+  {
+    label: "Business software",
+    examples: [
+      {
+        title: "Bridge",
+        note: "Our connected workspace · Demo shown",
+        src: "/media/bridge/tour-board.webp",
+        url: "Bridge / Demo workspace",
+        to: "/products/$slug",
+        slug: "bridge",
+      },
+    ],
+  },
+  { label: "Mobile platforms", examples: mobileExamples },
+] as const;
+
+/** MaCo-wide introduction, with controlled rotation of real work in each category. */
 export function TopHead() {
-  const bridge = getProduct("bridge");
+  const [active, setActive] = useState(0);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const showcaseRef = useRef<HTMLDivElement>(null);
+  const [examples, setExamples] = useState([0, 0, 0]);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [pageVisible, setPageVisible] = useState(false);
+  const uid = useId();
   const reduced = useReducedMotion();
-  const [mounted, setMounted] = useState(false);
-  const [mediaOk, setMediaOk] = useState(false);
-  const [entered, setEntered] = useState(
-    () => typeof document !== "undefined" && document.documentElement.dataset["preload"] === "skip",
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
+  const rotateX = useSpring(pointerX, { stiffness: 180, damping: 26 });
+  const rotateY = useSpring(pointerY, { stiffness: 180, damping: 26 });
+  const collection = builds[active]!;
+  const example = examples[active] ?? 0;
+  const project = collection.examples[example]!;
+  const exampleCount = collection.examples.length;
+  function selectCategory(index: number) {
+    setActive(index);
+  }
+  useEffect(() => {
+    const host = showcaseRef.current;
+    if (!host) return;
+    const observer = new IntersectionObserver(([entry]) => setVisible(!!entry?.isIntersecting), {
+      threshold: 0.2,
+    });
+    observer.observe(host);
+    const syncVisibility = () => setPageVisible(document.visibilityState === "visible");
+    syncVisibility();
+    document.addEventListener("visibilitychange", syncVisibility);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", syncVisibility);
+    };
+  }, []);
+  useEffect(() => {
+    if (reduced || hovered || focused || !visible || !pageVisible) return;
+    const timer = window.setTimeout(() => {
+      setExamples((previous) =>
+        previous.map((value, i) => (i === active ? (value + 1) % exampleCount : value)),
+      );
+      setActive((previous) => (previous + 1) % builds.length);
+    }, 6500);
+    return () => window.clearTimeout(timer);
+  }, [active, example, exampleCount, reduced, hovered, focused, visible, pageVisible]);
+  const screen = (
+    <AnimatePresence initial={false}>
+      <motion.img
+        key={project.src}
+        src={project.src}
+        alt={
+          active === 0
+            ? project.title + " homepage designed and developed by MaCo"
+            : active === 1
+              ? "Bridge project board showing fictional demo tasks"
+              : project.title + " mobile interface"
+        }
+        className="studio-hero-screen"
+        style={{ objectFit: active === 2 ? "contain" : "cover" }}
+        loading="eager"
+        fetchPriority={active === 0 && example === 0 ? "high" : "auto"}
+        decoding="async"
+        initial={reduced ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: reduced ? 0 : 0.4 }}
+      />
+    </AnimatePresence>
   );
-  const pointerRef = usePointerField<HTMLElement>();
-
-  useEffect(() => {
-    setMounted(true);
-    // Unlike ProductVideo below the fold, this video is always in the
-    // initial viewport, so an IntersectionObserver buys nothing — the
-    // actual waste was fetching 764KB unconditionally on touch/narrow/
-    // saveData devices with no way to defer it. Same policy ProductVideo
-    // already applies, so a phone or a throttled connection gets the
-    // static display-glow heading instead, not a silent full-size fetch.
-    setMediaOk(autoplayAllowed(reduced));
-  }, [reduced]);
-
-  useEffect(() => {
-    if (entered) return;
-    const onEntered = () => setEntered(true);
-    window.addEventListener("maco:entered", onEntered);
-    return () => window.removeEventListener("maco:entered", onEntered);
-  }, [entered]);
-
-  const showMasked = mounted && entered && !reduced && mediaOk && bridge?.media?.video;
-
+  function track(event: PointerEvent<HTMLDivElement>) {
+    if (reduced || event.pointerType !== "mouse") return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    pointerX.set(-((event.clientY - rect.top) / rect.height - 0.5) * 5);
+    pointerY.set(((event.clientX - rect.left) / rect.width - 0.5) * 7);
+  }
+  function keyboard(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    let next = index;
+    if (event.key === "ArrowRight") next = (index + 1) % builds.length;
+    else if (event.key === "ArrowLeft") next = (index - 1 + builds.length) % builds.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = builds.length - 1;
+    else return;
+    event.preventDefault();
+    selectCategory(next);
+    tabsRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+  }
   return (
-    <section
-      ref={pointerRef as never}
-      data-ground="deep"
-      aria-label="Introduction"
-      className="relative overflow-hidden"
-    >
-      <div aria-hidden="true" className="hero-backlight" />
-      <div aria-hidden="true" className="hero-grain" />
-
-      {/* Layout-3 desktop hint pointing at the fixed edge-nav dot rail
-          (edge-nav.tsx) — its per-dot labels only reveal on hover/focus,
-          so a first-time visitor sees two bare dot columns with nothing
-          marking them as navigation. Lives only in the hero (absolute
-          within this section, not fixed) so it scrolls away once the
-          real nav is the only thing left to notice. Purely decorative —
-          the actual nav landmark is edge-nav.tsx's own `<nav>`. */}
-      <div aria-hidden="true" className="hero-nav-hint hero-nav-hint-left">
-        <span className="hero-nav-hint-label label">Menu</span>
-        <span className="hero-nav-hint-chevron" />
-      </div>
-      <div aria-hidden="true" className="hero-nav-hint hero-nav-hint-right">
-        <span className="hero-nav-hint-label label">Menu</span>
-        <span className="hero-nav-hint-chevron" />
-      </div>
-      <div className="shell cb-tophead relative">
-        {/* The corner register mark + dashed leader that lived here
-            (studied from Sharplink's hero) are removed per the owner's
-            own annotated screenshots (motion/nav pass §10) — decorative,
-            purposeless floating boxes in both themes, not part of the
-            intended hero composition. */}
-
-        <ScrubReveal as="p" hold className="cb-tophead-eyebrow label">
-          {site.category}
-        </ScrubReveal>
-
-        <div className="cb-tophead-brand mt-6 flex items-center gap-4">
-          <Mark size={72} />
-          <span className="sr-only">{site.name}</span>
+    <section data-ground="deep" aria-label="Introduction" className="studio-hero">
+      <div className="shell studio-hero-shell">
+        <div className="studio-hero-grid">
+          <div className="studio-hero-copy">
+            <p className="studio-hero-eyebrow">MaCo — Software & digital experiences</p>
+            <h1>
+              Built around
+              <br />
+              <span>your business.</span>
+            </h1>
+            <p className="studio-hero-lead">
+              From the first impression to the systems your team runs on. We design, build and
+              support the digital side of your business.
+            </p>
+            <div className="studio-hero-actions">
+              <Magnetic>
+                <Link to="/contact" className="btn-solid">
+                  Start a project <span aria-hidden="true">↗</span>
+                </Link>
+              </Magnetic>
+              <Link to="/work" className="studio-text-link">
+                Explore our work <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+            <p className="studio-hero-location">
+              Based in Kochi. Working across India and the Middle East.
+            </p>
+          </div>
+          <div
+            className="studio-hero-showcase"
+            ref={showcaseRef}
+            onPointerEnter={(event) => {
+              if (event.pointerType === "mouse") setHovered(true);
+            }}
+            onPointerLeave={() => setHovered(false)}
+            onFocusCapture={(event) => {
+              setFocused(event.target.matches(":focus-visible"));
+            }}
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
+            }}
+          >
+            <div className="studio-hero-showcase-label">
+              <span>MaCo in practice</span>
+            </div>
+            <div
+              id={uid + "-panel"}
+              role="tabpanel"
+              aria-labelledby={uid + "-tab-" + active}
+              tabIndex={0}
+              className="studio-hero-stage"
+              onPointerMove={track}
+              onPointerLeave={() => {
+                pointerX.set(0);
+                pointerY.set(0);
+              }}
+            >
+              <motion.div
+                className="studio-hero-desk"
+                style={{
+                  rotateX: reduced ? 0 : rotateX,
+                  rotateY: reduced ? 0 : rotateY,
+                  transformPerspective: 1200,
+                }}
+              >
+                <div className="studio-hero-back-window" aria-hidden="true">
+                  <Safari
+                    src="/media/bridge/tour-board.webp"
+                    url="Bridge / Demo workspace"
+                    fit="cover"
+                  />
+                </div>
+                <AnimatePresence initial={false}>
+                  <motion.div
+                    key={active}
+                    className={
+                      "studio-hero-main-window" + (active === 2 ? " studio-hero-main-phone" : "")
+                    }
+                    initial={reduced ? false : { opacity: 0, y: 18, rotate: 1 }}
+                    animate={{ opacity: 1, y: 0, rotate: 0 }}
+                    exit={{ opacity: 0, y: reduced ? 0 : -12 }}
+                    transition={{ duration: reduced ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    {active === 2 ? (
+                      <Iphone screenColor={project.slug === "bridge" ? "#f5f6f8" : "#10121c"}>
+                        {screen}
+                      </Iphone>
+                    ) : (
+                      <Safari url={project.url}>{screen}</Safari>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+                {active !== 2 && (
+                  <div className="studio-hero-phone-companion" aria-hidden="true">
+                    <Iphone
+                      screenColor={example % 2 ? "#f5f6f8" : "#10121c"}
+                      src={mobileExamples[example % mobileExamples.length]!.src}
+                    />
+                  </div>
+                )}
+              </motion.div>
+            </div>
+            <div
+              className="studio-hero-project-caption"
+              aria-live={reduced ? "polite" : "off"}
+              aria-atomic="true"
+            >
+              <div>
+                <strong>{project.title}</strong>
+                <p>{project.note}</p>
+              </div>
+              <Link
+                to={project.to}
+                params={{ slug: project.slug }}
+                aria-label={"Explore " + project.title}
+              >
+                <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
+            <div
+              className="studio-hero-media-tabs"
+              role="tablist"
+              aria-label="Explore MaCo’s work"
+              ref={tabsRef}
+            >
+              {builds.map((build, i) => (
+                <button
+                  key={build.label}
+                  type="button"
+                  role="tab"
+                  id={uid + "-tab-" + i}
+                  aria-selected={active === i}
+                  aria-controls={uid + "-panel"}
+                  tabIndex={active === i ? 0 : -1}
+                  onClick={() => {
+                    selectCategory(i);
+                  }}
+                  onKeyDown={(event) => keyboard(event, i)}
+                >
+                  <span>0{i + 1}</span>
+                  {build.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-
-        {showMasked && bridge?.media?.video ? (
-          <MaskedHeading
-            text={site.tagline}
-            className="cb-tophead-headline display-hero mt-12 max-w-[16ch] md:mt-16"
-            videoWebm={bridge.media.video.webm}
-            videoMp4={bridge.media.video.mp4}
-            poster={bridge.media.poster}
-          />
-        ) : (
-          <h1 className="cb-tophead-headline display-hero display-glow hero-reveal mt-12 max-w-[16ch] md:mt-16">
-            {site.tagline}
-          </h1>
-        )}
-
-        <div className="cb-tophead-cta mt-10 flex flex-col gap-8 md:mt-14 md:flex-row md:items-end md:justify-between">
-          <ScrubReveal as="p" hold className="cb-tophead-lead lead max-w-xl">
-            {site.statement}
-          </ScrubReveal>
-
-          <Magnetic>
-            <Link to="/contact" className="btn-solid shrink-0">
-              Start a project <span aria-hidden="true">→</span>
+        <div className="studio-hero-footer">
+          <p>One team. From idea to everyday use.</p>
+          <div>
+            <Link to="/services/$slug" params={{ slug: "business-software" }}>
+              Business Software <span aria-hidden="true">↗</span>
             </Link>
-          </Magnetic>
+            <Link to="/services/$slug" params={{ slug: "digital-solutions" }}>
+              Digital Solutions <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
         </div>
+      </div>
+      <div className="hero-nav-hint hero-nav-hint-left" aria-hidden="true">
+        <span className="label">Menu</span>
+        <span className="hero-nav-hint-chevron" />
+      </div>
+      <div className="hero-nav-hint hero-nav-hint-right" aria-hidden="true">
+        <span className="label">Menu</span>
+        <span className="hero-nav-hint-chevron" />
       </div>
     </section>
   );

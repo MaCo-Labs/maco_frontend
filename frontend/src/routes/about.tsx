@@ -1,111 +1,13 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { site, process, principles, services, origin, team } from "@/content/maco";
+import { site, process, principles, services, origin } from "@/content/maco";
 import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 import { GlobeSection } from "@/components/globe-section";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { Stagger } from "@/components/motion/stagger";
 import { ProcessStroke } from "@/components/motion/process-stroke";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
-
-/** Auto-cycle interval — mirrors Vengeance UI's Team Reveal Grid default
- *  (`rotationInterval: 2800`), the one thing worth taking from that
- *  component: a stateful "active member" the grid cycles through when
- *  idle, not just a per-card `:hover` reveal. */
-const TEAM_ROTATION_MS = 2800;
-
-function TeamGrid({ people }: { people: typeof team }) {
-  const [active, setActive] = useState(0);
-  const reduced = useReducedMotion();
-  const pausedRef = useRef(false);
-
-  useEffect(() => {
-    if (reduced || people.length < 2) return;
-    const id = setInterval(() => {
-      if (!pausedRef.current) setActive((i) => (i + 1) % people.length);
-    }, TEAM_ROTATION_MS);
-    return () => clearInterval(id);
-  }, [reduced, people.length]);
-
-  return (
-    // Pause/resume lives on this wrapper, not per-card: clearing on a
-    // card's own mouseleave fires before the next card's mouseenter,
-    // which would drop the highlight to nothing for a frame between two
-    // adjacent cards instead of reading as one continuous hand-off.
-    <div className="lg:col-span-9" onMouseLeave={() => (pausedRef.current = false)}>
-      <Stagger
-        as="div"
-        className="grid grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-4"
-        style={{ background: "var(--line)" }}
-        gap={0.06}
-        band={0.3}
-      >
-        {people.map((person, i) => {
-          const isActive = active === i;
-          return (
-            <div
-              key={person.slug}
-              tabIndex={0}
-              className="stagger-item p-6 outline-none"
-              style={{ background: "var(--bg)", "--i": i } as CSSProperties}
-              onMouseEnter={() => {
-                pausedRef.current = true;
-                setActive(i);
-              }}
-              onFocus={() => {
-                pausedRef.current = true;
-                setActive(i);
-              }}
-            >
-              <div
-                className={`flex items-center justify-center transition-[filter] duration-400 ease-[var(--ease-emphasis)] ${isActive ? "contrast-125 brightness-105" : ""
-                  }`}
-              >
-                {person.portrait ? (
-                  <img
-                    src={person.portrait.poster}
-                    alt={person.portrait.alt}
-                    width={person.portrait.width}
-                    height={person.portrait.height}
-                    className="h-44 w-44 object-contain"
-                    loading="lazy"
-                  />
-                ) : (
-                  <span className="font-display text-3xl text-muted">
-                    {initials(person.name)}
-                  </span>
-                )}
-              </div>
-              <p className="mt-4 font-display text-lg tracking-[-0.02em]">{person.name}</p>
-              <p className="mt-1 text-sm text-muted">{person.role}</p>
-              <p
-                className={`mt-3 overflow-hidden text-sm text-muted transition-[max-height,opacity] duration-400 ease-[var(--ease-emphasis)] ${
-                  isActive ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
-                }`}
-              >
-                {person.bio}
-              </p>
-            </div>
-          );
-        })}
-      </Stagger>
-    </div>
-  );
-}
-
-/** slug -> initials, for the founder-card fallback (no portraits exist
- *  yet). Typographic, not a fake-avatar image — the honest stand-in per
- *  design-taste-frontend's guidance on invented headshots. */
-function initials(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-}
+import { TeamGrid } from "@/components/about/team-grid";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -167,6 +69,12 @@ function AboutPage() {
         </div>
       </section>
 
+      <section data-ground="paper" aria-label="Team" className="rule-b">
+        <div className="shell py-16 lg:py-28">
+          <TeamGrid />
+        </div>
+      </section>
+
       <section data-ground="paper" aria-label="Method" className="rule-b">
         <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
           <p className="label lg:col-span-3">Method</p>
@@ -211,13 +119,6 @@ function AboutPage() {
             ))}
             <li className="rule-t" />
           </Stagger>
-        </div>
-      </section>
-
-      <section data-ground="paper" aria-label="Team" className="rule-b">
-        <div className="shell grid gap-8 py-14 lg:grid-cols-12 lg:py-20">
-          <p className="label lg:col-span-3">Team</p>
-          <TeamGrid people={team} />
         </div>
       </section>
 

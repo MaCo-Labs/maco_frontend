@@ -8,12 +8,12 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
-plugins: [
-  tanstackStart({
-    server: { entry: "./src/server.ts" },
-  }),
-  nitro(),
-  react(),
-  tailwindcss(),
-],
+  plugins: [
+    tanstackStart({
+      server: { entry: "./src/server.ts" },
+    }),
+    nitro(),
+    react(),
+    tailwindcss(),
+  ],
 });

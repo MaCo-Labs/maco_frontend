@@ -249,7 +249,7 @@ function RootComponent() {
           <Cursor />
           <Header />
           <EdgeNav />
-          <main id="main">
+          <main id="main" tabIndex={-1}>
             <Outlet />
           </main>
           <Footer />

@@ -49,7 +49,7 @@ export function ScrubReveal({
           { "--r": 0 },
           {
             "--r": 1,
-            duration: 0.9,
+            duration: 0.55,
             ease: "expo.out",
             scrollTrigger: { trigger: el, start, once: true },
           },

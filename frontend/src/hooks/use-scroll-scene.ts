@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, type DependencyList } from "react";
 import { getScrollRuntime, type ScrollRuntime } from "@/lib/scroll-runtime";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 type GsapContext = ReturnType<ScrollRuntime["gsap"]["context"]>;
 
@@ -46,7 +47,9 @@ export function useScrollScene(
   setup: (rt: ScrollRuntime) => void,
   deps: DependencyList = [],
 ): void {
+  const reduced = useReducedMotion();
   useIsomorphicLayoutEffect(() => {
+    if (reduced) return;
     let cancelled = false;
     let ctx: GsapContext | null = null;
 
@@ -62,5 +65,5 @@ export function useScrollScene(
     };
     // `setup` is an inline closure at every call site; callers list their
     // own dependencies explicitly, same convention as a bare useEffect.
-  }, deps);
+  }, [reduced, ...deps]);
 }

@@ -470,7 +470,7 @@ export const products: Product[] = [
       note: "Brand illustration — not product UI. Real screen capture is pending.",
     },
     screen: {
-      poster: "/media/products/drivers-diary/screen-poster.webp",
+      poster: "/media/products/drivers-diary/interface.webp",
       alt: "Driver's Diary — a walkthrough of attendance, rides and payroll, recorded on device",
       width: 540,
       height: 1128,
@@ -487,31 +487,37 @@ export const products: Product[] = [
     owner: "MaCo",
     kind: "SaaS / PWA + desktop",
     short_description:
-      "Task and project implementation, administration, users, project analysis and task assignment.",
+      "Projects, tasks, team conversations and service maintenance in one connected workspace.",
     positioning:
-      "MaCo's own product. Bridge is aimed at the task and project management category, built from the delivery problems we hit on client work.",
+      "MaCo's own connected workspace, built from the delivery problems we meet in our own work.",
     problem:
       "Project tools optimise for the board view and leave implementation, assignment discipline and analysis to the team's memory.",
     solution:
-      "A platform where projects, assignment, administration and analysis are one workflow, available as a PWA and on the desktop.",
+      "A shared workspace for project delivery, clear ownership, team conversations and planned service work, available as a PWA and on the desktop.",
     target_users: "Delivery teams, project administrators and the people assigning the work.",
     features: [
       {
-        title: "Project implementation",
-        description: "Projects carried from definition through delivery in one place.",
+        title: "Projects and tasks",
+        description:
+          "Give work an owner, a priority and a checklist, then follow it through delivery.",
       },
       {
-        title: "Task assignment",
-        description: "Explicit ownership of every task rather than an unassigned column.",
+        title: "Team conversations",
+        description: "Keep project conversations alongside the work they concern.",
+      },
+      { title: "Calendar", description: "See scheduled tasks in a shared calendar view." },
+      {
+        title: "Service maintenance",
+        description:
+          "Connect AMC contracts, planned visits, assigned service tasks and renewal history.",
       },
       {
-        title: "Administration",
-        description: "Organisation, workspace and permission administration.",
+        title: "Roles and access",
+        description: "Manage your organisation, users and role-aware workspace access.",
       },
-      { title: "Users", description: "User management with role-aware access." },
       {
         title: "Project analysis",
-        description: "Progress and workload analysis from live project data.",
+        description: "Read project progress and workload from the team's working record.",
       },
     ],
     technologies: ["PWA", "Desktop", "React", "REST API", "PostgreSQL"],
@@ -747,7 +753,7 @@ export const team: TeamMember[] = [
     bio: "Building full-stack applications and streamlining deployment and infrastructure workflows.",
     portrait: {
       poster: "/media/founders/unknown.png",
-      alt: "M S",
+      alt: "M D",
       width: 512,
       height: 512,
     },

@@ -1,0 +1,219 @@
+.bridge-tour {
+  width: 100%;
+  min-width: 0;
+}
+.bridge-tour-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.bridge-tour-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--surface-2);
+  border-radius: 999px;
+}
+.bridge-tour-tabs button {
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.bridge-tour-tabs [aria-selected="true"] {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 4px color-mix(in oklab, var(--text) 8%, transparent);
+}
+.bridge-reel-button {
+  min-height: 44px;
+  padding: 0.5rem 0 0.5rem 0.75rem;
+  white-space: nowrap;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+.bridge-reel-button span {
+  margin-right: 0.4rem;
+}
+.bridge-tour-stage {
+  position: relative;
+  aspect-ratio: 1203 / 853;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+}
+.bridge-phone-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+}
+.bridge-phone-stage .bridge-iphone {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+}
+.bridge-tour-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.bridge-tour-caption p {
+  max-width: 36rem;
+}
+.bridge-tour-caption span {
+  white-space: nowrap;
+  font-size: 0.75rem;
+  padding-top: 0.15rem;
+}
+.bridge-film {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 1.5rem 1.5rem;
+  background: rgb(10 11 14 / 0.96);
+  color: #f6f6f7;
+}
+.bridge-film video {
+  display: block;
+  max-height: calc(100dvh - 10rem);
+  max-width: 100%;
+  border-radius: 0.75rem;
+}
+.bridge-film p {
+  font-size: 0.8rem;
+  color: #c5c6cc;
+}
+.bridge-film-close {
+  position: absolute;
+  right: 1.5rem;
+  top: 1rem;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #777;
+  border-radius: 50%;
+  font-size: 2rem;
+  cursor: pointer;
+}
+.product-chapter {
+  display: grid;
+  grid-template-columns: 1fr 1.7fr;
+  gap: clamp(2rem, 5vw, 6rem);
+  align-items: center;
+}
+.product-chapter-title {
+  font-size: clamp(2.8rem, 5.5vw, 5rem);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.product-chapter-copy {
+  max-width: 27rem;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--muted);
+  margin-top: 1.5rem;
+}
+.product-chapter-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+.product-ownership {
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+  color: var(--muted);
+}
+.product-diary {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  align-items: center;
+  gap: 3rem;
+  border-top: 1px solid var(--line);
+  margin-top: 6rem;
+  padding-top: 5rem;
+}
+.product-diary-visual {
+  max-width: 20rem;
+  justify-self: center;
+}
+.product-diary-copy {
+  max-width: 32rem;
+}
+.product-diary-copy h3 {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.15;
+}
+.product-diary-copy p {
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1.55;
+}
+.product-diary-copy a {
+  margin-top: 1.5rem;
+}
+.product-detail-tour {
+  margin-top: 4rem;
+}
+@media (max-width: 1023px) {
+  .product-chapter {
+    grid-template-columns: 1fr;
+  }
+  .product-chapter-copy {
+    max-width: 42rem;
+  }
+}
+@media (max-width: 639px) {
+  .bridge-tour-toolbar {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .bridge-tour-tabs {
+    width: 100%;
+    border-radius: 0.85rem;
+    flex-wrap: nowrap;
+  }
+  .bridge-tour-tabs button {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.65rem;
+  }
+  .bridge-reel-button {
+    padding-left: 0;
+  }
+  .bridge-tour-stage {
+    border-radius: 0.75rem;
+  }
+  .bridge-tour-caption {
+    display: block;
+  }
+  .bridge-tour-caption span {
+    display: block;
+    margin-top: 0.6rem;
+  }
+  .product-diary {
+    grid-template-columns: 1fr;
+    margin-top: 4rem;
+    padding-top: 3rem;
+  }
+  .product-diary-visual {
+    max-width: 17rem;
+  }
+}

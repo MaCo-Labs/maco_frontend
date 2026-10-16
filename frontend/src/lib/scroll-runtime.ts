@@ -76,6 +76,7 @@ export function getScrollRuntime(): Promise<ScrollRuntime | null> {
         import("gsap/SplitText"),
       ]);
 
+      if (resolveMotionPreference() === "reduced") return null;
       const gsap = gsapMod.gsap;
       const { ScrollTrigger } = scrollTriggerMod;
       const { SplitText } = splitTextMod;
@@ -154,7 +155,11 @@ export function getScrollRuntime(): Promise<ScrollRuntime | null> {
     }
   })();
 
-  return runtimePromise;
+  const pending = runtimePromise;
+  void pending.then((runtime) => {
+    if (!runtime && runtimePromise === pending) runtimePromise = null;
+  });
+  return pending;
 }
 
 /** Synchronous accessor for code that only wants to act if the runtime already exists (e.g. cleanup on unmount). */

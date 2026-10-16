@@ -1,0 +1,215 @@
+.service-explorer {
+  margin-top: 3rem;
+}
+.service-explorer-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+}
+.service-explorer-tabs button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: left;
+  min-height: 100px;
+  padding: 1.25rem 1.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 1.6vw, 1.5rem);
+  cursor: pointer;
+  color: var(--muted);
+  transition:
+    color 160ms ease,
+    background 160ms ease;
+}
+.service-explorer-tabs button + button {
+  border-left: 1px solid var(--line-strong);
+}
+.service-explorer-tabs button[aria-selected="true"] {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.service-explorer-tabs button::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 3px;
+  background: var(--text);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 260ms var(--ease-emphasis);
+}
+.service-explorer-tabs button[aria-selected="true"]::after {
+  transform: scaleX(1);
+}
+.service-explorer-tabs button:active {
+  background: var(--line);
+}
+.service-tab-index {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  align-self: flex-start;
+  padding-top: 0.2rem;
+}
+.service-tab-arrow {
+  margin-left: auto;
+  transition: transform 180ms ease;
+}
+.service-explorer-tabs button[aria-selected="true"] .service-tab-arrow {
+  transform: rotate(45deg);
+}
+.service-explorer-panel {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: clamp(2.5rem, 6vw, 6rem);
+  padding-top: 3.5rem;
+  min-height: 660px;
+}
+.service-explorer-statement {
+  max-width: 25rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+  line-height: 1.35;
+  letter-spacing: -0.04em;
+}
+.service-explorer-description {
+  color: var(--muted);
+  margin-top: 1.25rem;
+  max-width: 34rem;
+  line-height: 1.6;
+}
+.service-explorer-capabilities {
+  margin-block: 1.75rem 2rem;
+}
+.service-explorer-capabilities li {
+  padding-block: 0.9rem;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 1.5rem;
+}
+.service-explorer-capabilities h3 {
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.service-explorer-capabilities p {
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.service-explorer-evidence {
+  align-self: start;
+  background: var(--surface-2);
+  padding: 1.25rem;
+  border-radius: var(--radius-card);
+}
+.service-evidence-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  margin-bottom: 2.5rem;
+  color: var(--muted);
+}
+.service-evidence-link {
+  display: block;
+}
+.service-evidence-image {
+  overflow: hidden;
+  border-radius: calc(var(--radius-card) / 2);
+  background: var(--surface);
+}
+.service-evidence-image img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: contain;
+  display: block;
+  transition: transform 500ms var(--ease-emphasis);
+}
+.service-evidence-link:hover img {
+  transform: scale(1.035);
+}
+.service-evidence-caption {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.service-evidence-caption strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1rem, 1.6vw, 1.4rem);
+}
+.service-evidence-caption p,
+.service-evidence-foot {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+.service-evidence-caption > span {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+}
+.service-evidence-foot {
+  margin-top: 3rem;
+}
+@media (max-width: 1023px) {
+  .service-explorer-panel {
+    gap: 2rem;
+    min-height: 0;
+  }
+  .service-explorer-capabilities li {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
+@media (max-width: 767px) {
+  .service-explorer {
+    margin-top: 2rem;
+  }
+  .service-explorer-tabs button {
+    padding: 1rem 0.75rem;
+    gap: 0.5rem;
+    min-height: 100px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  .service-tab-index {
+    display: none;
+  }
+  .service-tab-arrow {
+    font-size: 1.2rem;
+  }
+  .service-explorer-panel {
+    grid-template-columns: 1fr;
+    padding-top: 2rem;
+    gap: 2rem;
+  }
+  .service-explorer-capabilities li {
+    grid-template-columns: 1fr;
+    padding-block: 1rem;
+  }
+  .service-explorer-capabilities p {
+    font-size: 0.9rem;
+  }
+  .service-evidence-meta {
+    margin-bottom: 1.5rem;
+  }
+  .service-evidence-foot {
+    margin-top: 2rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .service-explorer * {
+    transition: none !important;
+  }
+  .service-evidence-link:hover img {
+    transform: none;
+  }
+}

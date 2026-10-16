@@ -68,7 +68,7 @@ export function Identity() {
       const trigger = rt.ScrollTrigger.create({
         trigger: section,
         start: "top top",
-        end: "+=170%",
+        end: "+=90%",
         pin: true,
         anticipatePin: 1,
         scrub: 0.25,
@@ -77,25 +77,24 @@ export function Identity() {
           track.style.setProperty("--t", String(self.progress * (N - 1)));
         },
       });
-      return () => trigger.kill();
+      return () => {
+        trigger.kill();
+        track.style.removeProperty("--t");
+      };
     });
     mm.add("(max-width: 1023px)", () => {
-      // Shorter pin on a shorter viewport — the desktop distance felt
-      // over-long at 844px tall (values below tuned by scrubbing live,
-      // not derived).
       const trigger = rt.ScrollTrigger.create({
         trigger: section,
-        start: "top top",
-        end: "+=130%",
-        pin: true,
-        anticipatePin: 1,
+        start: "top bottom",
+        end: "bottom top",
         scrub: 0.25,
         invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          track.style.setProperty("--t", String(self.progress * (N - 1)));
-        },
+        onUpdate: (self) => track.style.setProperty("--t", String(self.progress * (N - 1))),
       });
-      return () => trigger.kill();
+      return () => {
+        trigger.kill();
+        track.style.removeProperty("--t");
+      };
     });
   }, []);
 
