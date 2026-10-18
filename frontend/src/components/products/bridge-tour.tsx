@@ -1,6 +1,5 @@
 import { useId, useRef, useState, type KeyboardEvent } from "react";
-import { createPortal } from "react-dom";
-import { useOverlayMenu } from "@/hooks/use-overlay-menu";
+import { BridgeFilms } from "./bridge-films";
 import { Safari } from "@/components/media/safari";
 import { Iphone } from "@/components/media/iphone";
 import "./products.css";
@@ -25,12 +24,8 @@ const views = [
 
 export function BridgeTour({ compact = false }: { compact?: boolean }) {
   const [view, setView] = useState(0);
-  const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const uid = useId();
-  useOverlayMenu({ open, setOpen, panelRef, triggerRef });
   function keyboard(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     let next = index;
     if (event.key === "ArrowRight") next = (index + 1) % views.length;
@@ -62,14 +57,6 @@ export function BridgeTour({ compact = false }: { compact?: boolean }) {
             </button>
           ))}
         </div>
-        <button
-          ref={triggerRef}
-          type="button"
-          onClick={() => setOpen(true)}
-          className="bridge-reel-button"
-        >
-          <span aria-hidden="true">▷</span> Watch the film
-        </button>
       </div>
       <div
         id={`${uid}-panel`}
@@ -102,48 +89,7 @@ export function BridgeTour({ compact = false }: { compact?: boolean }) {
         <p>{views[view]!.caption}</p>
         <span>Demo workspace shown</span>
       </div>
-      {open &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            ref={panelRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={`${uid}-film-title`}
-            className="bridge-film"
-            data-ground="deep"
-            data-lenis-prevent
-            onClick={(event) => {
-              if (event.target === event.currentTarget) setOpen(false);
-            }}
-          >
-            <button
-              type="button"
-              className="bridge-film-close"
-              aria-label="Close Bridge film"
-              onClick={() => setOpen(false)}
-            >
-              ×
-            </button>
-            <h2 id={`${uid}-film-title`} className="sr-only">
-              Bridge: Tasks. Sorted.
-            </h2>
-            <video
-              controls
-              playsInline
-              autoPlay
-              muted
-              preload="metadata"
-              poster="/media/bridge/teaser-poster.jpg"
-            >
-              <source src="/media/bridge/teaser.mp4" type="video/mp4" />
-              Your browser does not support video.{" "}
-              <a href="/media/bridge/teaser.mp4">Open the Bridge film</a>.
-            </video>
-            <p>Bridge by MaCo. Illustrative product film.</p>
-          </div>,
-          document.body,
-        )}
+      <BridgeFilms />
     </div>
   );
 }

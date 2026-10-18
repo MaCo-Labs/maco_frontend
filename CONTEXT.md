@@ -1,5 +1,13 @@
 # MaCo Website — CONTEXT
 
+## Bridge film collection — 2026-10-18
+
+Bridge's screenshot tour is accompanied by three deliberate-play films in one shared cinema UI on Home, Products and `/products/bridge`: team/project work (30s), AMC/service maintenance (25s), and the existing Bridge introduction (20s). The two new source videos and poster frames come from the owner-supplied local `D:\TaskFlow` productions; see [docs/BRIDGE_FILMS_2026-10-18.md](docs/BRIDGE_FILMS_2026-10-18.md) for exact provenance, credits, encoding and factual limits. Keep the full portrait frame, use posters before selection, and mount only the selected video. The viewer follows the existing `useOverlayMenu` accessibility/scroll-lock pattern and provides transcript text; its focus trap includes `<summary>`.
+
+The TanStack security update pins Router `1.170.45` and Start `1.169.3`. Keep the lockfile resolved as one Router version; Start's transitive Server Core is `1.169.44`. The root error UI consumes TanStack's exported `ErrorComponentProps`.
+
+---
+
 ## Release refinement — 2026-10-16
 
 This entry supersedes earlier local-only status below. The owner authorized a main-branch push after final checks. Working checkout remains E:\Downloads\maco-website-v2 on homepage-reset, based on c988e2f; use Git history and origin/main for the release commit. No hosting configuration or separate deployment action was performed.

@@ -30,16 +30,6 @@
   color: var(--text);
   box-shadow: 0 1px 4px color-mix(in oklab, var(--text) 8%, transparent);
 }
-.bridge-reel-button {
-  min-height: 44px;
-  padding: 0.5rem 0 0.5rem 0.75rem;
-  white-space: nowrap;
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-.bridge-reel-button span {
-  margin-right: 0.4rem;
-}
 .bridge-tour-stage {
   position: relative;
   aspect-ratio: 1203 / 853;
@@ -75,31 +65,178 @@
   font-size: 0.75rem;
   padding-top: 0.15rem;
 }
-.bridge-film {
+.bridge-film-library {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.bridge-film-library-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.bridge-film-library-heading > span {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.bridge-film-picks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.bridge-film-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.bridge-film-pick img {
+  width: 3.25rem;
+  height: auto;
+  aspect-ratio: 9 / 16;
+  flex-shrink: 0;
+  border-radius: 0.35rem;
+}
+.bridge-film-pick-copy {
+  display: grid;
+  gap: 0.5rem;
+}
+.bridge-film-pick-title {
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+.bridge-film-pick-duration {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.bridge-film-pick-duration > span {
+  margin-right: 0.25rem;
+}
+.bridge-cinema {
   position: fixed;
   inset: 0;
   z-index: 100;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 4rem 1.5rem 1.5rem;
-  background: rgb(10 11 14 / 0.96);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4.5rem 2rem 2rem;
+  background: #0a0b0e;
   color: #f6f6f7;
 }
-.bridge-film video {
-  display: block;
-  max-height: calc(100dvh - 10rem);
-  max-width: 100%;
-  border-radius: 0.75rem;
+.bridge-cinema-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 6vw, 6rem);
+  width: 100%;
+  max-width: 66rem;
+  margin: auto;
 }
-.bridge-film p {
+.bridge-cinema-screen {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+}
+.bridge-cinema video {
+  display: block;
+  height: min(78dvh, 48rem);
+  max-width: 100%;
+  aspect-ratio: 9 / 16;
+  object-fit: contain;
+  border-radius: 0.6rem;
+  background: #101218;
+}
+.bridge-cinema-copy {
+  min-width: 0;
+}
+.bridge-cinema-subject {
   font-size: 0.8rem;
   color: #c5c6cc;
 }
+.bridge-cinema-copy h2 {
+  margin-top: 1rem;
+  font-size: clamp(1.7rem, 3vw, 2.75rem);
+  line-height: 1.2;
+}
+.bridge-cinema-description {
+  margin-top: 1.25rem;
+  max-width: 32rem;
+  color: #c5c6cc;
+  line-height: 1.6;
+}
+.bridge-cinema-playlist {
+  margin-top: 2rem;
+}
+.bridge-cinema-playlist button {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.75rem;
+  border-top: 1px solid #34363e;
+  text-align: left;
+  cursor: pointer;
+}
+.bridge-cinema-playlist button[aria-pressed="true"] {
+  background: #20232c;
+}
+.bridge-cinema-playlist img {
+  width: 2rem;
+  height: auto;
+  aspect-ratio: 9 / 16;
+  border-radius: 0.2rem;
+}
+.bridge-cinema-film-title {
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.bridge-cinema-film-meta,
+.bridge-cinema-duration {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: #c5c6cc;
+}
+.bridge-cinema-note,
+.bridge-cinema-credit,
+.bridge-cinema-transcript {
+  margin-top: 1.25rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: #c5c6cc;
+}
+.bridge-cinema-transcript summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 0.5rem 0;
+  color: #f6f6f7;
+}
+.bridge-cinema-transcript p {
+  margin-top: 0.75rem;
+}
+.bridge-cinema-credit a,
+.bridge-cinema-error a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.bridge-cinema-error {
+  font-size: 0.875rem;
+}
+.bridge-film-pick:focus-visible,
+.bridge-cinema :is(button, video, summary, a):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
 .bridge-film-close {
-  position: absolute;
+  position: fixed;
   right: 1.5rem;
   top: 1rem;
   width: 48px;
@@ -108,6 +245,15 @@
   border-radius: 50%;
   font-size: 2rem;
   cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  .bridge-film-pick:hover .bridge-film-pick-title {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .bridge-cinema-playlist button:hover {
+    background: #20232c;
+  }
 }
 .product-chapter {
   display: grid;
@@ -195,9 +341,6 @@
     font-size: 0.75rem;
     border-radius: 0.65rem;
   }
-  .bridge-reel-button {
-    padding-left: 0;
-  }
   .bridge-tour-stage {
     border-radius: 0.75rem;
   }
@@ -207,6 +350,37 @@
   .bridge-tour-caption span {
     display: block;
     margin-top: 0.6rem;
+  }
+  .bridge-film-picks {
+    gap: 0.75rem;
+  }
+  .bridge-film-pick {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .bridge-film-pick img {
+    width: 100%;
+  }
+  .bridge-film-pick-title {
+    font-size: 0.8rem;
+  }
+  .bridge-film-pick-copy {
+    align-content: start;
+    flex: 1;
+  }
+  .bridge-cinema {
+    padding: 4.5rem 1.25rem 2rem;
+  }
+  .bridge-cinema-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .bridge-cinema video {
+    height: 58dvh;
+  }
+  .bridge-cinema-copy h2 {
+    font-size: 1.75rem;
   }
   .product-diary {
     grid-template-columns: 1fr;

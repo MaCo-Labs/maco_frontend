@@ -1,5 +1,17 @@
 # MaCo Website — Project Status
 
+## Release handoff — 2026-10-18
+
+The current local `main` checkout includes the Bridge film collection and TanStack Router/Start security version updates. Before release, `origin/main` and `origin/prod` were both at `1fa5dc8`; `prod`'s earlier tip `08d49bf` is an ancestor of `main`, so production's existing changes are already preserved in main. The release commit is to be pushed to both branches, leaving them on the same commit; no force push.
+
+The Bridge player offers three films from the Home, Products and Bridge detail tour. New local source footage from `D:\TaskFlow` is encoded as two MP4s with posters; the existing teaser remains. It uses the shared cinema dialog, native controls, on-demand video loading, transcripts, Escape, focus restoration, and the existing scroll-lock/focus-trap pattern. The focus trap now recognizes expandable transcript summaries. Provenance, license details and illustrative-content limits: [docs/BRIDGE_FILMS_2026-10-18.md](docs/BRIDGE_FILMS_2026-10-18.md).
+
+Router `1.170.45` and Start `1.169.3` are locked, resolving one Router version and Start Server Core `1.169.44`.
+
+Checks passed: frontend production build, TypeScript `--noEmit`, ESLint (0 errors; 3 existing Fast Refresh warnings), `git diff --check`, and a Vercel-preset build producing the serverless function, Node.js 24 runtime config and new media in static output. Chromium verified Home, Products and Bridge detail at 390px with all three film pickers, one H1, and no horizontal overflow; all three films load to `readyState 4`. The dialog passed transcript-to-credit Tab focus, Escape close, trigger focus restoration, scroll lock/unlock and video switching checks. Browser console errors: zero. Existing globe chunk-size warning remains. No manual production deploy has been run.
+
+---
+
 ## Release refinement — 2026-10-16
 
 This entry supersedes earlier local-only status below. The owner authorized a main-branch push after final checks. Working checkout remains E:\Downloads\maco-website-v2 on homepage-reset, based on c988e2f; use Git history and origin/main for the release commit. No hosting configuration or separate deployment action was performed.

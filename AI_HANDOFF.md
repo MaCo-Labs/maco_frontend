@@ -1,5 +1,19 @@
 # MaCo Website — AI Handoff
 
+## Release handoff — 2026-10-18
+
+The current local checkout is `main` at `1fa5dc8`, with the completed Bridge film collection and the verified TanStack security updates in the working tree. Production history is preserved: the original `prod` tip `08d49bf` is an ancestor of `main`, and `origin/main` and `origin/prod` both pointed to `1fa5dc8` before this release. The intended release is one commit pushed to both branches so they end at the same source tree. No force push or history rewrite.
+
+Bridge now has a shared three-film picker and portal player on the Home, Products and Bridge detail surfaces via the existing `BridgeTour`: the 30-second teamwork film, 25-second service-maintenance film, and retained 20-second teaser. New media is locally encoded and sourced from `D:\TaskFlow`; provenance, credits, and capability boundaries are documented in [docs/BRIDGE_FILMS_2026-10-18.md](docs/BRIDGE_FILMS_2026-10-18.md). Posters load before selection; videos mount on demand. The viewer retains native controls, transcript, Escape/close, focus restoration and scroll locking. `useOverlayMenu` now includes expandable summaries in its focus trap.
+
+TanStack Router is pinned to `1.170.45` and Start to `1.169.3`; the lock resolves a single Router version and Start Server Core `1.169.44`. The root error view uses TanStack's exported `ErrorComponentProps`.
+
+Validation for this release: `bun run build`, `bun run lint` (0 errors; the same 3 Fast Refresh warnings), `.\\node_modules\\.bin\\tsc --noEmit`, and `git diff --check` passed in `frontend`. A Vercel-targeted build with `NITRO_PRESET=vercel` produced `.vercel/output/config.json`, the `__server.func` server bundle, Node.js 24 runtime configuration, and both new videos/posters under static output. The local dev server returned HTTP 200 for `/products/bridge` and the new MP4. Chromium QA checked Home, Products, and the Bridge detail page at 390px; all show the three films, one H1, and no horizontal overflow. The teamwork, AMC, and retained teaser videos each loaded to `readyState 4` with native controls. Dialog tests verified scroll lock, transcript-summary keyboard focus to the music credit, Escape close, trigger-focus restoration, scroll unlock, and that choosing another film unmounts the previous video. Console error count was zero. Desktop/mobile tour and cinema screenshots remain available in `frontend/.playwright-mcp/` for both themes.
+
+The regular build retains the pre-existing large globe-chunk advisory. The site has not been manually deployed; branch pushes are the requested delivery and Vercel deployment behavior remains controlled by the project's branch integration.
+
+---
+
 ## Release refinement — 2026-10-16
 
 This entry supersedes earlier local-only status below. The owner authorized a main-branch push after final checks. Working checkout remains E:\Downloads\maco-website-v2 on homepage-reset, based on c988e2f; use Git history and origin/main for the release commit. No hosting configuration or separate deployment action was performed.

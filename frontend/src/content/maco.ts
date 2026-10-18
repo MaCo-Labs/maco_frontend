@@ -537,6 +537,68 @@ export const products: Product[] = [
   },
 ];
 
+/** Source films use fictional demo data. Credits travel with each film. */
+export const bridgeFilms = [
+  {
+    id: "team-work",
+    title: "Less chasing. More doing.",
+    subject: "Projects & teamwork",
+    duration: "0:30",
+    src: "/media/bridge/team-work.mp4",
+    poster: "/media/bridge/team-work-poster.jpg",
+    description: "From assigning a task to sharing context and following project progress.",
+    note: "Illustrative product film. Fictional demo workspace.",
+    transcript: [
+      "Still chasing ‘Any update?’ Work moves. Updates get lost. Meet Bridge.",
+      "Give every task an owner. A manager assigns work; an employee adds a checklist and context to the task.",
+      "Keep context with the task. See progress at a glance. A reviewed task is completed and the project progress updates.",
+      "Service visits, tracked too. The separate AMC module connects a planned visit to its assigned service task.",
+      "Clear owners. Shared context. Visible progress. Bridge. Less chasing. More doing. Book a demo.",
+    ],
+    credit: {
+      text: "Music: Happy Beats & Business Moves Vol. 10 by Sascha Ende. Trimmed and mixed. CC BY 4.0.",
+      href: "https://ende.app/en/song/12875-happy-beats-business-moves-vol-10",
+      license: "https://creativecommons.org/licenses/by/4.0/",
+    },
+  },
+  {
+    id: "service-maintenance",
+    title: "Service, kept in view.",
+    subject: "AMC & planned visits",
+    duration: "0:25",
+    src: "/media/bridge/service-maintenance.mp4",
+    poster: "/media/bridge/service-maintenance-poster.jpg",
+    description:
+      "A closer look at contracts, scheduled visits and service work in Bridge’s AMC module.",
+    note: "Illustrative product film with fictional data. AMC automation depends on contract and workspace configuration.",
+    transcript: [
+      "Too many AMCs. Too many expiry dates. Everything scattered? Shouldn’t it be easier? AMC management shouldn’t feel like a chore.",
+      "Bridge. Manage your AMCs. A fictional contract list brings service agreements into one view.",
+      "Automatically schedule visits. An eligible contract with configured automation generates planned visit dates.",
+      "Automatically track contract expiries. An expiry task is generated; the contract is not automatically renewed.",
+      "Plan visits by zone. The Visit Planner groups service visits by zone and engineer.",
+      "Stay ahead. Stay organized. Bridge by MACO. www.maco.codes. +974 3126 6690.",
+    ],
+    credit: null,
+  },
+  {
+    id: "teaser",
+    title: "Work, connected.",
+    subject: "The short introduction",
+    duration: "0:20",
+    src: "/media/bridge/teaser.mp4",
+    poster: "/media/bridge/teaser-poster.jpg",
+    description: "A short animated introduction to the ideas behind Bridge.",
+    note: "Illustrative launch film from the Bridge archive.",
+    transcript: [
+      "Tasks. Sorted. Assign. Follow up. Always in progress.",
+      "Never miss the routine. Work, in motion. Deadline approaching.",
+      "Everything connected. Introducing soon. Bridge by MACO. Work, connected.",
+    ],
+    credit: null,
+  },
+] as const;
+
 export interface Client {
   name: string;
   slug: string;

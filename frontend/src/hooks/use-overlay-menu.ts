@@ -34,7 +34,7 @@ export function useOverlayMenu({
     const focusable = () =>
       Array.from(
         panelRef.current?.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), video[controls], [tabindex]:not([tabindex="-1"])',
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), video[controls], summary, [tabindex]:not([tabindex="-1"])',
         ) ?? [],
       );
     const onKey = (e: KeyboardEvent) => {

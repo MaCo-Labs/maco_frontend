@@ -1,5 +1,11 @@
 # MaCo Website — Roadmap
 
+## Release refinement — 2026-10-18
+
+Bridge's three-film collection and the TanStack Router/Start security update are implemented and validated in the current `main` checkout. The production branch history is preserved: `prod`'s earlier tip is an ancestor of `main`, and `origin/main` and `origin/prod` were both at `1fa5dc8` before this release. The release is pushed as the same commit to both branches; no history rewrite. Vercel-targeted output, build, type check, lint and Bridge browser interactions passed. A manual production deployment was not performed; deployment is controlled by the existing branch integration. Details: [docs/BRIDGE_FILMS_2026-10-18.md](docs/BRIDGE_FILMS_2026-10-18.md), AI_HANDOFF.md and PROJECT_STATUS.md.
+
+---
+
 ## Release refinement — 2026-10-16
 
 This entry supersedes earlier local-only status below. The owner authorized a main-branch push after final checks. Working checkout remains E:\Downloads\maco-website-v2 on homepage-reset, based on c988e2f; use Git history and origin/main for the release commit. No hosting configuration or separate deployment action was performed.
