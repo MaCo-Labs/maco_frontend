@@ -24,6 +24,7 @@ Updated 2026-10-16. Working checkout: E:\Downloads\maco-website-v2. This ledger 
 - [Aceternity timeline](https://ui.aceternity.com/components/timeline): conceptual reference for case-study chapters. Existing content stays readable without motion or JavaScript-driven scroll gates.
 - [shadcn carousel](https://ui.shadcn.com/docs/components/carousel): reviewed explicit carousel interaction. Owner subsequently requested removal of slideshow controls; category tabs, hover/focus suspension and reduced-motion behavior remain.
 - [Awwwards](https://www.awwwards.com/), [CSS Design Awards](https://www.cssdesignawards.com/) and [Dribbble](https://dribbble.com/tags/award-winning-website): visual research for editorial hierarchy, composition and project-led identity, not evidence that MaCo has won awards.
+- [Bencho](https://bencho.dev/) (2026-10-30): full 44-block audit with an adopt/conditional/reject shortlist in [BENCHO_COMPONENT_AUDIT_2026-10-30.md](BENCHO_COMPONENT_AUDIT_2026-10-30.md). Implemented 2026-11-04.
 - [Skiper](https://skiper-ui.com/), [Uiverse](https://uiverse.io/) and [Spectrum](https://ui.spectrumhq.in/): catalogue exploration; no component adopted. Their visual language did not justify additional packages or competing effects.
 
 ## Optional next opportunities, not implemented claims

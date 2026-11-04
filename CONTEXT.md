@@ -1,5 +1,39 @@
 # MaCo Website — CONTEXT
 
+## Ozone site and Bridge AMC reel — 2026-11-05
+
+Released to `main` and `prod` together with the 2026-11-04 pass below.
+
+**Ozone** now shows real screens of its website, captured from the local production build of `D:\ozone website\frontend` in `OZONE_PREVIEW_MODE`. The site is not live, so the case study says "In final development" and `/clients` says "Website launching soon". It keeps no outbound link until `https://www.ozonefitout.com/` actually serves the site. `lib/upcoming-sites.ts` holds the URL and a content marker; `routes/api.site-live.ts` checks it server-side for that fixed list only, cached at the CDN; `hooks/use-live-site.ts` reads it. A parked page, an error, or a redirect to another host does not count. When it goes live, the link, the Live/Public row and the `/clients` link appear with no code change. Remove the entry and set `external_url` then, so the check stops running.
+
+**Bridge** gains `amc-reel` first in `bridgeFilms`: `bridge-amc-reel-voice-heart.mp4` from `D:\TaskFlow\promo-production\bridge-amc-reel-20261025`, its README's recommended version, re-encoded from 78 MB to 7.5 MB at 720×1280. Original score; Kokoro-82M voice (Apache-2.0). **Per that folder's README, nobody has listened to the voiceover, and fictional company names were not checked against real Qatari businesses.** It was verified to load and play for its full 55s, not by ear.
+
+**.gitignore** now has `*.md`. Files already tracked stay tracked, so new notes such as `docs/SEO_AUDIT_2026-11-04.md` remain local only.
+
+Verified on the production build: type check, ESLint 0 errors (3 existing Fast Refresh warnings), 14 routes at 1440/1024/768/430/390/375 with no overflow, broken images, missing alt, extra H1 or console errors; both Ozone states (live state by simulating the API answer); `siteIsLive` against the real build, parked page, 404, cross-host redirect, dead host and today's real domain.
+
+---
+
+## Motion, performance, globe and SEO pass — 2026-11-04
+
+Supersedes older descriptions below where they conflict, including every mention of `ogl`, `MorphSlider`, `AmbientCanvas` and `react-globe.gl`.
+
+**Removed:** `ogl`, `react-globe.gl` (with its d3/three-globe tree), `components/media/morph-slider.tsx`, `public/geo/countries-110m.geojson`. **Added:** no runtime dependency. `three` stays as the only WebGL runtime, `/about` only, lazy.
+
+**New components:** `components/command-menu.tsx` (Ctrl/⌘ K, built from `content/maco.ts`), `components/inner/particle-mark.tsx` (dot logo: Outro and 404), `components/hero/MaCoGlobe.tsx` + `components/globe-section.tsx` (dotted globe rewritten on raw `three`: land dots from `public/geo/land-dots.bin`, flowing arcs, hub ripple, drag with inertia, tap to pick, hub list with live local time), `components/work/case-gallery.tsx` (accordion on fine pointer, swipe stack on touch, native strip for reduced-motion touch), `components/motion/choice-chips.tsx`, `components/motion/rolling-number.tsx`, `components/motion/offscreen-animation-gate.tsx`.
+
+**Changed:** MobilePillNav's pill grows into the menu as one surface; `CardTilt` now presses in and wraps `WorkCollection` plates (it had no callers before); Bridge tour tabs are a step player (6.5s, pauses on hover, keyboard focus, offscreen, hidden tab, open film; still under reduced motion); film picks are pills and the cinema grows out of the pill; EdgeNav dots have a dock falloff; ServiceExplorer panels stagger with an image wipe; LogoReel's playback rate follows scroll velocity; footer wordmark rises on scrub; hero has an entrance plus depth parallax on scroll-out via `--hero-out`; work images reveal by clip-path scrub; route changes use native View Transitions (`defaultViewTransition`, styled in `styles.css`) with a shared element from work card to case study. `/about`'s hub section is now on deep ground.
+
+**Performance root causes fixed:** the header ticker and cursor each measured every section on every frame even when idle (now only when something moved, plus a 250ms heartbeat); the globe library froze `/about` on entry; the header's backdrop blur radius was scrubbed; endless CSS loops ran offscreen; every work card loaded a hidden 1400px hover image; phones got 1400px images (now `N-800.webp` via `scripts/resize-work-images.mjs`).
+
+**Measured** (production build, headless Chromium, 4× CPU throttle, software rendering, so absolute numbers are worse than a real GPU): home scroll 5 → 11 FPS, `/work` 16 → 24, `/work/al-afzah` 18 → 29, contact 25 → 30; longest `/about` frame 8,462ms → 1,183ms; home idle main-thread 2,468ms → 1,324ms per 3s; style recalcs 116 → 31; globe chunk now 125KB gzipped, the whole old stack was ~500KB. Home scroll is still the weakest number. Formal Lighthouse and physical-device tests have not been run.
+
+**Verified:** `tsc --noEmit` clean; ESLint 0 errors, the same 3 Fast Refresh warnings; `npm run build` passes. 15 routes at 1440/1024/768/430/390/375: no horizontal overflow, one H1, no broken images, no missing `alt`, no console errors beyond intended 404 statuses. The sweep still flags small text links under 24px; their touch hit area is enlarged by a `link-draw` pseudo-element for coarse pointers. Interaction checks passed for Ctrl K, pill, swipe stack, chips, film open/close with scroll restored, and route change landing at top. Also driven in a browser: first visit, first visit with animation chunks delayed past the intro (hero stays visible, via `data-entered`), reduced motion on a phone (strip gallery, static globe that still switches hubs, no errors), and the globe in Cobalt.
+
+**SEO:** see [docs/SEO_AUDIT_2026-11-04.md](docs/SEO_AUDIT_2026-11-04.md), including the owner-only actions (Business Profile, Search Console, directories, privacy policy). Research ledger: [docs/BENCHO_COMPONENT_AUDIT_2026-10-30.md](docs/BENCHO_COMPONENT_AUDIT_2026-10-30.md).
+
+---
+
 ## Bridge film collection — 2026-10-18
 
 Bridge's screenshot tour is accompanied by three deliberate-play films in one shared cinema UI on Home, Products and `/products/bridge`: team/project work (30s), AMC/service maintenance (25s), and the existing Bridge introduction (20s). The two new source videos and poster frames come from the owner-supplied local `D:\TaskFlow` productions; see [docs/BRIDGE_FILMS_2026-10-18.md](docs/BRIDGE_FILMS_2026-10-18.md) for exact provenance, credits, encoding and factual limits. Keep the full portrait frame, use posters before selection, and mount only the selected video. The viewer follows the existing `useOverlayMenu` accessibility/scroll-lock pattern and provides transcript text; its focus trap includes `<summary>`.

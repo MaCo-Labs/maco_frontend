@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getProduct, products, type Product } from "@/content/maco";
-import { absoluteUrl, breadcrumbJsonLd, ORGANIZATION_ID } from "@/lib/seo";
+import { absoluteUrl, breadcrumbJsonLd, ORGANIZATION_ID, socialImage } from "@/lib/seo";
 import { NotFoundSection } from "@/components/inner/not-found-section";
 import { MaCoSystemField } from "@/components/system-field";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
@@ -66,6 +66,9 @@ export const Route = createFileRoute("/products/$slug")({
         { property: "og:title", content: p.seo_title },
         { property: "og:description", content: p.seo_description },
         { property: "og:url", content: absoluteUrl(path) },
+        { name: "twitter:title", content: p.seo_title },
+        { name: "twitter:description", content: p.seo_description },
+        ...socialImage(p.media?.poster),
         {
           "script:ld+json": breadcrumbJsonLd([
             { name: "Home", path: "/" },
@@ -78,7 +81,8 @@ export const Route = createFileRoute("/products/$slug")({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
             name: p.title,
-            description: p.short_description,
+            description: p.seo_description,
+            ...(p.media?.poster ? { image: absoluteUrl(p.media.poster) } : {}),
             url: absoluteUrl(path),
             applicationCategory: p.kind,
             operatingSystem: "Web",

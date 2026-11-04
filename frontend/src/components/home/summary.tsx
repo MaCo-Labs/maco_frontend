@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { products, type Brand, type Media } from "@/content/maco";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { ProductVideo } from "@/components/media/product-video";
-import { MorphSlider } from "@/components/media/morph-slider";
 import { PhoneMockup } from "@/components/media/phone-mockup";
 import { BridgeTour } from "@/components/products/bridge-tour";
 import { WorkCollection } from "@/components/work/work-collection";
@@ -10,7 +9,6 @@ import { WorkCollection } from "@/components/work/work-collection";
 export function CardMedia({
   media,
   brand,
-  gallery,
   screen,
   title,
   aspect = "2.1 / 1",
@@ -18,7 +16,6 @@ export function CardMedia({
 }: {
   media?: Media | undefined;
   brand?: Brand | undefined;
-  gallery?: string[] | undefined;
   /** A looping screen recording for a phone-only product — rendered inside
    *  a phone-frame mockup instead of every other media type's flat card
    *  box, since a device screenshot doesn't read as "this is a phone app"
@@ -45,12 +42,7 @@ export function CardMedia({
         background: "var(--surface-2)",
       }}
     >
-      {gallery && gallery.length > 1 ? (
-        // Radius 0: the CardMedia wrapper above already clips + rounds this
-        // box (var(--radius-card)); a second radius here would just double
-        // up at the same corners, so the slider fills it edge-to-edge.
-        <MorphSlider items={gallery.map((src) => ({ image: src }))} radius={0} autoplay loop />
-      ) : media ? (
+      {media ? (
         <ProductVideo
           media={media}
           objectFit={media.note ? "contain" : "cover"}

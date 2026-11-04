@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useScrollScene } from "@/hooks/use-scroll-scene";
+import { getLiveScrollRuntime } from "@/lib/scroll-runtime";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "motion/react";
 import { Link } from "@tanstack/react-router";
 import { Magnetic } from "@/components/motion/magnetic";
@@ -82,6 +84,71 @@ export function TopHead() {
   const [active, setActive] = useState(0);
   const tabsRef = useRef<HTMLDivElement>(null);
   const showcaseRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  // Runtime already up at first render means a client navigation here.
+  const arrivedByRoute = useRef(getLiveScrollRuntime() !== null);
+
+  useScrollScene((rt) => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const { gsap } = rt;
+
+    // Scrolling out, the layers separate by depth: CSS reads --hero-out.
+    gsap.fromTo(
+      section,
+      { "--hero-out": 0 },
+      {
+        "--hero-out": 1,
+        ease: "none",
+        scrollTrigger: { trigger: section, start: "top top", end: "bottom top", scrub: 0.4 },
+      },
+    );
+
+    // Entrance only where it can start hidden: behind the intro, or after a
+    // route change. A hard reload that skips the intro has already painted the
+    // hero, and hiding it now would flash.
+    // `entered` already set: the intro closed before this chunk arrived, so its
+    // event has fired and a paused timeline would leave the hero hidden for good.
+    const preloader =
+      !document.documentElement.dataset["entered"] && document.querySelector(".maco-preloader");
+    if (!preloader && !arrivedByRoute.current) return;
+    const headline = section.querySelector("h1");
+    const lines = headline
+      ? rt.SplitText.create(headline, { type: "lines", mask: "lines" }).lines
+      : [];
+    const tl = gsap.timeline({ paused: Boolean(preloader), defaults: { ease: "expo.out" } });
+    tl.from(lines, { yPercent: 110, duration: 1.1, stagger: 0.09 }, 0)
+      .from(
+        section.querySelectorAll(
+          ".studio-hero-eyebrow, .studio-hero-lead, .studio-hero-actions, .studio-hero-location",
+        ),
+        { y: 22, autoAlpha: 0, duration: 0.9, stagger: 0.07 },
+        0.18,
+      )
+      .from(
+        section.querySelector(".studio-hero-stage"),
+        {
+          y: 70,
+          rotateX: 14,
+          scale: 0.94,
+          autoAlpha: 0,
+          duration: 1.3,
+          transformPerspective: 1200,
+        },
+        0.1,
+      )
+      .from(
+        section.querySelectorAll(
+          ".studio-hero-showcase-label, .studio-hero-project-caption, .studio-hero-media-tabs, .studio-hero-footer",
+        ),
+        { y: 16, autoAlpha: 0, duration: 0.8, stagger: 0.06 },
+        0.45,
+      );
+    if (preloader) {
+      const play = () => tl.play();
+      window.addEventListener("maco:entered", play, { once: true });
+    }
+  }, []);
   const [examples, setExamples] = useState([0, 0, 0]);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -167,11 +234,11 @@ export function TopHead() {
     tabsRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
   }
   return (
-    <section data-ground="deep" aria-label="Introduction" className="studio-hero">
+    <section ref={sectionRef} data-ground="deep" aria-label="Introduction" className="studio-hero">
       <div className="shell studio-hero-shell">
         <div className="studio-hero-grid">
           <div className="studio-hero-copy">
-            <p className="studio-hero-eyebrow">MaCo — Software & digital experiences</p>
+            <p className="studio-hero-eyebrow">MaCo — Software company in Kochi, Kerala</p>
             <h1>
               Built around
               <br />

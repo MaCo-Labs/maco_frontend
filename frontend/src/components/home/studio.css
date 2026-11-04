@@ -329,3 +329,19 @@
     font-size: 0.65rem;
   }
 }
+
+/* Depth on scroll-out (--hero-out, top-head.tsx). `translate` composes with
+   the layers' own rotate transforms. Unset without the runtime, so at rest. */
+.studio-hero-copy {
+  translate: 0 calc(var(--hero-out, 0) * -3.5rem);
+  opacity: calc(1 - var(--hero-out, 0) * 0.7);
+}
+.studio-hero-back-window {
+  translate: 0 calc(var(--hero-out, 0) * 4rem);
+}
+.studio-hero-main-window {
+  translate: 0 calc(var(--hero-out, 0) * -1.5rem);
+}
+.studio-hero-phone-companion {
+  translate: 0 calc(var(--hero-out, 0) * -7rem);
+}

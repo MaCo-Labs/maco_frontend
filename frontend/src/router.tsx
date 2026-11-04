@@ -14,6 +14,9 @@ export const getRouter = () => {
     // were two owners of the same value racing on every navigation.
     scrollRestoration: false,
     defaultPreloadStaleTime: 0,
+    // Native View Transitions: styled in styles.css, ignored by browsers
+    // without the API, and switched off there for reduced motion.
+    defaultViewTransition: true,
   });
 
   return router;

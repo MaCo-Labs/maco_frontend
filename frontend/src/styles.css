@@ -518,14 +518,15 @@ html::-webkit-scrollbar-thumb {
    to come: whatever plays behind a transparent header from here on, the
    header stays legible without a per-hero special case. */
 @utility header-scroll {
-  background: color-mix(in oklab, var(--bg) calc(8% + var(--header-solid, 1) * 80%), transparent);
+  background: color-mix(in oklab, var(--bg) calc(8% + var(--header-solid, 1) * 87%), transparent);
   border-bottom-color: color-mix(
     in oklab,
     var(--line) calc(var(--header-solid, 1) * 100%),
     transparent
   );
-  backdrop-filter: blur(calc(6px + var(--header-solid, 1) * 10px));
-  -webkit-backdrop-filter: blur(calc(6px + var(--header-solid, 1) * 10px));
+  /* Fixed radius: scrubbing the blur repainted the whole header every frame. */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* Label — replaces every monospace technical tag on the site. Runs the
@@ -589,6 +590,13 @@ html::-webkit-scrollbar-thumb {
 @utility link-draw {
   position: relative;
   display: inline-block;
+  @media (pointer: coarse) {
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -0.8rem -0.25rem;
+    }
+  }
   &::after {
     content: "";
     position: absolute;
@@ -1697,6 +1705,7 @@ html[data-theme="cobalt"] .footer-giant-mark {
    untouched (the card's own hover-lift keeps working); this is opacity
    only, on the same 0.35s standard ease as the rest of the reel's motion. */
 .cb-reel li {
+  transform: skewX(var(--reel-lean, 0deg));
   transition: opacity 0.35s var(--ease-standard);
 }
 .cb-reel:has(li:hover) li:not(:hover),
@@ -2444,17 +2453,18 @@ html[data-layout="3"] footer .shell {
   border-radius: 999px;
   background: var(--bg);
   border: 1.5px solid color-mix(in oklab, var(--muted) 70%, transparent);
+  transform: scale(calc(1 + var(--dock, 0) * 1.3));
   transition:
     transform 0.3s var(--ease-emphasis),
     background-color 0.3s var(--ease-standard),
     border-color 0.3s var(--ease-standard);
 }
 .edge-nav-dot:hover .edge-nav-dot-mark {
-  transform: scale(1.35);
+  transform: scale(max(1.35, calc(1 + var(--dock, 0) * 1.3)));
   border-color: var(--text);
 }
 .edge-nav-dot[data-active="true"] .edge-nav-dot-mark {
-  transform: scale(1.4);
+  transform: scale(max(1.4, calc(1 + var(--dock, 0) * 1.3)));
   background: var(--text);
   border-color: var(--text);
 }
@@ -2468,7 +2478,7 @@ html[data-layout="3"] footer .shell {
   text-transform: uppercase;
   color: var(--muted);
   white-space: nowrap;
-  opacity: 0;
+  opacity: var(--dock-label, 0);
   transition:
     opacity 0.3s var(--ease-standard),
     transform 0.3s var(--ease-emphasis);
@@ -2614,186 +2624,6 @@ html[data-layout="3"] footer .shell {
 }
 
 /* ============================================================
-   MORPH SLIDER — React Bits' MorphSlider (components/media/morph-slider.tsx,
-   WebGL shader-morph via ogl). Ported as-is except: chrome (buttons, dots,
-   caption pill) uses this file's theme tokens instead of the original's
-   hardcoded dark rgba, matching DEPTH CAROUSEL above; the shader's own
-   photographic vignette (uOverlay, black by default) is untouched — that's
-   pixel treatment on the image itself, not UI chrome.
-   ============================================================ */
-.morph-slider {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: var(--surface-2);
-  user-select: none;
-  touch-action: pan-y;
-}
-
-.morph-slider-stage {
-  position: absolute;
-  inset: 0;
-  cursor: grab;
-  outline: none;
-}
-
-.morph-slider-stage:active {
-  cursor: grabbing;
-}
-
-.morph-slider-stage:focus-visible {
-  box-shadow: inset 0 0 0 2px var(--focus);
-}
-
-.morph-slider-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.morph-slider-caption {
-  position: absolute;
-  left: 16px;
-  bottom: 16px;
-  z-index: 2;
-  max-width: 70%;
-  pointer-events: none;
-  display: grid;
-}
-
-.morph-slider-caption-text {
-  grid-area: 1 / 1;
-  justify-self: start;
-  display: inline-block;
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--text);
-  background: color-mix(in oklab, var(--bg) 72%, transparent);
-  backdrop-filter: blur(8px);
-  opacity: 0;
-  transform: translateY(12px);
-  filter: blur(6px);
-  transition:
-    opacity var(--ms-swap) var(--ease-standard),
-    transform var(--ms-swap) var(--ease-standard),
-    filter var(--ms-swap) var(--ease-standard);
-}
-
-.morph-slider-caption-text.is-active {
-  opacity: 1;
-  transform: translateY(0);
-  filter: blur(0);
-}
-
-.morph-slider-controls {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  z-index: 3;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 12px;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-/* Hit target (44px, §30) and visible mark are decoupled, same trick as
-   .edge-nav-dot: the button itself is transparent and fixed at 44px, the
-   40px (34px below 420px) circle is a ::before behind the icon so the
-   visual doesn't grow just because the tap target has to. */
-.morph-slider-btn {
-  position: relative;
-  z-index: 1;
-  pointer-events: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  color: var(--text);
-  cursor: pointer;
-}
-
-.morph-slider-btn::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: 2px;
-  border: 1px solid var(--line-strong);
-  border-radius: 50%;
-  background: color-mix(in oklab, var(--bg) 72%, transparent);
-  backdrop-filter: blur(8px);
-  transition:
-    transform 0.25s var(--ease-standard),
-    background 0.25s var(--ease-standard),
-    border-color 0.25s var(--ease-standard);
-}
-
-.morph-slider-btn:hover::before {
-  background: color-mix(in oklab, var(--bg) 88%, transparent);
-  transform: scale(1.06);
-}
-
-.morph-slider-btn:active::before {
-  transform: scale(0.96);
-}
-
-.morph-slider-btn:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.morph-slider-indicators {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 14px;
-  z-index: 3;
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  align-items: center;
-}
-
-.morph-slider-dot {
-  width: 8px;
-  height: 8px;
-  padding: 0;
-  border: none;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--text) 40%, transparent);
-  cursor: pointer;
-  transition:
-    width var(--ms-dot) var(--ease-standard),
-    background var(--ms-dot) var(--ease-standard);
-}
-
-.morph-slider-dot.is-active {
-  width: 22px;
-  background: var(--text);
-}
-
-.morph-slider-dot:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-@media (max-width: 420px) {
-  .morph-slider-btn::before {
-    inset: 5px;
-  }
-
-  .morph-slider-caption-text {
-    font-size: 0.8125rem;
-  }
-}
-
-/* ============================================================
    PHONE MOCKUP — device chassis around a looping screen recording
    (components/media/phone-mockup.tsx), for products.screen items that are
    mobile-only (Driver's Diary). No card box: unlike every other CardMedia
@@ -2906,4 +2736,395 @@ main > section[aria-label="Introduction"]:not(.studio-hero) > .shell:not(.page-i
   main > section[aria-label="Introduction"]:not(.studio-hero) > .shell:not(.page-intro) {
     padding-top: 9rem;
   }
+}
+
+/* ============================================================
+   COMMAND MENU — Ctrl/⌘ K (components/command-menu.tsx)
+   ============================================================ */
+.command-menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: min(12vh, 7rem) 1rem 1rem;
+  background: color-mix(in oklab, var(--bg) 62%, transparent);
+  backdrop-filter: blur(6px);
+}
+.command-menu {
+  width: min(40rem, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.45);
+}
+.command-menu kbd,
+.command-hint kbd {
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.05rem 0.4rem;
+}
+.command-menu-input {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.1rem 1.35rem;
+  border-bottom: 1px solid var(--line);
+}
+.command-menu-input input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  outline: none;
+  font-size: 1.25rem;
+  color: var(--text);
+}
+.command-menu-input input::placeholder {
+  color: var(--muted);
+}
+.command-menu-list {
+  flex: 1;
+  min-height: 0;
+  max-height: 25rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.5rem;
+}
+.command-menu-group {
+  padding: 0.6rem 0.9rem 0.25rem;
+}
+.command-menu-empty {
+  padding: 1rem 0.9rem;
+  color: var(--muted);
+}
+.command-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+.command-menu-item b {
+  font-weight: 500;
+  color: var(--text);
+}
+.command-menu-item small {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.command-menu-item mark {
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.command-menu-item kbd {
+  opacity: 0;
+}
+.command-menu-item[aria-selected="true"] {
+  background: var(--surface-2);
+}
+.command-menu-item[aria-selected="true"] kbd {
+  opacity: 1;
+}
+.command-menu-foot {
+  display: flex;
+  gap: 1.1rem;
+  padding: 0.75rem 1.35rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.command-hint {
+  display: none;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 200ms ease;
+}
+.command-hint:hover {
+  color: var(--text);
+}
+@media (hover: hover) and (pointer: fine) and (min-width: 64rem) {
+  .command-hint {
+    display: inline-block;
+  }
+}
+
+/* ============================================================
+   CHOICE CHIPS — components/motion/choice-chips.tsx
+   ============================================================ */
+.choice-chips legend {
+  padding: 0;
+  margin-bottom: 0.75rem;
+}
+.choice-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.choice-chip {
+  position: relative;
+  transition: translate 500ms cubic-bezier(0.34, 1.36, 0.64, 1);
+}
+.choice-chip input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.choice-chip span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  transition:
+    scale 500ms cubic-bezier(0.34, 1.36, 0.64, 1),
+    background-color 250ms ease,
+    color 250ms ease,
+    border-color 250ms ease;
+}
+.choice-chip:hover span {
+  border-color: var(--text);
+}
+.choice-chip input:checked + span {
+  scale: 1.07;
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+.choice-chip input:focus-visible + span {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+/* The neighbours give way, falling off with distance. */
+.choice-chip:has(input:checked) + .choice-chip {
+  translate: 8px 0;
+}
+.choice-chip:has(input:checked) + .choice-chip + .choice-chip {
+  translate: 4px 0;
+}
+.choice-chip:has(+ .choice-chip input:checked) {
+  translate: -8px 0;
+}
+.choice-chip:has(+ .choice-chip + .choice-chip input:checked) {
+  translate: -4px 0;
+}
+@media (max-width: 639px) {
+  .choice-chip {
+    translate: none !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .choice-chip,
+  .choice-chip span {
+    transition: none;
+  }
+  .choice-chip {
+    translate: none !important;
+  }
+}
+
+/* ============================================================
+   ROLLING NUMBER — components/motion/rolling-number.tsx
+   ============================================================ */
+.rolling-number {
+  display: inline-flex;
+}
+.rolling-window {
+  display: block;
+  height: 1lh;
+  overflow: clip;
+}
+.rolling-column {
+  display: block;
+  transition: transform 1.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+.rolling-column > span {
+  display: block;
+  height: 1lh;
+}
+.rolling-number[data-armed] .rolling-column {
+  transform: none !important;
+  transition: none;
+}
+
+/* ============================================================
+   ROUTE TRANSITIONS — native View Transitions (router.tsx). The next page
+   rises over the old one as a rounded sheet, the same gesture as the
+   homepage's ground flips. Work images morph into their case study through a
+   shared view-transition-name; the chrome holds still above it all.
+   ============================================================ */
+@keyframes route-old-out {
+  to {
+    opacity: 0.35;
+    transform: translateY(-3vh) scale(0.97);
+  }
+}
+@keyframes route-new-in {
+  from {
+    clip-path: inset(100% 0 0 0 round 3rem 3rem 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 0);
+  }
+}
+::view-transition-old(root) {
+  animation: route-old-out 620ms var(--ease-emphasis) both;
+  transform-origin: 50% 40%;
+}
+::view-transition-new(root) {
+  z-index: 1;
+  animation: route-new-in 620ms var(--ease-emphasis) both;
+}
+::view-transition-group(*) {
+  animation-duration: 620ms;
+  animation-timing-function: var(--ease-emphasis);
+}
+::view-transition-group(site-header),
+::view-transition-group(site-pill) {
+  z-index: 3;
+}
+header.chrome-adaptive {
+  view-transition-name: site-header;
+}
+[data-mobile-pill-nav] {
+  view-transition-name: site-pill;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   HUB GLOBE — components/globe-section.tsx + hero/MaCoGlobe.tsx
+   ============================================================ */
+.hub-globe {
+  display: grid;
+  gap: 2rem;
+  min-width: 0;
+}
+.hub-globe-visual {
+  position: relative;
+  aspect-ratio: 1;
+  width: min(100%, 44rem);
+  margin-inline: auto;
+}
+@media (min-width: 64rem) {
+  .hub-globe {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas: "copy visual" "list visual";
+    grid-template-rows: auto 1fr;
+    column-gap: 4rem;
+    row-gap: 2.5rem;
+    align-items: center;
+  }
+  .hub-globe-copy {
+    grid-area: copy;
+    align-self: end;
+  }
+  .hub-globe-visual {
+    grid-area: visual;
+  }
+  .hub-list {
+    grid-area: list;
+    align-self: start;
+  }
+}
+.hub-globe-stage {
+  position: absolute;
+  inset: 0;
+}
+.hub-globe-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  /* Vertical swipes still scroll the page; horizontal ones spin the globe. */
+  touch-action: pan-y;
+}
+.hub-globe-canvas:active {
+  cursor: grabbing;
+}
+.hub-globe-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  transition: opacity 250ms ease;
+}
+.hub-globe-tag span {
+  display: block;
+  translate: 1rem -130%;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.hub-list {
+  border-top: 1px solid var(--line);
+}
+.hub-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 1rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.7rem 0.25rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 200ms ease,
+    padding-left 400ms var(--ease-emphasis);
+}
+.hub-row:hover {
+  color: var(--text);
+}
+.hub-row[aria-pressed="true"] {
+  color: var(--text);
+  padding-left: 0.9rem;
+}
+.hub-row:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.hub-row-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+.hub-row-region {
+  font-size: 0.85rem;
+}
+.hub-row-time {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* OffscreenAnimationGate: endless loops don't run for nobody. */
+[data-offscreen] {
+  animation-play-state: paused !important;
 }

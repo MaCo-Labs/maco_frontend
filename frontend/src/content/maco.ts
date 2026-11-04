@@ -208,9 +208,9 @@ export const services: Service[] = [
       },
     ],
     evidence: ["drivers-diary", "bridge", "headgreen", "soorath-autos"],
-    seo_title: "Business Software — MaCo",
+    seo_title: "Custom Software, CRM & Task Management | MaCo, Kochi",
     seo_description:
-      "MaCo builds business software: task management, CRM and custom operational systems, plus the ongoing support to keep them running.",
+      "Custom software development in Kochi, Kerala: CRM, task management and operational systems for teams in India and the Middle East, with ongoing support.",
   },
   {
     slug: "digital-solutions",
@@ -242,9 +242,9 @@ export const services: Service[] = [
       },
     ],
     evidence: ["ananta-nethralaya", "al-afzah", "soorath-autos", "headgreen", "ozone"],
-    seo_title: "Digital Solutions — MaCo",
+    seo_title: "Website Development, E-commerce & Branding | MaCo, Kochi",
     seo_description:
-      "MaCo delivers digital solutions: websites, e-commerce, branding and design, and social media management.",
+      "Website design and development, e-commerce, branding and social media management from MaCo in Kochi, for businesses in India and the Middle East.",
   },
 ];
 
@@ -266,8 +266,9 @@ export const projects: Project[] = [
     external_url: "https://www.anantanethralaya.org/",
     technologies: ["Web", "CMS", "Responsive"],
     services: ["digital-solutions"],
-    seo_title: "Ananta Nethralaya — Client work by MaCo",
-    seo_description: "MaCo built the website for Ananta Nethralaya, an eye clinic.",
+    seo_title: "Eye Clinic Website: Ananta Nethralaya Case Study | MaCo",
+    seo_description:
+      "How MaCo designed and built the website for Ananta Nethralaya, an eye clinic: the challenge, the solution and the outcome.",
     brand: { src: "/media/brand/ananta.webp", alt: "Ananta Nethralaya", width: 640, height: 639 },
     media: {
       poster: "/media/work/ananta-nethralaya/1.webp",
@@ -298,9 +299,9 @@ export const projects: Project[] = [
     external_url: "https://www.al-afzahgroup.com/",
     technologies: ["Web", "CMS", "Multi-section IA"],
     services: ["digital-solutions"],
-    seo_title: "Al Afzah Group — Client work by MaCo",
+    seo_title: "Construction Website in Qatar: Al Afzah Case Study | MaCo",
     seo_description:
-      "MaCo built the corporate website for Al Afzah Group WLL, a Qatar-based construction company.",
+      "How MaCo built the corporate website for Al Afzah Group WLL, a construction company based in Qatar: the challenge, the solution and the outcome.",
     brand: {
       src: "/media/brand/al-afzah.webp",
       alt: "Al Afzah Group WLL",
@@ -338,8 +339,9 @@ export const projects: Project[] = [
     external_url: "https://www.soorathautos.in/",
     technologies: ["Web", "Inventory content", "Enquiry capture"],
     services: ["digital-solutions"],
-    seo_title: "Soorath Autos — Client work by MaCo",
-    seo_description: "MaCo built the website for Soorath Autos, a pre-owned car showroom.",
+    seo_title: "Used Car Dealer Website: Soorath Autos Case Study | MaCo",
+    seo_description:
+      "How MaCo built the website for Soorath Autos, a pre-owned car showroom: the challenge, the solution and the outcome.",
     brand: { src: "/media/brand/soorath.webp", alt: "Soorath Autos", width: 640, height: 640 },
     media: {
       poster: "/media/work/soorath-autos/1.webp",
@@ -371,9 +373,9 @@ export const projects: Project[] = [
     external_url: "https://www.headgreen.in/",
     technologies: ["Web", "Corporate enquiry", "EV fleet"],
     services: ["digital-solutions", "business-software"],
-    seo_title: "HeadGreen — Client work by MaCo",
+    seo_title: "EV Fleet Website in Kochi: HeadGreen Case Study | MaCo",
     seo_description:
-      "MaCo built the website for HeadGreen, a corporate EV fleet cab service in Kochi, Kerala.",
+      "How MaCo built the website for HeadGreen, a corporate EV fleet cab service in Kochi, Kerala: the challenge, the solution and the outcome.",
     brand: { src: "/media/brand/headgreen.webp", alt: "HeadGreen", width: 500, height: 826 },
     media: {
       poster: "/media/work/headgreen/1.webp",
@@ -395,24 +397,38 @@ export const projects: Project[] = [
     client: "Ozone Fitout & Contracting W.L.L.",
     sector: "Interior fit-out & contracting",
     year: "—",
-    short_description: "A 16-page corporate brochure for a fit-out and contracting company.",
+    short_description:
+      "A corporate website, in final development, and a 16-page brochure for a fit-out and contracting company in Qatar.",
     challenge:
-      "Ozone Fitout & Contracting needed one document that could introduce the company and its service domains to a client in a single sitting — a printed, shareable brand piece, not a website.",
+      "Ozone Fitout & Contracting needed to introduce the company and its service domains clearly: in print, in a single sitting, and online, where clients check a contractor's past projects.",
     solution:
-      "A 16-page corporate brochure structuring interior fit-out, contracting, MEP and engineering-consultancy capability into one editorial system: company introduction, services, client and brand showcase, working process, quality policy, a project portfolio, and a QR-linked contact page.",
+      "A 16-page corporate brochure covering interior fit-out, contracting, MEP and engineering consultancy, with the company introduction, clients, working process, quality policy, project portfolio and a QR-linked contact page. The website carries the same story online: service pages for each discipline, and a project archive people can search and filter by sector and by branch, Qatar or Bahrain, run from a Django admin.",
     results:
-      "Ozone now has one brand communication piece, cover to contact page, carrying its full capability and portfolio story in a single consistent visual language.",
-    technologies: ["Editorial layout", "Print design", "Brand system"],
+      "The brochure is delivered, giving Ozone one piece that carries its capability and portfolio from cover to contact page. The website is in final development ahead of launch at ozonefitout.com.",
+    technologies: ["Next.js", "Django", "Editorial layout", "Print design"],
     services: ["digital-solutions"],
-    seo_title: "Ozone — Client work by MaCo",
+    seo_title: "Fit-Out Company Website & Brochure: Ozone Case Study | MaCo",
     seo_description:
-      "MaCo designed a 16-page corporate brochure for Ozone Fitout & Contracting W.L.L., an interior fit-out and contracting company.",
+      "MaCo designed a 16-page brochure and built the corporate website for Ozone Fitout & Contracting W.L.L., a fit-out and contracting company in Qatar.",
     brand: {
       src: "/media/brand/ozone.webp",
       alt: "Ozone Fitout & Contracting",
       width: 800,
       height: 360,
     },
+    media: {
+      poster: "/media/work/ozone/1.webp",
+      alt: "The Ozone Fitout & Contracting website, in final development",
+      width: 1400,
+      height: 662,
+    },
+    gallery: [
+      "/media/work/ozone/1.webp",
+      "/media/work/ozone/2.webp",
+      "/media/work/ozone/3.webp",
+      "/media/work/ozone/4.webp",
+      "/media/work/ozone/5.webp",
+    ],
   },
 ];
 
@@ -453,9 +469,9 @@ export const products: Product[] = [
     ],
     technologies: ["PWA", "React", "REST API", "PostgreSQL"],
     live_url: "https://prod.d25ny7hdw64pgk.amplifyapp.com/",
-    seo_title: "Driver's Diary — Fleet operations platform by MaCo",
+    seo_title: "Driver's Diary: Fleet Operations PWA for HeadGreen | MaCo",
     seo_description:
-      "Driver's Diary is a PWA built by MaCo for HeadGreen: attendance, rides, payroll, documentation and reporting.",
+      "Driver's Diary is a fleet operations PWA built by MaCo for HeadGreen: driver attendance, rides, payroll, documentation and reporting, on the phone.",
     brand: {
       src: "/media/brand/drivers-diary.webp",
       alt: "Driver's Diary",
@@ -522,9 +538,9 @@ export const products: Product[] = [
     ],
     technologies: ["PWA", "Desktop", "React", "REST API", "PostgreSQL"],
     live_url: "https://prod.ddklo8cltmn7o.amplifyapp.com/",
-    seo_title: "Bridge — Project and task platform by MaCo",
+    seo_title: "Bridge: Project & Task Management Platform | MaCo",
     seo_description:
-      "Bridge is MaCo's SaaS/PWA and desktop platform for project implementation, task assignment, administration and analysis.",
+      "Bridge is MaCo's project and task management platform, on web, PWA and desktop: task assignment, team collaboration, administration and analysis.",
     brand: { src: "/media/brand/bridge.webp", alt: "Bridge", width: 640, height: 640 },
     media: {
       poster: "/media/bridge/poster.jpg",
@@ -539,6 +555,29 @@ export const products: Product[] = [
 
 /** Source films use fictional demo data. Credits travel with each film. */
 export const bridgeFilms = [
+  {
+    id: "amc-reel",
+    title: "Excel forgets. Bridge follows up.",
+    subject: "One AMC contract, start to renewal",
+    duration: "0:55",
+    src: "/media/bridge/amc-reel.mp4",
+    poster: "/media/bridge/amc-reel-poster.jpg",
+    description:
+      "Follow one maintenance contract from a spreadsheet to scheduled visits, a technician handoff and its renewal.",
+    note: "Illustrative product film. Clients, people and figures are fictional. AMC automation depends on contract and workspace configuration.",
+    transcript: [
+      "A thousand contracts. One Excel sheet. Row 847 expired three weeks ago. The visit was due Tuesday. Nobody was assigned. Spreadsheets can't remember. Bridge can.",
+      "Your Excel book comes with you. Set the visits once and Bridge spreads them across the year. A week before each visit, the job lands on your engineer's phone.",
+      "Hand it to a technician, with every handoff on record. Emergency at 9 p.m.? Dispatched in a few taps.",
+      "Thirty days before a contract expires, your sales team gets the renewal task. Renew it, with every term still on file.",
+      "Now do that for every contract, and see your whole AMC book at a glance. Bridge by MaCo. Excel forgets. Bridge follows up.",
+    ],
+    credit: {
+      text: "Original score. Voiceover generated with Kokoro-82M.",
+      href: "https://huggingface.co/hexgrad/Kokoro-82M",
+      license: "https://www.apache.org/licenses/LICENSE-2.0",
+    },
+  },
   {
     id: "team-work",
     title: "Less chasing. More doing.",

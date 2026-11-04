@@ -1,4 +1,12 @@
-import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import { bridgeFilms } from "@/content/maco";
 import { useOverlayMenu } from "@/hooks/use-overlay-menu";
@@ -44,14 +52,62 @@ function FilmPlayer({ film }: { film: Film }) {
 }
 
 /** Posters are the only media loaded before a deliberate film selection. */
-export function BridgeFilms() {
-  const [open, setOpen] = useState(false);
+export function BridgeFilms({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
+  const [open, setOpenState] = useState(false);
   const [selected, setSelected] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const uid = useId();
   const film = bridgeFilms[selected]!;
+  const reduced = useReducedMotion();
+  const closingRef = useRef(false);
+
+  /** The clip path of the pill that opened the cinema, in viewport terms. */
+  const pillClip = useCallback(() => {
+    const r = triggerRef.current?.getBoundingClientRect();
+    if (!r) return "inset(0 round 0px)";
+    const { innerWidth: w, innerHeight: h } = window;
+    return `inset(${r.top}px ${w - r.right}px ${h - r.bottom}px ${r.left}px round 40px)`;
+  }, []);
+
+  // The cinema grows out of the pill as one object, and folds back into it.
+  const setOpen = useCallback(
+    (next: boolean) => {
+      if (next) {
+        setOpenState(true);
+        return;
+      }
+      const panel = panelRef.current;
+      if (!panel || reduced) {
+        setOpenState(false);
+        return;
+      }
+      if (closingRef.current) return;
+      closingRef.current = true;
+      const close = () => {
+        closingRef.current = false;
+        setOpenState(false);
+      };
+      panel
+        .animate(
+          { clipPath: ["inset(0 round 0px)", pillClip()] },
+          { duration: 380, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" },
+        )
+        .finished.then(close, close);
+    },
+    [pillClip, reduced],
+  );
   useOverlayMenu({ open, setOpen, panelRef, triggerRef });
+
+  useLayoutEffect(() => {
+    if (!open || reduced) return;
+    panelRef.current?.animate(
+      { clipPath: [pillClip(), "inset(0 round 0px)"] },
+      { duration: 560, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+    );
+  }, [open, reduced, pillClip]);
+
+  useEffect(() => onOpenChange?.(open), [open, onOpenChange]);
 
   function watch(event: MouseEvent<HTMLButtonElement>, index: number) {
     triggerRef.current = event.currentTarget;
@@ -64,7 +120,7 @@ export function BridgeFilms() {
       <div className="bridge-film-library" role="group" aria-label="Bridge films">
         <div className="bridge-film-library-heading">
           <p>Bridge, in motion.</p>
-          <span>Three short films</span>
+          <span>{bridgeFilms.length} short films</span>
         </div>
         <div className="bridge-film-picks">
           {bridgeFilms.map((item, index) => (
@@ -79,10 +135,9 @@ export function BridgeFilms() {
               <img src={item.poster} alt="" width={360} height={640} loading="lazy" />
               <span className="bridge-film-pick-copy">
                 <span className="bridge-film-pick-title">{item.title}</span>
-                <span className="bridge-film-pick-duration">
-                  <span aria-hidden="true">▷</span> {item.duration}
-                </span>
+                <span className="bridge-film-pick-duration">Film · {item.duration}</span>
               </span>
+              <span className="bridge-film-pick-play" aria-hidden="true" />
             </button>
           ))}
         </div>

@@ -24,6 +24,7 @@ export function Preloader() {
     if (dismissed.current) return;
     dismissed.current = true;
     releaseScroll();
+    document.documentElement.dataset["entered"] = "1";
     window.dispatchEvent(new CustomEvent("maco:entered"));
     setDone(true);
   }, [releaseScroll]);

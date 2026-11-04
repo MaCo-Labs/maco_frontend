@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { nameScripts, site } from "@/content/maco";
 import { Mark, Wordmark } from "./mark";
 import { ExperienceSwitch } from "./experience-switch";
+import { CommandHint } from "./command-menu";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
@@ -36,6 +37,18 @@ function MobilePillNav() {
   // the values as JS so exit gets the same easing as enter.
   const enterTransition = reduced ? { duration: 0 } : { duration: 0.45, ease: EASE_EMPHASIS };
   const exitTransition = reduced ? { duration: 0 } : { duration: 0.3, ease: EASE_EMPHASIS };
+  const growTransition = reduced
+    ? { duration: 0 }
+    : ({ type: "spring", bounce: 0.14, duration: 0.5 } as const);
+  // Rows arrive just behind the growing edge, bottom of the list first.
+  const menuRow = (i: number) =>
+    reduced
+      ? {}
+      : {
+          initial: { opacity: 0, y: 12 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.35, delay: 0.08 + (site.nav.length + 2 - i) * 0.025 },
+        };
 
   return (
     <>
@@ -62,8 +75,23 @@ function MobilePillNav() {
         suppressHydrationWarning
         className="chrome-adaptive fixed inset-x-0 bottom-0 z-50 hidden max-lg:flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       >
-        <div className="w-full max-w-sm">
-          <AnimatePresence>
+        {/* One surface, not a sheet above a pill: the trigger stays pinned to
+            the bottom edge and the panel grows out of it inside the same
+            rounded box. 1.75rem is past half the closed height, so the same
+            radius reads as a full pill when closed. */}
+        <div
+          className="w-full max-w-sm overflow-hidden rounded-[1.75rem] border backdrop-blur-xl transition-[border-color,background] duration-300"
+          style={{
+            background: open
+              ? "var(--surface)"
+              : "color-mix(in oklab, var(--surface) 92%, transparent)",
+            borderColor: open ? "var(--text)" : "var(--line)",
+            boxShadow: open
+              ? "0 -8px 40px color-mix(in oklab, var(--bg) 55%, transparent)"
+              : undefined,
+          }}
+        >
+          <AnimatePresence initial={false}>
             {open && (
               <motion.div
                 key="mobile-nav-panel"
@@ -72,56 +100,71 @@ function MobilePillNav() {
                 role="dialog"
                 aria-modal="true"
                 aria-label="Site navigation"
-                className="mb-3 overflow-hidden rounded-[1.75rem] border border-line shadow-[0_-8px_40px_color-mix(in_oklab,var(--bg)_55%,transparent)]"
-                style={{ background: "var(--surface)" }}
-                initial={{ opacity: 0, y: "1.4rem" }}
-                animate={{ opacity: 1, y: 0, transition: enterTransition }}
-                exit={{ opacity: 0, y: "1.4rem", transition: exitTransition }}
+                className="overflow-hidden"
+                initial={{ height: 0 }}
+                animate={{ height: "auto", transition: growTransition }}
+                exit={{ height: 0, transition: exitTransition }}
               >
-                <div className="flex items-center justify-between border-b border-line px-5 py-3">
-                  <span className="label flex items-center gap-2">
-                    <Mark size={18} />
-                    MaCo
-                  </span>
-                  <ExperienceSwitch />
-                </div>
-                <nav aria-label="Mobile">
-                  <Link
-                    to="/"
-                    className="flex items-center justify-between px-6 py-3.5 font-display text-xl"
-                    style={{
-                      color: pathname === "/" ? "var(--text)" : "var(--muted)",
-                    }}
+                {/* Scrolls instead of clipping on short (landscape) viewports. */}
+                <div
+                  data-lenis-prevent
+                  className="overflow-y-auto border-b border-line"
+                  style={{ maxHeight: "calc(100dvh - 6.5rem)" }}
+                >
+                  <motion.div
+                    {...menuRow(0)}
+                    className="flex items-center justify-between border-b border-line px-5 py-3"
                   >
-                    Home
-                  </Link>
-                  {site.nav.map((item) => {
-                    const active = pathname === item.to || pathname.startsWith(item.to + "/");
-                    return (
+                    <span className="label flex items-center gap-2">
+                      <Mark size={18} />
+                      MaCo
+                    </span>
+                    <ExperienceSwitch />
+                  </motion.div>
+                  <nav aria-label="Mobile">
+                    <motion.div {...menuRow(1)}>
                       <Link
-                        key={item.to}
-                        to={item.to}
-                        className="flex min-h-12 items-center border-t border-line px-6 py-3.5 font-display text-xl"
-                        style={{ color: active ? "var(--text)" : "var(--muted)" }}
+                        to="/"
+                        className="flex items-center justify-between px-6 py-3.5 font-display text-xl"
+                        style={{
+                          color: pathname === "/" ? "var(--text)" : "var(--muted)",
+                        }}
                       >
-                        <span className="flex items-center gap-3">
-                          {active && (
-                            <span
-                              className="block h-1.5 w-1.5 rounded-full"
-                              style={{ background: "var(--accent)" }}
-                              aria-hidden="true"
-                            />
-                          )}
-                          {item.label}
-                        </span>
+                        Home
                       </Link>
-                    );
-                  })}
-                </nav>
-                <div className="border-t border-line p-3">
-                  <Link to="/contact" className="btn-solid w-full justify-center !py-3">
-                    Start a project
-                  </Link>
+                    </motion.div>
+                    {site.nav.map((item, i) => {
+                      const active = pathname === item.to || pathname.startsWith(item.to + "/");
+                      return (
+                        <motion.div key={item.to} {...menuRow(i + 2)}>
+                          <Link
+                            to={item.to}
+                            className="flex min-h-12 items-center border-t border-line px-6 py-3.5 font-display text-xl"
+                            style={{ color: active ? "var(--text)" : "var(--muted)" }}
+                          >
+                            <span className="flex items-center gap-3">
+                              {active && (
+                                <span
+                                  className="block h-1.5 w-1.5 rounded-full"
+                                  style={{ background: "var(--accent)" }}
+                                  aria-hidden="true"
+                                />
+                              )}
+                              {item.label}
+                            </span>
+                          </Link>
+                        </motion.div>
+                      );
+                    })}
+                  </nav>
+                  <motion.div
+                    {...menuRow(site.nav.length + 2)}
+                    className="border-t border-line p-3"
+                  >
+                    <Link to="/contact" className="btn-solid w-full justify-center !py-3">
+                      Start a project
+                    </Link>
+                  </motion.div>
                 </div>
               </motion.div>
             )}
@@ -133,11 +176,7 @@ function MobilePillNav() {
             aria-expanded={open}
             aria-controls={open ? menuId : undefined}
             aria-label={open ? "Close navigation menu" : "Open navigation menu"}
-            className="flex min-h-12 w-full items-center justify-between rounded-full border border-line px-5 py-3.5 backdrop-blur-xl transition-[border-color,background] duration-300"
-            style={{
-              background: "color-mix(in oklab, var(--surface) 92%, transparent)",
-              borderColor: open ? "var(--text)" : "var(--line)",
-            }}
+            className="flex min-h-12 w-full items-center justify-between px-5 py-3.5"
           >
             {/* Explicit color, not inherited: this span is a sibling of
                 `.label` (which sets its own `--muted` color on itself), not
@@ -705,8 +744,10 @@ export function Header() {
     getScrollRuntime().then((rt) => {
       if (cancelled || !rt) return;
       rt_ = rt;
-      applyGround = () => {
-        // Queried fresh every tick, not cached — first tried as a
+      let lastScrollY = -1;
+      let lastSampleAt = 0;
+      const sampleGrounds = () => {
+        // Queried fresh every sample, not cached — first tried as a
         // `[pathname]`-keyed effect dep instead (re-running this whole
         // setup per route), but that raced TanStack Router's own code
         // splitting: `pathname` updates before the target route's lazy
@@ -728,14 +769,19 @@ export function Header() {
         // differ, which is most of the page.
         const topGround = groundAt(grounds, 48, lastTop);
         const edgeGround = groundAt(grounds, window.innerHeight / 2, lastEdge);
+        const topChanged = topGround !== lastTop;
         lastTop = topGround;
         lastEdge = edgeGround;
         const header = headerRef.current;
-        if (header) header.dataset["over"] = topGround;
-        if (mobileNav)
-          mobileNav.dataset["over"] = groundAt(grounds, window.innerHeight - 42, topGround);
-        if (triggerOverlay) triggerOverlay.dataset["over"] = topGround;
-        if (edgeNav) edgeNav.dataset["over"] = edgeGround;
+        if (header && (topChanged || header.dataset["over"] !== topGround))
+          header.dataset["over"] = topGround;
+        if (mobileNav) {
+          const bottomGround = groundAt(grounds, window.innerHeight - 42, topGround);
+          if (mobileNav.dataset["over"] !== bottomGround) mobileNav.dataset["over"] = bottomGround;
+        }
+        if (triggerOverlay && triggerOverlay.dataset["over"] !== topGround)
+          triggerOverlay.dataset["over"] = topGround;
+        if (edgeNav && edgeNav.dataset["over"] !== edgeGround) edgeNav.dataset["over"] = edgeGround;
         // `<body>`'s own backdrop (html[data-ground-now] in styles.css)
         // takes the CENTRE sample, not the top one: body shows through
         // wherever a section doesn't fully paint — a margin between two
@@ -750,7 +796,20 @@ export function Header() {
         // doesn't transition, it just becomes black". On a route with no
         // [data-ground] sections at all, `grounds` is empty and `groundAt`
         // falls back to "paper" — no separate no-op branch needed.
-        document.documentElement.dataset["groundNow"] = edgeGround;
+        if (document.documentElement.dataset["groundNow"] !== edgeGround)
+          document.documentElement.dataset["groundNow"] = edgeGround;
+      };
+      applyGround = () => {
+        // Measuring every section forced layout on every frame, idle or not.
+        // Measure only while the page is moving, plus a slow heartbeat that
+        // keeps the "self-corrects after a route change" property above.
+        const scrollY = window.scrollY;
+        const clock = performance.now();
+        if (scrollY !== lastScrollY || clock - lastSampleAt > 250) {
+          lastScrollY = scrollY;
+          lastSampleAt = clock;
+          sampleGrounds();
+        }
 
         // --vel: 0 (at rest) to 1 (fast fling), consumed only by
         // `.ambient-field` (styles.css). `lenis.velocity` is px per rAF
@@ -765,7 +824,8 @@ export function Header() {
         // a wheel notch (~8-12 px/frame) and a trackpad fling (~60-150):
         // a notch nudges this, a fling saturates it. Both figures are
         // `lerp: 0.09`'s own numbers (scroll-runtime.ts).
-        const vel = Math.min(1, Math.abs(rawVel) / 40);
+        // Quantized: each write restyles every ambient layer on the page.
+        const vel = Math.round(Math.min(1, Math.abs(rawVel) / 40) * 20) / 20;
         if (vel !== lastVel) {
           lastVel = vel;
           for (const el of document.querySelectorAll<HTMLElement>(".ambient-field")) {
@@ -781,7 +841,11 @@ export function Header() {
         // panel is never hidden mid-interaction even on stale velocity.
         const now = performance.now();
         if (Math.abs(rawVel) > 1.5) lastActiveAt = now;
-        if (mobileNav) mobileNav.dataset["scrolling"] = String(now - lastActiveAt < 200);
+        if (mobileNav) {
+          const scrolling = String(now - lastActiveAt < 200);
+          if (mobileNav.dataset["scrolling"] !== scrolling)
+            mobileNav.dataset["scrolling"] = scrolling;
+        }
       };
       rt.gsap.ticker.add(applyGround);
     });
@@ -937,6 +1001,27 @@ export function Footer() {
   const scriptRef = useScriptFontsWhenVisible<HTMLSpanElement>();
   const giantMarkRef = usePointerField<HTMLDivElement>();
 
+  // The giant name climbs out of the page's edge as the footer arrives.
+  useScrollScene((rt) => {
+    const mark = giantMarkRef.current;
+    if (!mark) return;
+    rt.gsap.fromTo(
+      mark,
+      { yPercent: 62 },
+      {
+        yPercent: 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: mark.parentElement,
+          start: "top bottom",
+          end: "bottom bottom",
+          scrub: 0.6,
+          invalidateOnRefresh: true,
+        },
+      },
+    );
+  }, []);
+
   return (
     <footer
       data-ground="deep"
@@ -1032,11 +1117,14 @@ export function Footer() {
             <p className="mt-5 max-w-sm text-lg" style={{ color: "var(--text)" }}>
               {site.tagline}
             </p>
-            <Magnetic className="mt-auto inline-block pt-6">
-              <Link to="/contact" className="btn-line">
-                Brief us <ArrowGlyph />
-              </Link>
-            </Magnetic>
+            <div className="mt-auto flex items-center gap-5 pt-6">
+              <Magnetic className="inline-block">
+                <Link to="/contact" className="btn-line">
+                  Brief us <ArrowGlyph />
+                </Link>
+              </Magnetic>
+              <CommandHint />
+            </div>
           </div>
         </div>
 

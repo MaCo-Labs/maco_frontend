@@ -7,11 +7,11 @@ import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 export const Route = createFileRoute("/work/")({
   head: () => ({
     meta: [
-      { title: "Work — Client projects delivered by MaCo" },
+      { title: "Case Studies: Websites & Software Built by MaCo, Kochi" },
       {
         name: "description",
         content:
-          "Case studies from MaCo: Ananta Nethralaya, Al Afzah Group, Soorath Autos, HeadGreen and Ozone Fitout & Contracting.",
+          "Case studies from MaCo in Kochi: websites and brand work for Ananta Nethralaya, Al Afzah Group, Soorath Autos, HeadGreen and Ozone Fitout & Contracting.",
       },
       { property: "og:title", content: "Work — MaCo" },
       {

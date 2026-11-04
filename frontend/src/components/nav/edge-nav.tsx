@@ -1,8 +1,13 @@
+import { useEffect, useRef } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { site } from "@/content/maco";
 
 const LEFT = site.nav.slice(0, 3); // Services, Work, Products
 const RIGHT = site.nav.slice(3); // Clients, About, Contact
+/** How far from a dot, in px, the pointer starts to swell it. */
+const DOCK_REACH = 90;
 // The bar (below `lg`) wants the full six-item list in document order, not
 // the LEFT/RIGHT split above — that split exists only to feed two columns.
 
@@ -54,9 +59,51 @@ const RIGHT = site.nav.slice(3); // Clients, About, Contact
  */
 export function EdgeNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navRef = useRef<HTMLElement>(null);
+  const fine = useMediaQuery("(hover: hover) and (pointer: fine)");
+  const reduced = useReducedMotion();
+
+  // Dock falloff: dots swell toward the pointer by distance, not just on
+  // hover. CSS custom properties only, read at most once a frame, and nothing
+  // is measured unless layout 3 is on and the pointer is near a rail.
+  useEffect(() => {
+    if (!fine || reduced) return;
+    let frame = 0;
+    let lit = false;
+    let x = 0;
+    let y = 0;
+    const update = () => {
+      frame = 0;
+      const nearRail = x < DOCK_REACH * 2.5 || x > window.innerWidth - DOCK_REACH * 2.5;
+      const on = document.documentElement.dataset["layout"] === "3" && nearRail;
+      if (!on && !lit) return;
+      lit = on;
+      navRef.current?.querySelectorAll<HTMLElement>(".edge-nav-dot").forEach((dot) => {
+        const mark = dot.firstElementChild!.getBoundingClientRect();
+        const distance = Math.hypot(
+          x - (mark.left + mark.width / 2),
+          y - (mark.top + mark.height / 2),
+        );
+        const near = on ? Math.max(0, 1 - distance / DOCK_REACH) : 0;
+        dot.style.setProperty("--dock", near.toFixed(3));
+        dot.style.setProperty("--dock-label", near > 0.65 ? "1" : near > 0.3 ? "0.35" : "0");
+      });
+    };
+    const onMove = (e: PointerEvent) => {
+      x = e.clientX;
+      y = e.clientY;
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      cancelAnimationFrame(frame);
+    };
+  }, [fine, reduced]);
 
   return (
     <nav
+      ref={navRef}
       data-edge-nav
       data-over="paper"
       suppressHydrationWarning

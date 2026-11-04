@@ -1,397 +1,560 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Globe, { type GlobeMethods } from "react-globe.gl";
-import { MeshPhongMaterial } from "three";
+import { useEffect, useRef } from "react";
+import {
+  AdditiveBlending,
+  BackSide,
+  BufferAttribute,
+  BufferGeometry,
+  Group,
+  Mesh,
+  PerspectiveCamera,
+  Points,
+  QuadraticBezierCurve3,
+  Scene,
+  ShaderMaterial,
+  SphereGeometry,
+  TubeGeometry,
+  Vector3,
+  WebGLRenderer,
+} from "three";
+import { getLiveScrollRuntime } from "@/lib/scroll-runtime";
 
-const COUNTRIES_GEO_URL = "/geo/countries-110m.geojson";
+export type Hub = { name: string; lat: number; lng: number };
 
-type Theme = "obsidian" | "cobalt";
-
-type CountryFeature = {
-  type: "Feature";
-  properties: { ISO_A2?: string; NAME?: string };
-  geometry: { type: string; coordinates: unknown };
-};
-
-/** `primary` nodes are real MaCo operational hubs (labelled, brighter,
- *  larger); the rest stay unlabelled ambient network points. */
-type NetworkNode = { lat: number; lng: number; id: number; primary?: boolean; label?: string };
-
-type NetworkArc = {
-  startLat: number;
-  startLng: number;
-  endLat: number;
-  endLng: number;
-  id: number;
-  dashTime: number;
-};
-
-/** 0-4 are MaCo's real operational hubs — labelled, primary. 5+ are
- *  ambient network points (visual only, not office/customer claims). */
-const NODES: NetworkNode[] = [
-  { lat: 9.9312, lng: 76.2673, id: 0, primary: true, label: "Kochi" },
-  { lat: 12.9716, lng: 77.5946, id: 1, primary: true, label: "Bangalore" },
-  { lat: 13.0827, lng: 80.2707, id: 2, primary: true, label: "Chennai" },
-  { lat: 25.3176, lng: 51.1887, id: 3, primary: true, label: "Qatar" },
-  { lat: 25.2048, lng: 55.2708, id: 4, primary: true, label: "Dubai" },
-  { lat: 35.6895, lng: 139.6917, id: 5 }, // East Asia
-  { lat: 51.5074, lng: -0.1278, id: 6 }, // Europe
-  { lat: 37.7749, lng: -122.4194, id: 7 }, // US West
-  { lat: 31.2304, lng: 121.4737, id: 8 }, // China coast
-  { lat: -33.8688, lng: 151.2093, id: 9 }, // Oceania
-  { lat: -23.5505, lng: -46.6333, id: 10 }, // South America
-  { lat: 6.5244, lng: 3.3792, id: 11 }, // West Africa
-  { lat: 1.3521, lng: 103.8198, id: 12 }, // Southeast Asia
-  { lat: 52.52, lng: 13.405, id: 13 }, // Central Europe
-  { lat: 43.6532, lng: -79.3832, id: 14 }, // North America east
-];
-
-/** Module-scope, not recomputed per render — passed straight to
- *  `labelsData`/`ringsData` so those layers keep a stable array identity
- *  and three-globe doesn't rebuild them on every parent re-render. */
-const PRIMARY_NODES = NODES.filter((n) => n.primary);
-/** Stable empty-array identity for the reduced-motion `ringsData` branch —
- *  `[]` inline would mint a new identity every render. */
-const EMPTY_RINGS: NetworkNode[] = [];
-
-/** Cross-regional links — pairs of node indices (0-4 are the real hubs;
- *  the first five pairs below connect them to each other). */
-const ARC_PAIRS: [number, number][] = [
+/** Arcs run between real hubs only, by index into `hubs`. */
+const ROUTES: readonly [number, number][] = [
   [0, 1],
   [0, 2],
   [0, 3],
   [0, 4],
   [3, 4],
-  [0, 6],
-  [0, 7],
-  [0, 12],
-  [3, 8],
-  [3, 11],
-  [3, 13],
-  [1, 8],
-  [1, 12],
-  [1, 7],
-  [4, 13],
-  [4, 14],
-  [7, 14],
-  [7, 10],
-  [8, 12],
-  [9, 12],
-  [9, 8],
-  [10, 6],
-  [13, 6],
 ];
 
-function buildArcs(nodes: NetworkNode[]): NetworkArc[] {
-  return ARC_PAIRS.map(([a, b], i) => {
-    const from = nodes[a];
-    const to = nodes[b];
-    if (!from || !to) {
-      return {
-        startLat: 0,
-        startLng: 0,
-        endLat: 0,
-        endLng: 0,
-        id: i,
-        dashTime: 2000,
-      };
-    }
-    return {
-      startLat: from.lat,
-      startLng: from.lng,
-      endLat: to.lat,
-      endLng: to.lng,
-      id: i,
-      dashTime: 1600 + (i % 5) * 380 + Math.floor(i / 5) * 120,
-    };
-  });
+const FAR = 4.7;
+const NEAR = 4.3;
+const TAU = Math.PI * 2;
+
+const toVector = (lat: number, lng: number, radius = 1) => {
+  const a = (lat * Math.PI) / 180;
+  const o = (lng * Math.PI) / 180;
+  return new Vector3(
+    Math.cos(a) * Math.sin(o) * radius,
+    Math.sin(a) * radius,
+    Math.cos(a) * Math.cos(o) * radius,
+  );
+};
+
+/** Shortest signed path between two angles. */
+const shortest = (from: number, to: number) => {
+  const d = (to - from) % TAU;
+  return d > Math.PI ? d - TAU : d < -Math.PI ? d + TAU : d;
+};
+
+/** Resolves any CSS colour (the tokens are oklch/color-mix) to raw 0..1 RGB. */
+function readColor(ctx: CanvasRenderingContext2D, css: string): Vector3 {
+  ctx.clearRect(0, 0, 1, 1);
+  ctx.fillStyle = css;
+  ctx.fillRect(0, 0, 1, 1);
+  const d = ctx.getImageData(0, 0, 1, 1).data;
+  return new Vector3(d[0]! / 255, d[1]! / 255, d[2]! / 255);
 }
 
-const ARCS = buildArcs(NODES);
-
-function themeTokens(theme: Theme) {
-  if (theme === "cobalt") {
-    return {
-      globeColor: 0xe4ecf8,
-      emissive: 0xc8daf0,
-      emissiveIntensity: 0.08,
-      landCap: "rgba(60, 110, 200, 0.28)",
-      landSide: "rgba(40, 85, 170, 0.38)",
-      landStroke: "rgba(50, 100, 190, 0.22)",
-      point: "rgba(40, 90, 190, 0.78)",
-      pointDim: "rgba(40, 90, 190, 0.32)",
-      label: "rgba(40, 90, 190, 0.92)",
-      arc: ["rgba(50, 100, 190, 0.14)", "rgba(60, 120, 210, 0.62)"] as [string, string],
-      arcStroke: 0.58,
-      pointRadius: 0.3,
-      atmosphere: "rgba(70, 120, 210, 0.14)",
-      atmosphereAlt: 0.12,
-      autoRotateSpeed: 0.35,
-    };
+const DOT_VERTEX = /* glsl */ `
+  uniform float uPx, uReveal, uRipple;
+  uniform vec3 uFocus;
+  varying float vAlpha, vHot;
+  void main() {
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    float d = acos(clamp(dot(position, uFocus), -1.0, 1.0));
+    float ring = exp(-pow((d - uRipple) / 0.14, 2.0)) * smoothstep(3.2, 0.3, uRipple);
+    float near = exp(-pow(d / 0.2, 2.0));
+    float shown = smoothstep(uReveal * 3.6, uReveal * 3.6 - 0.4, d);
+    float facing = clamp(dot(normalize(normalMatrix * position), normalize(-mv.xyz)), 0.0, 1.0);
+    vAlpha = shown * (0.45 + 0.55 * facing);
+    vHot = clamp(ring + near * 0.55, 0.0, 1.0);
+    gl_PointSize = uPx * (0.6 + 0.4 * facing) * (1.0 + ring * 1.2 + near * 0.5) * shown;
+    gl_Position = projectionMatrix * mv;
   }
-  return {
-    globeColor: 0xededf0,
-    emissive: 0xd8d8dc,
-    emissiveIntensity: 0.06,
-    landCap: "rgba(40, 40, 48, 0.22)",
-    landSide: "rgba(30, 30, 36, 0.32)",
-    landStroke: "rgba(20, 20, 24, 0.14)",
-    point: "rgba(20, 20, 24, 0.72)",
-    pointDim: "rgba(20, 20, 24, 0.28)",
-    label: "rgba(20, 20, 24, 0.88)",
-    arc: ["rgba(20, 20, 24, 0.1)", "rgba(40, 40, 48, 0.48)"] as [string, string],
-    arcStroke: 0.5,
-    pointRadius: 0.26,
-    atmosphere: "rgba(40, 40, 48, 0.08)",
-    atmosphereAlt: 0.08,
-    autoRotateSpeed: 0.18,
-  };
-}
+`;
+const DOT_FRAGMENT = /* glsl */ `
+  uniform vec3 uDot, uHot;
+  varying float vAlpha, vHot;
+  void main() {
+    float r = length(gl_PointCoord - 0.5);
+    if (r > 0.5) discard;
+    gl_FragColor = vec4(mix(uDot, uHot, vHot), smoothstep(0.5, 0.32, r) * vAlpha);
+  }
+`;
+
+const SHELL_VERTEX = /* glsl */ `
+  varying vec3 vN, vV;
+  void main() {
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    vN = normalize(normalMatrix * normal);
+    vV = normalize(-mv.xyz);
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+const SHELL_FRAGMENT = /* glsl */ `
+  uniform vec3 uBase, uRim;
+  varying vec3 vN, vV;
+  void main() {
+    float f = pow(1.0 - clamp(dot(vN, vV), 0.0, 1.0), 3.2);
+    gl_FragColor = vec4(mix(uBase, uRim, f * 0.22), 1.0);
+  }
+`;
+const GLOW_FRAGMENT = /* glsl */ `
+  uniform vec3 uRim;
+  varying vec3 vN, vV;
+  void main() {
+    float f = pow(clamp(-dot(vN, vV), 0.0, 1.0), 2.6);
+    gl_FragColor = vec4(uRim, f * 0.2);
+  }
+`;
+
+const ARC_VERTEX = /* glsl */ `
+  varying float vT;
+  void main() {
+    vT = uv.x;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+const ARC_FRAGMENT = /* glsl */ `
+  uniform float uTime, uOffset, uLit, uReveal;
+  uniform vec3 uColor;
+  varying float vT;
+  void main() {
+    float head = fract(uTime * 0.28 + uOffset) * 1.5;
+    float tail = smoothstep(head - 0.45, head, vT) * step(vT, head);
+    float a = (0.1 + 0.14 * uLit + tail * (0.5 + 0.5 * uLit)) * step(vT, uReveal * 1.4);
+    gl_FragColor = vec4(uColor, a);
+  }
+`;
+
+const HUB_VERTEX = /* glsl */ `
+  attribute float aIndex;
+  uniform float uPx, uActive;
+  varying float vOn;
+  void main() {
+    vOn = 1.0 - step(0.5, abs(aIndex - uActive));
+    gl_PointSize = uPx * (vOn > 0.5 ? 44.0 : 20.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+const HUB_FRAGMENT = /* glsl */ `
+  uniform float uTime;
+  uniform vec3 uColor;
+  varying float vOn;
+  void main() {
+    float r = length(gl_PointCoord - 0.5) * 2.0;
+    float core = smoothstep(vOn > 0.5 ? 0.2 : 0.4, vOn > 0.5 ? 0.14 : 0.28, r);
+    float p = fract(uTime * 0.55);
+    float ring = vOn * (1.0 - p) * smoothstep(0.05, 0.0, abs(r - (0.2 + p * 0.78)));
+    float a = max(core, ring);
+    if (a < 0.01) discard;
+    gl_FragColor = vec4(uColor, a);
+  }
+`;
 
 /**
- * MaCo Globe — abstract global network visualization.
- * Light-canvas or section context; dark/gray globe (Obsidian) or blue globe (Cobalt).
- *
- * Hover (or tap, via `onPointClick`) a hub to highlight it, stop
- * auto-rotation, and surface its name via three-globe's built-in
- * `pointLabel` tooltip. The internal render loop pauses via
- * `pauseAnimation()`/`resumeAnimation()` when scrolled off-screen or the
- * tab is hidden, and the renderer + material are fully disposed on
- * unmount and on every theme change — see the effects below.
+ * The dotted globe: real land dots, real hubs, arcs that flow between them. A
+ * new hub flies into view and sends a ripple through the dot field. Drag spins
+ * it with inertia, a tap picks the nearest hub, and scrolling nudges it. Raw
+ * `three`, one draw per frame, stopped entirely while offscreen.
  */
 export function MaCoGlobe({
-  className = "",
-  theme = "obsidian",
-  reducedMotion = false,
-  scrollProgress = 0,
-  variant = "hero",
+  hubs,
+  active,
+  reducedMotion,
+  onPick,
+  onInteract,
+  onFail,
 }: {
-  className?: string;
-  theme?: Theme;
-  reducedMotion?: boolean;
-  scrollProgress?: number;
-  variant?: "hero" | "section";
+  hubs: readonly Hub[];
+  active: number;
+  reducedMotion: boolean;
+  onPick: (index: number) => void;
+  onInteract: () => void;
+  onFail: () => void;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const globeRef = useRef<GlobeMethods | undefined>(undefined);
-  const [mounted, setMounted] = useState(false);
-  const [dims, setDims] = useState({ width: 320, height: 320 });
-  const [countries, setCountries] = useState<CountryFeature[]>([]);
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const tagRef = useRef<HTMLDivElement>(null);
+  const focusRef = useRef<(index: number) => void>(() => {});
+  const callbacks = useRef({ onPick, onInteract });
+  callbacks.current = { onPick, onInteract };
 
-  const tokens = useMemo(() => themeTokens(theme), [theme]);
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
 
-  const globeMaterial = useMemo(
-    () =>
-      new MeshPhongMaterial({
-        color: tokens.globeColor,
-        emissive: tokens.emissive,
-        emissiveIntensity: tokens.emissiveIntensity,
-        shininess: 8,
+    let renderer: WebGLRenderer;
+    try {
+      renderer = new WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
+    } catch {
+      onFail();
+      return;
+    }
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+    renderer.setPixelRatio(dpr);
+    renderer.domElement.className = "hub-globe-canvas";
+    host.prepend(renderer.domElement);
+
+    const scene = new Scene();
+    const camera = new PerspectiveCamera(30, 1, 0.1, 20);
+    camera.position.z = FAR;
+    const globe = new Group();
+    scene.add(globe);
+
+    const color = { value: new Vector3(1, 1, 1) };
+    const hot = { value: new Vector3(1, 1, 1) };
+    const base = { value: new Vector3(0, 0, 0) };
+    const rim = { value: new Vector3(1, 1, 1) };
+    const time = { value: 0 };
+    const reveal = { value: reducedMotion ? 1 : 0 };
+    const ripple = { value: 4 };
+    const focus = { value: toVector(hubs[0]!.lat, hubs[0]!.lng) };
+    const dotPx = { value: 2 };
+    const hubPx = { value: dpr };
+    const activeHub = { value: active };
+
+    const shell = new Mesh(
+      new SphereGeometry(0.992, 64, 48),
+      new ShaderMaterial({
+        vertexShader: SHELL_VERTEX,
+        fragmentShader: SHELL_FRAGMENT,
+        uniforms: { uBase: base, uRim: rim },
       }),
-    [tokens],
-  );
-  // Real three.js resource — every theme flip allocates a new one via the
-  // useMemo above, so the previous instance must be disposed or it leaks
-  // GPU buffers. Effect cleanup fires both on the next `tokens` change
-  // (before the new material mounts) and on unmount.
-  useEffect(() => {
-    return () => globeMaterial.dispose();
-  }, [globeMaterial]);
+    );
+    globe.add(shell);
+    const glow = new Mesh(
+      new SphereGeometry(1.1, 48, 32),
+      new ShaderMaterial({
+        vertexShader: SHELL_VERTEX,
+        fragmentShader: GLOW_FRAGMENT,
+        uniforms: { uRim: rim },
+        side: BackSide,
+        transparent: true,
+        depthWrite: false,
+        blending: AdditiveBlending,
+      }),
+    );
+    scene.add(glow);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(COUNTRIES_GEO_URL)
-      .then((res) => res.json())
-      .then((data: { features: CountryFeature[] }) => {
-        if (cancelled) return;
-        setCountries(data.features.filter((f) => f.properties.ISO_A2 !== "AQ"));
+    let dotGeometry: BufferGeometry | null = null;
+    const dotMaterial = new ShaderMaterial({
+      vertexShader: DOT_VERTEX,
+      fragmentShader: DOT_FRAGMENT,
+      transparent: true,
+      depthWrite: false,
+      uniforms: {
+        uPx: dotPx,
+        uReveal: reveal,
+        uRipple: ripple,
+        uFocus: focus,
+        uDot: color,
+        uHot: hot,
+      },
+    });
+    const abort = new AbortController();
+    fetch("/geo/land-dots.bin", { signal: abort.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.arrayBuffer();
+      })
+      .then((buffer) => {
+        const raw = new Int16Array(buffer);
+        const positions = new Float32Array((raw.length / 2) * 3);
+        for (let i = 0; i < raw.length / 2; i++) {
+          const v = toVector(raw[i * 2]! / 100, raw[i * 2 + 1]! / 100);
+          positions.set([v.x, v.y, v.z], i * 3);
+        }
+        dotGeometry = new BufferGeometry();
+        dotGeometry.setAttribute("position", new BufferAttribute(positions, 3));
+        globe.add(new Points(dotGeometry, dotMaterial));
+        dirty = true;
       })
       .catch(() => {
-        /* countries optional — globe still renders */
+        // Aborted on unmount, or offline: the hub list beside it still works.
       });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      if (!entry) return;
-      const { width, height } = entry.contentRect;
-      const size = Math.max(180, Math.min(width, height));
-      setDims({ width: size, height: size });
+    const arcMaterials = ROUTES.map(([a, b], i) => {
+      const from = toVector(hubs[a]!.lat, hubs[a]!.lng);
+      const to = toVector(hubs[b]!.lat, hubs[b]!.lng);
+      const lift = 1 + from.angleTo(to) * 1.05 + 0.04;
+      const mid = from.clone().add(to).normalize().multiplyScalar(lift);
+      const material = new ShaderMaterial({
+        vertexShader: ARC_VERTEX,
+        fragmentShader: ARC_FRAGMENT,
+        transparent: true,
+        depthWrite: false,
+        uniforms: {
+          uTime: time,
+          uOffset: { value: i * 0.23 },
+          uLit: { value: 0 },
+          uReveal: reveal,
+          uColor: hot,
+        },
+      });
+      globe.add(
+        new Mesh(
+          new TubeGeometry(new QuadraticBezierCurve3(from, mid, to), 64, 0.0026, 5),
+          material,
+        ),
+      );
+      return material;
     });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
-  const configureGlobe = useCallback(() => {
-    const globe = globeRef.current;
-    if (!globe) return;
+    const hubVectors = hubs.map((h) => toVector(h.lat, h.lng, 1.004));
+    const hubGeometry = new BufferGeometry();
+    hubGeometry.setAttribute(
+      "position",
+      new BufferAttribute(new Float32Array(hubVectors.flatMap((v) => [v.x, v.y, v.z])), 3),
+    );
+    hubGeometry.setAttribute(
+      "aIndex",
+      new BufferAttribute(new Float32Array(hubs.map((_, i) => i)), 1),
+    );
+    globe.add(
+      new Points(
+        hubGeometry,
+        new ShaderMaterial({
+          vertexShader: HUB_VERTEX,
+          fragmentShader: HUB_FRAGMENT,
+          transparent: true,
+          depthWrite: false,
+          uniforms: { uPx: hubPx, uActive: activeHub, uTime: time, uColor: hot },
+        }),
+      ),
+    );
 
-    const controls = globe.controls();
-    controls.enableZoom = false;
-    controls.enablePan = false;
-    controls.autoRotate = !reducedMotion && hoveredId === null;
-    controls.autoRotateSpeed = tokens.autoRotateSpeed;
+    // Rotation state: `free` after a drag, otherwise easing toward a hub.
+    let rx = (hubs[active]!.lat * Math.PI) / 180;
+    let ry = -(hubs[active]!.lng * Math.PI) / 180;
+    let targetX = rx;
+    let targetY = ry;
+    let free = false;
+    let vx = 0;
+    let vy = 0;
+    let dragging = false;
+    let moved = 0;
+    let lastX = 0;
+    let lastY = 0;
+    let kick = 0;
+    let revealing = !reducedMotion;
+    let dirty = true;
+    let inView = true;
+    let width = 1;
+    let height = 1;
 
-    globe.pointOfView({ lat: 18, lng: 68, altitude: 2.1 }, 0);
+    function applyTheme() {
+      const styles = getComputedStyle(host!);
+      const probe = document.createElement("canvas").getContext("2d", {
+        willReadFrequently: true,
+      });
+      if (!probe) return;
+      probe.canvas.width = probe.canvas.height = 1;
+      color.value = readColor(probe, styles.getPropertyValue("--muted"));
+      hot.value = readColor(probe, styles.getPropertyValue("--text"));
+      base.value = readColor(probe, styles.getPropertyValue("--bg"));
+      rim.value = readColor(probe, styles.getPropertyValue("--text"));
+      dirty = true;
+    }
+    applyTheme();
 
-    const renderer = globe.renderer();
-    renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-  }, [reducedMotion, hoveredId, tokens.autoRotateSpeed]);
+    function resize() {
+      width = host!.clientWidth || 1;
+      height = host!.clientHeight || 1;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      dotPx.value = Math.max(1.6, (width / 300) * dpr);
+      dirty = true;
+    }
+    resize();
 
-  useEffect(() => {
-    configureGlobe();
-  }, [configureGlobe, theme, reducedMotion]);
-
-  // Pause the internal rAF loop (react-globe.gl / three.js keeps rendering
-  // on its own, independent of the shared gsap.ticker) whenever the globe
-  // scrolls off-screen or the tab is hidden — matches the discipline
-  // morph-slider.tsx already applies to its own WebGL surface.
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || reducedMotion) return;
-
-    const setPaused = (paused: boolean) => {
-      const globe = globeRef.current;
-      if (!globe) return;
-      if (paused) globe.pauseAnimation();
-      else globe.resumeAnimation();
+    focusRef.current = (index) => {
+      activeHub.value = index;
+      focus.value = toVector(hubs[index]!.lat, hubs[index]!.lng);
+      ripple.value = reducedMotion ? 4 : 0;
+      targetX = (hubs[index]!.lat * Math.PI) / 180;
+      targetY = -(hubs[index]!.lng * Math.PI) / 180;
+      free = false;
+      vx = vy = 0;
+      ROUTES.forEach(([a, b], i) => {
+        arcMaterials[i]!.uniforms["uLit"]!.value = a === index || b === index ? 1 : 0;
+      });
+      if (reducedMotion) {
+        rx = targetX;
+        ry = targetY;
+      }
+      dirty = true;
     };
+    focusRef.current(active);
 
-    const io = new IntersectionObserver(([entry]) => setPaused(!entry?.isIntersecting), {
-      rootMargin: "200px 0px",
+    const projected = new Vector3();
+    function placeTag() {
+      const tag = tagRef.current;
+      if (!tag) return;
+      projected.copy(hubVectors[activeHub.value]!).applyMatrix4(globe.matrixWorld);
+      const visible = projected.dot(camera.position) > 1;
+      projected.project(camera);
+      tag.style.opacity = visible ? "1" : "0";
+      tag.style.transform = `translate(${((projected.x + 1) / 2) * width}px, ${((1 - projected.y) / 2) * height}px)`;
+    }
+
+    function hubAt(x: number, y: number) {
+      let best = -1;
+      let bestDistance = 34;
+      hubVectors.forEach((v, i) => {
+        projected.copy(v).applyMatrix4(globe.matrixWorld);
+        if (projected.dot(camera.position) <= 1) return;
+        projected.project(camera);
+        const d = Math.hypot(
+          ((projected.x + 1) / 2) * width - x,
+          ((1 - projected.y) / 2) * height - y,
+        );
+        if (d < bestDistance) {
+          bestDistance = d;
+          best = i;
+        }
+      });
+      return best;
+    }
+
+    const onDown = (e: PointerEvent) => {
+      dragging = true;
+      moved = 0;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      vx = vy = 0;
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      moved += Math.abs(dx) + Math.abs(dy);
+      if (moved < 6) return;
+      if (!free) {
+        free = true;
+        callbacks.current.onInteract();
+      }
+      const speed = 0.006 * (340 / width);
+      vy = dx * speed;
+      vx = dy * speed;
+      ry += vy;
+      rx = Math.max(-1.2, Math.min(1.2, rx + vx));
+      dirty = true;
+    };
+    const onUp = (e: PointerEvent) => {
+      if (!dragging) return;
+      dragging = false;
+      if (moved < 6) {
+        const r = host.getBoundingClientRect();
+        const hit = hubAt(e.clientX - r.left, e.clientY - r.top);
+        if (hit >= 0) callbacks.current.onPick(hit);
+      }
+    };
+    const canvas = renderer.domElement;
+    canvas.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+
+    const resizer = new ResizeObserver(resize);
+    resizer.observe(host);
+    const viewer = new IntersectionObserver(([entry]) => {
+      inView = entry?.isIntersecting ?? true;
+      if (inView) schedule();
     });
-    io.observe(el);
-
-    const onVisibility = () => setPaused(document.hidden);
+    viewer.observe(host);
+    const themer = new MutationObserver(applyTheme);
+    themer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    const onVisibility = () => schedule();
     document.addEventListener("visibilitychange", onVisibility);
 
+    let frame = 0;
+    let last = performance.now();
+    function schedule() {
+      if (!frame && inView && !document.hidden) frame = requestAnimationFrame(tick);
+    }
+    function tick(now: number) {
+      frame = 0;
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      if (!reducedMotion) {
+        time.value += dt;
+        ripple.value = Math.min(4, ripple.value + dt * 1.25);
+        if (revealing) {
+          reveal.value = Math.min(1, reveal.value + dt * 0.62);
+          revealing = reveal.value < 1;
+        }
+        const velocity = getLiveScrollRuntime()?.lenis.velocity ?? 0;
+        kick += (velocity * 0.0016 - kick) * 0.06;
+        if (!dragging) {
+          if (free) {
+            ry += vy + dt * 0.05;
+            rx = Math.max(-1.2, Math.min(1.2, rx + vx));
+            vx *= 0.94;
+            vy *= 0.94;
+          } else {
+            const k = 1 - Math.exp(-dt * 2.6);
+            rx += shortest(rx, targetX) * k;
+            ry += shortest(ry, targetY) * k;
+          }
+        }
+        camera.position.z += ((free ? FAR : NEAR) - camera.position.z) * (1 - Math.exp(-dt * 2));
+        dirty = true;
+      }
+      if (dirty) {
+        globe.rotation.set(rx, ry + kick, 0);
+        globe.updateMatrixWorld();
+        camera.updateMatrixWorld();
+        renderer.render(scene, camera);
+        placeTag();
+        dirty = false;
+      }
+      schedule();
+    }
+    schedule();
+
     return () => {
-      io.disconnect();
+      abort.abort();
+      cancelAnimationFrame(frame);
+      focusRef.current = () => {};
+      resizer.disconnect();
+      viewer.disconnect();
+      themer.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [reducedMotion]);
-
-  // Full GL teardown on unmount — dispose the renderer's own resources and
-  // force the WebGL context to release, so navigating away from /about
-  // doesn't leave a live context and rAF loop behind. Captured at effect
-  // setup (after `<Globe ref={globeRef}>` has already committed), not
-  // re-read in cleanup, so the lint rule can't warn about a stale ref.
-  useEffect(() => {
-    const globe = globeRef.current;
-    return () => {
-      if (!globe) return;
-      globe.pauseAnimation();
-      const renderer = globe.renderer();
+      canvas.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      scene.traverse((o) => {
+        const mesh = o as Mesh;
+        mesh.geometry?.dispose();
+        (mesh.material as ShaderMaterial | undefined)?.dispose();
+      });
       renderer.dispose();
-      renderer.forceContextLoss();
+      canvas.remove();
     };
-  }, []);
+    // Rebuilding the scene would drop the view; `active` flows in through the
+    // effect below instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hubs, reducedMotion]);
 
-  const scale = variant === "section" ? 1 : 1 - scrollProgress * 0.06;
-  const driftY = variant === "section" ? 0 : scrollProgress * -12;
-  const shellClass =
-    variant === "section" ? "maco-globe-shell maco-globe-shell--section" : "maco-globe-shell";
-
-  if (!mounted) {
-    return (
-      <div
-        ref={containerRef}
-        className={`${shellClass} ${className}`}
-        aria-hidden="true"
-        style={{ minHeight: variant === "section" ? "12rem" : "14rem" }}
-      />
-    );
-  }
+  useEffect(() => {
+    focusRef.current(active);
+  }, [active]);
 
   return (
-    <div
-      ref={containerRef}
-      className={`${shellClass} ${className}`}
-      aria-hidden="true"
-      style={{
-        transform: reducedMotion ? undefined : `translate3d(0, ${driftY}px, 0) scale(${scale})`,
-      }}
-    >
-      <Globe
-        ref={globeRef}
-        width={dims.width}
-        height={dims.height}
-        backgroundColor="rgba(0,0,0,0)"
-        globeMaterial={globeMaterial}
-        showGlobe
-        showGraticules={false}
-        showAtmosphere
-        atmosphereColor={tokens.atmosphere}
-        atmosphereAltitude={tokens.atmosphereAlt}
-        globeOffset={[0, dims.height * 0.04]}
-        polygonsData={countries}
-        polygonCapColor={() => tokens.landCap}
-        polygonSideColor={() => tokens.landSide}
-        polygonStrokeColor={() => tokens.landStroke}
-        polygonAltitude={0.004}
-        polygonsTransitionDuration={300}
-        pointsData={NODES}
-        pointLat="lat"
-        pointLng="lng"
-        pointColor={(d: object) => {
-          const n = d as NetworkNode;
-          if (n.id === hoveredId) return tokens.label;
-          return n.primary ? tokens.point : tokens.pointDim;
-        }}
-        pointAltitude={0.014}
-        pointRadius={(d: object) => {
-          const n = d as NetworkNode;
-          const base = n.primary ? tokens.pointRadius * 1.6 : tokens.pointRadius * 0.7;
-          return n.id === hoveredId ? base * 1.5 : base;
-        }}
-        pointsMerge={false}
-        pointLabel={(d: object) => (d as NetworkNode).label ?? ""}
-        onPointHover={(d) => setHoveredId(d ? (d as NetworkNode).id : null)}
-        onPointClick={(d) =>
-          setHoveredId((prev) => (prev === (d as NetworkNode).id ? null : (d as NetworkNode).id))
-        }
-        labelsData={PRIMARY_NODES}
-        labelLat="lat"
-        labelLng="lng"
-        labelText="label"
-        labelSize={1.1}
-        labelColor={() => tokens.label}
-        labelDotRadius={0}
-        labelAltitude={0.02}
-        labelResolution={2}
-        arcsData={ARCS}
-        arcStartLat="startLat"
-        arcStartLng="startLng"
-        arcEndLat="endLat"
-        arcEndLng="endLng"
-        arcColor={() => tokens.arc}
-        arcAltitude={0.28}
-        arcStroke={tokens.arcStroke}
-        arcDashLength={0.55}
-        arcDashGap={0.12}
-        arcDashAnimateTime={reducedMotion ? 0 : (d: object) => (d as NetworkArc).dashTime}
-        ringsData={reducedMotion ? EMPTY_RINGS : PRIMARY_NODES}
-        ringLat="lat"
-        ringLng="lng"
-        ringColor={() =>
-          theme === "cobalt" ? "rgba(50, 100, 190, 0.16)" : "rgba(20, 20, 24, 0.1)"
-        }
-        ringMaxRadius={2.8}
-        ringPropagationSpeed={1.2}
-        ringRepeatPeriod={2400}
-        enablePointerInteraction={!reducedMotion}
-        onGlobeReady={configureGlobe}
-      />
+    <div ref={hostRef} className="hub-globe-stage">
+      <div ref={tagRef} className="hub-globe-tag" aria-hidden="true">
+        <span>{hubs[active]!.name}</span>
+      </div>
     </div>
   );
 }

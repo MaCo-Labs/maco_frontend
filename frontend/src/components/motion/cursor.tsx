@@ -130,11 +130,19 @@ export function Cursor() {
           el.style.opacity = "1";
         }
       };
+      let lastSampleY = -1;
+      let lastScroll = -1;
       const tick = () => {
-        px += (tx - px) * 0.25;
-        py += (ty - py) * 0.25;
-        setX(px);
-        setY(py);
+        if (Math.abs(tx - px) + Math.abs(ty - py) > 0.1) {
+          px += (tx - px) * 0.25;
+          py += (ty - py) * 0.25;
+          setX(px);
+          setY(py);
+        }
+        // Nothing under the ring can have changed if neither it nor the page moved.
+        if (py === lastSampleY && window.scrollY === lastScroll) return;
+        lastSampleY = py;
+        lastScroll = window.scrollY;
         // Queried fresh every tick, not cached at effect setup — this
         // component mounts once in __root.tsx and never remounts on
         // navigation, so a `grounds` snapshot taken once would go stale
@@ -156,7 +164,8 @@ export function Cursor() {
         // momentary no-match gap (see groundAt's own doc comment, lib/
         // ground.ts) holds the cursor's last tone instead of flashing.
         const prev = el.dataset["ground"] === "deep" ? "deep" : "paper";
-        el.dataset["ground"] = hoveredGround ?? groundAt(grounds, py, prev);
+        const next = hoveredGround ?? groundAt(grounds, py, prev);
+        if (el.dataset["ground"] !== next) el.dataset["ground"] = next;
       };
       const onOver = (e: PointerEvent) => {
         const hit = e.target instanceof Element ? e.target.closest(CURSOR_SELECTOR) : null;

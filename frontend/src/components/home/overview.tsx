@@ -5,6 +5,7 @@ import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
 import { Magnetic } from "@/components/motion/magnetic";
+import { RollingNumber } from "@/components/motion/rolling-number";
 
 /** Counted from the content model rather than typed as literals, so the
  *  numbers can never drift out of step with what the page below shows. */
@@ -73,7 +74,7 @@ export function Overview() {
               {FIGURES.map((f, i) => (
                 <div key={f.label} className="stagger-item" style={{ "--i": i } as CSSProperties}>
                   <dt className="display-md" style={{ color: "var(--text)" }}>
-                    {f.value}
+                    <RollingNumber value={f.value} />
                   </dt>
                   <dd className="label mt-1">{f.label}</dd>
                 </div>

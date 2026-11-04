@@ -62,3 +62,6 @@ frontend/package-lock.json
 
 # Visual-QA screenshots (root-level scratch, never committed)
 /*.png
+
+# Project notes stay local. Files already tracked are unaffected.
+*.md

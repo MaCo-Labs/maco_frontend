@@ -11,7 +11,7 @@ import { PageOutro } from "@/components/inner/page-outro";
 export const Route = createFileRoute("/products/")({
   head: () => ({
     meta: [
-      { title: "Products — Driver's Diary & Bridge | MaCo" },
+      { title: "Software Products: Bridge & Driver's Diary | MaCo" },
       {
         name: "description",
         content:

@@ -1,7 +1,8 @@
-import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
 import { BridgeFilms } from "./bridge-films";
 import { Safari } from "@/components/media/safari";
 import { Iphone } from "@/components/media/iphone";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import "./products.css";
 
 const views = [
@@ -24,8 +25,31 @@ const views = [
 
 export function BridgeTour({ compact = false }: { compact?: boolean }) {
   const [view, setView] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [offscreen, setOffscreen] = useState(true);
+  const [hiddenTab, setHiddenTab] = useState(false);
+  const [filmOpen, setFilmOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const uid = useId();
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => setOffscreen(!entry?.isIntersecting), {
+      threshold: 0.35,
+    });
+    io.observe(el);
+    const onVisibility = () => setHiddenTab(document.hidden);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
   function keyboard(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     let next = index;
     if (event.key === "ArrowRight") next = (index + 1) % views.length;
@@ -37,23 +61,56 @@ export function BridgeTour({ compact = false }: { compact?: boolean }) {
     setView(next);
     tabsRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
   }
+
+  // Keyboard focus holds the view still; a mouse click on a dot doesn't, or a
+  // single click would stop the tour until the visitor clicked elsewhere.
+  function onFocus(event: FocusEvent<HTMLDivElement>) {
+    if (event.target.matches(":focus-visible")) setFocused(true);
+  }
+  function onBlur(event: FocusEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
+  }
+
+  const paused = hovered || focused || offscreen || hiddenTab || filmOpen;
+
   return (
-    <div className={`bridge-tour ${compact ? "bridge-tour-compact" : ""}`}>
+    <div
+      ref={rootRef}
+      className={`bridge-tour ${compact ? "bridge-tour-compact" : ""}`}
+      data-paused={paused || undefined}
+      data-reduced={reduced || undefined}
+      onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    >
       <div className="bridge-tour-toolbar">
-        <div ref={tabsRef} role="tablist" aria-label="Explore Bridge" className="bridge-tour-tabs">
+        <p className="bridge-tour-title" aria-hidden="true">
+          {views[view]!.title}
+        </p>
+        <div ref={tabsRef} role="tablist" aria-label="Explore Bridge" className="bridge-steps">
           {views.map((item, i) => (
             <button
               key={item.title}
               type="button"
               role="tab"
               id={`${uid}-tab-${i}`}
+              aria-label={item.title}
               aria-selected={view === i}
               aria-controls={`${uid}-panel`}
               tabIndex={view === i ? 0 : -1}
+              className="bridge-step"
               onClick={() => setView(i)}
               onKeyDown={(event) => keyboard(event, i)}
             >
-              {item.title}
+              <span className="bridge-step-track">
+                {view === i && (
+                  <span
+                    className="bridge-step-fill"
+                    onAnimationEnd={() => setView((v) => (v + 1) % views.length)}
+                  />
+                )}
+              </span>
             </button>
           ))}
         </div>
@@ -89,7 +146,7 @@ export function BridgeTour({ compact = false }: { compact?: boolean }) {
         <p>{views[view]!.caption}</p>
         <span>Demo workspace shown</span>
       </div>
-      <BridgeFilms />
+      <BridgeFilms onOpenChange={setFilmOpen} />
     </div>
   );
 }

@@ -6,13 +6,15 @@ import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { Stagger } from "@/components/motion/stagger";
 import { usePointerField } from "@/hooks/use-pointer-field";
+import { useLiveSite } from "@/hooks/use-live-site";
+import { UPCOMING_SITES } from "@/lib/upcoming-sites";
 import { useSectionHandoff } from "@/hooks/use-section-handoff";
 import { PageOutro } from "@/components/inner/page-outro";
 
 export const Route = createFileRoute("/clients")({
   head: () => ({
     meta: [
-      { title: "Clients — Organisations MaCo works with" },
+      { title: "Clients | Who MaCo Builds Software and Websites For" },
       {
         name: "description",
         content:
@@ -40,6 +42,8 @@ const HANDOFF_PAIRS = [["Client roster", "Start a project", "sheet"]] as const;
 
 function ClientRow({ c, i }: { c: (typeof clients)[number]; i: number }) {
   const spotlightRef = usePointerField<HTMLDivElement>();
+  const upcomingUrl = useLiveSite(c.slug);
+  const website = c.website ?? upcomingUrl;
 
   return (
     <article className="stagger-item index-row" style={{ "--i": i } as CSSProperties}>
@@ -90,18 +94,18 @@ function ClientRow({ c, i }: { c: (typeof clients)[number]; i: number }) {
               );
             })}
           </ul>
-          {c.website ? (
+          {website ? (
             <a
-              href={c.website}
+              href={website}
               target="_blank"
               rel="noreferrer noopener"
               className="link-draw mt-5 inline-block font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted hover:text-text"
             >
-              {c.website.replace("https://", "").replace(/\/$/, "")} ↗
+              {website.replace("https://", "").replace(/\/$/, "")} ↗
             </a>
           ) : (
             <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
-              Print / brand piece
+              {UPCOMING_SITES[c.slug] ? "Website launching soon" : "Print / brand piece"}
             </p>
           )}
         </div>
@@ -124,7 +128,7 @@ function ClientsPage() {
             </LineReveal>
             <ScrubReveal as="p" hold className="mt-8 max-w-xl text-muted">
               No borrowed logos, no unnamed "global brands". Each organisation below is attached to
-              work that is live and publicly verifiable.
+              real work MaCo has delivered for them.
             </ScrubReveal>
           </div>
         </div>

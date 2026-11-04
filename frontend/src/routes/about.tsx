@@ -12,11 +12,11 @@ import { TeamGrid } from "@/components/about/team-grid";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About MaCo — How we build and maintain software" },
+      { title: "About MaCo | Software Company Based in Kochi, Kerala" },
       {
         name: "description",
         content:
-          "MaCo is a software and IT solutions company based in Kochi, Kerala. How we scope, model, build and hand over software.",
+          "MaCo is a software company based in Kochi, Kerala, working across India and the Middle East. Meet the team and see how we scope, build and hand over.",
       },
       { property: "og:title", content: "About — MaCo" },
       {
@@ -122,27 +122,21 @@ function AboutPage() {
         </div>
       </section>
 
-      <section data-ground="paper" aria-label="Contact MaCo">
-        <div className="shell grid gap-10 py-14 lg:grid-cols-12 lg:items-center lg:py-20">
-          <div className="lg:col-span-5">
+      <section data-ground="deep" aria-label="Contact MaCo">
+        <div className="shell py-16 lg:py-24">
+          <GlobeSection>
             <p className="label">Where we are</p>
             <p className="display-md mt-6">{site.location}</p>
             <p className="mt-6 max-w-xl text-muted">
               Working with clients in India and the Middle East across {services.length} service
-              lines.
+              lines. Kochi, Bangalore, Chennai, Qatar and Dubai are where MaCo works.
             </p>
             <Magnetic className="mt-8 inline-block">
               <Link to="/contact" className="btn-solid">
                 Contact MaCo <span aria-hidden="true">→</span>
               </Link>
             </Magnetic>
-          </div>
-          <div className="lg:col-span-7">
-            <GlobeSection
-              label="Operational hubs"
-              description="Kochi, Bangalore, Chennai, Qatar and Dubai — where MaCo works."
-            />
-          </div>
+          </GlobeSection>
         </div>
       </section>
     </>

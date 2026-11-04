@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
-  Link,
   createRootRouteWithContext,
   useRouter,
   HeadContent,
@@ -17,25 +16,22 @@ import { Header, Footer } from "@/components/chrome";
 import { EdgeNav } from "@/components/nav/edge-nav";
 import { Cursor } from "@/components/motion/cursor";
 import { Preloader } from "@/components/preloader";
+import { CommandMenu } from "@/components/command-menu";
+import { OffscreenAnimationGate } from "@/components/motion/offscreen-animation-gate";
+import { NotFoundSection } from "@/components/inner/not-found-section";
 import { ScrollRuntimeProvider } from "@/components/scroll-runtime-provider";
 import { skipToMain } from "@/lib/skip-to-main";
-import { site } from "@/content/maco";
+import { services, site } from "@/content/maco";
 import { SITE_URL, absoluteUrl, ORGANIZATION_ID, WEBSITE_ID } from "@/lib/seo";
 
 function NotFoundComponent() {
   return (
-    <div className="shell flex min-h-[70vh] flex-col justify-center py-24">
-      <p className="label">Error / 404</p>
-      <h1 className="display-hero mt-6">404</h1>
-      <p className="mt-6 max-w-md text-muted">
-        This route is not part of the MaCo system. It may have moved, or it never existed.
-      </p>
-      <div className="mt-10">
-        <Link to="/" className="btn-line">
-          Back to index <span aria-hidden="true">→</span>
-        </Link>
-      </div>
-    </div>
+    <NotFoundSection
+      label="404"
+      backTo="/"
+      backLabel="Back to index"
+      message="This route is not part of the MaCo system. It may have moved, or it never existed."
+    />
   );
 }
 
@@ -70,9 +66,9 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
-const SITE_TITLE = "MaCo — Software & IT solutions";
+const SITE_TITLE = "MaCo | Software Company in Kochi, Kerala";
 const SITE_DESCRIPTION =
-  "MaCo builds and maintains software that carries operational weight: client platforms, web development, app development and long-term support.";
+  "MaCo is a software company in Kochi, Kerala: custom software, CRM, task management, websites and e-commerce for businesses in India and the Middle East.";
 // Interim social-share image: the Bridge capture poster (1280x660, see
 // scripts/build-media.mjs) — not a purpose-built 1200x630 card. Flagged in
 // PROJECT_STATUS.md as a follow-up once real OG art exists. Absolute URL
@@ -92,12 +88,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: SITE_TITLE },
       { name: "description", content: SITE_DESCRIPTION },
       { name: "author", content: "MaCo" },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1" },
       { name: "theme-color", content: "#fafafa" },
       { property: "og:title", content: SITE_TITLE },
-      { property: "og:description", content: site.tagline },
+      { property: "og:description", content: SITE_DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: site.name },
-      { property: "og:locale", content: "en_US" },
+      { property: "og:locale", content: "en_IN" },
       { property: "og:url", content: SITE_URL },
       { property: "og:image", content: OG_IMAGE.url },
       { property: "og:image:width", content: String(OG_IMAGE.width) },
@@ -105,20 +102,39 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:image:alt", content: SITE_TITLE },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: SITE_TITLE },
-      { name: "twitter:description", content: site.tagline },
+      { name: "twitter:description", content: SITE_DESCRIPTION },
       { name: "twitter:image", content: OG_IMAGE.url },
       {
         "script:ld+json": {
           "@context": "https://schema.org",
-          "@type": "Organization",
+          "@type": "ProfessionalService",
           "@id": ORGANIZATION_ID,
           name: site.name,
           url: SITE_URL,
           logo: absoluteUrl("/logo-mark.png"),
+          image: OG_IMAGE.url,
           description: site.statement,
+          slogan: site.tagline,
           email: site.contact_email,
-          telephone: site.phones[0]?.number,
-          address: { "@type": "PostalAddress", addressLocality: site.location },
+          telephone: site.phones.find((p) => p.label === "India")?.number,
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: "Kochi",
+            addressRegion: "Kerala",
+            addressCountry: "IN",
+          },
+          areaServed: [
+            { "@type": "Country", name: "India" },
+            { "@type": "Country", name: "Qatar" },
+            { "@type": "Country", name: "United Arab Emirates" },
+          ],
+          contactPoint: site.phones.map((phone) => ({
+            "@type": "ContactPoint",
+            telephone: phone.number,
+            contactType: "sales",
+            areaServed: phone.label,
+          })),
+          knowsAbout: services.flatMap((s) => s.capabilities.map((c) => c.title)),
         },
       },
       {
@@ -144,7 +160,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         // on an in-session switch. Loading both sets here unconditionally
         // meant one was always wasted, render-blocking bytes.
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Unbounded:wght@200..900&family=Jost:ital,wght@0,100..900;1,100..900&family=Agdasima:wght@400;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Unbounded:wght@200..900&family=Jost:wght@100..900&family=Agdasima:wght@400;700&display=swap",
       },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
     ],
@@ -157,7 +173,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="obsidian" suppressHydrationWarning>
+    <html lang="en-IN" data-theme="obsidian" suppressHydrationWarning>
       <head>
         <HeadContent />
         {/* Runs before paint — reads the stored theme so Cobalt users never
@@ -250,6 +266,8 @@ function RootComponent() {
           <Cursor />
           <Header />
           <EdgeNav />
+          <CommandMenu />
+          <OffscreenAnimationGate />
           <main id="main" tabIndex={-1}>
             <Outlet />
           </main>

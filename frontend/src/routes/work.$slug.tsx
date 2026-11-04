@@ -1,13 +1,16 @@
 import type { CSSProperties } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getProject, getService, projects, type Project } from "@/content/maco";
-import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
+import { absoluteUrl, breadcrumbJsonLd, caseStudyJsonLd, socialImage } from "@/lib/seo";
 import { NotFoundSection } from "@/components/inner/not-found-section";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
 import { CaseStory } from "@/components/work/case-story";
 import { Stagger } from "@/components/motion/stagger";
 import { CardMedia } from "@/components/home/summary";
+import { CaseGallery } from "@/components/work/case-gallery";
+import { useLiveSite } from "@/hooks/use-live-site";
+import { UPCOMING_SITES } from "@/lib/upcoming-sites";
 
 export const Route = createFileRoute("/work/$slug")({
   loader: ({ params }) => {
@@ -29,6 +32,19 @@ export const Route = createFileRoute("/work/$slug")({
         { property: "og:title", content: p.seo_title },
         { property: "og:description", content: p.seo_description },
         { property: "og:url", content: absoluteUrl(path) },
+        { property: "og:type", content: "article" },
+        { name: "twitter:title", content: p.seo_title },
+        { name: "twitter:description", content: p.seo_description },
+        ...socialImage(p.media?.poster),
+        {
+          "script:ld+json": caseStudyJsonLd({
+            title: p.title,
+            description: p.seo_description,
+            path,
+            image: p.media?.poster,
+            sector: p.sector,
+          }),
+        },
         {
           "script:ld+json": breadcrumbJsonLd([
             { name: "Home", path: "/" },
@@ -49,6 +65,8 @@ export const Route = createFileRoute("/work/$slug")({
 function WorkDetail() {
   const { slug } = Route.useParams();
   const p = getProject(slug) as Project;
+  const upcomingUrl = useLiveSite(p.slug);
+  const siteUrl = p.external_url ?? upcomingUrl;
   const next = projects[
     (projects.findIndex((x) => x.slug === slug) + 1) % projects.length
   ] as Project;
@@ -62,7 +80,7 @@ function WorkDetail() {
   return (
     <>
       <section data-ground="paper" aria-label="Case study introduction" className="rule-b">
-        <div className="shell py-16 lg:py-24">
+        <div className="shell page-intro">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p className="label">Case study / {p.index}</p>
             <Link to="/work" className="link-draw text-sm text-muted hover:text-text">
@@ -72,19 +90,18 @@ function WorkDetail() {
           <LineReveal as="h1" className="display-hero mt-8 -ml-[0.04em]">
             {p.title}
           </LineReveal>
-          {/* `gallery` passed here (item 8) — only one project is ever on
-              this page, so unlike the /work index list this is a single
-              MorphSlider instance, not several competing for WebGL
-              contexts. Real captures only (`p.gallery`, content/maco.ts) —
-              never invented. */}
-          <CardMedia
-            media={p.media}
-            brand={p.brand}
-            gallery={p.gallery}
-            title={p.title}
-            aspect="16 / 9"
-            className="mt-10"
-          />
+          {/* Real captures only (`p.gallery`, content/maco.ts) — never invented. */}
+          {p.gallery && p.gallery.length > 1 ? (
+            <CaseGallery images={p.gallery} title={p.title} slug={p.slug} className="mt-10" />
+          ) : (
+            <CardMedia
+              media={p.media}
+              brand={p.brand}
+              title={p.title}
+              aspect="16 / 9"
+              className="mt-10"
+            />
+          )}
           <Stagger
             as="dl"
             className="mt-10 grid gap-px sm:grid-cols-2 lg:grid-cols-4"
@@ -96,7 +113,11 @@ function WorkDetail() {
               ["Client", p.client],
               ["Sector", p.sector],
               ["Type", "Client project"],
-              p.external_url ? ["Live", "Public"] : ["Delivered", "Print / brand piece"],
+              siteUrl
+                ? ["Live", "Public"]
+                : UPCOMING_SITES[p.slug]
+                  ? ["Website", "In final development"]
+                  : ["Delivered", "Print / brand piece"],
             ].map(([k, v], i) => (
               <div
                 key={k}
@@ -135,14 +156,9 @@ function WorkDetail() {
                 );
               })}
             </div>
-            {p.external_url && (
+            {siteUrl && (
               <Magnetic className="mt-8 inline-block">
-                <a
-                  href={p.external_url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="btn-solid"
-                >
+                <a href={siteUrl} target="_blank" rel="noreferrer noopener" className="btn-solid">
                   Visit {p.title} ↗
                 </a>
               </Magnetic>

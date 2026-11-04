@@ -4,6 +4,7 @@ import { site, services } from "@/content/maco";
 import { absoluteUrl, breadcrumbJsonLd } from "@/lib/seo";
 import { LineReveal } from "@/components/motion/line-reveal";
 import { Magnetic } from "@/components/motion/magnetic";
+import { ChoiceChips } from "@/components/motion/choice-chips";
 import { Stagger } from "@/components/motion/stagger";
 import { useSectionHandoff } from "@/hooks/use-section-handoff";
 import { PageOutro } from "@/components/inner/page-outro";
@@ -11,11 +12,11 @@ import { PageOutro } from "@/components/inner/page-outro";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact MaCo — Brief us on your project" },
+      { title: "Contact MaCo | Software Company in Kochi, Qatar & Dubai" },
       {
         name: "description",
         content:
-          "Send MaCo the problem, the constraint and the deadline. We reply with scope. Email info@maco.codes or use the enquiry form.",
+          "Start a software or website project with MaCo. Send the problem and the deadline, and we reply with scope. Email info@maco.codes or call India, Qatar or Dubai.",
       },
       { property: "og:title", content: "Contact — MaCo" },
       {
@@ -158,7 +159,6 @@ function ContactPage() {
 
   const field =
     "w-full border-b border-line bg-transparent py-3 text-base outline-none transition-colors placeholder:text-muted focus:border-text";
-  const select = `${field} appearance-none pr-6`;
 
   return (
     <>
@@ -284,66 +284,20 @@ function ContactPage() {
                     </span>
                     <input name="phone" autoComplete="tel" className={field} placeholder="+91" />
                   </label>
-                  <label className="stagger-item group block" style={{ "--i": 4 } as CSSProperties}>
-                    <span className="label transition-colors group-focus-within:text-text">
-                      Service interest
-                    </span>
-                    <span className="relative block">
-                      <select
-                        name="service_interest"
-                        className={select}
-                        style={{ color: "var(--text)" }}
-                        defaultValue=""
-                      >
-                        <option value="" style={{ background: "var(--surface)" }}>
-                          Select
-                        </option>
-                        {services.map((s) => (
-                          <option
-                            key={s.slug}
-                            value={s.slug}
-                            style={{ background: "var(--surface)" }}
-                          >
-                            {s.title}
-                          </option>
-                        ))}
-                      </select>
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-muted"
-                      >
-                        ▾
-                      </span>
-                    </span>
-                  </label>
-                  <label className="stagger-item group block" style={{ "--i": 5 } as CSSProperties}>
-                    <span className="label transition-colors group-focus-within:text-text">
-                      Budget range
-                    </span>
-                    <span className="relative block">
-                      <select
-                        name="budget_range"
-                        className={select}
-                        style={{ color: "var(--text)" }}
-                        defaultValue=""
-                      >
-                        <option value="" style={{ background: "var(--surface)" }}>
-                          Select
-                        </option>
-                        {budgets.map((b) => (
-                          <option key={b} value={b} style={{ background: "var(--surface)" }}>
-                            {b}
-                          </option>
-                        ))}
-                      </select>
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-muted"
-                      >
-                        ▾
-                      </span>
-                    </span>
-                  </label>
+                  <ChoiceChips
+                    legend="Service interest"
+                    name="service_interest"
+                    options={services.map((s) => ({ value: s.slug, label: s.title }))}
+                    className="stagger-item sm:col-span-2"
+                    style={{ "--i": 4 } as CSSProperties}
+                  />
+                  <ChoiceChips
+                    legend="Budget range"
+                    name="budget_range"
+                    options={budgets.map((b) => ({ value: b, label: b }))}
+                    className="stagger-item sm:col-span-2"
+                    style={{ "--i": 5 } as CSSProperties}
+                  />
                 </Stagger>
 
                 <label className="group mt-8 block">

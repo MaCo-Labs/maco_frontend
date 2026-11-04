@@ -93,11 +93,16 @@ export function ServiceExplorer() {
             </h2>
             <p className="service-explorer-description">{service.short_description}</p>
             <ul className="service-explorer-capabilities">
-              {service.capabilities.map((capability) => (
-                <li key={capability.title}>
+              {service.capabilities.map((capability, i) => (
+                <motion.li
+                  key={capability.title}
+                  initial={reduced ? false : { opacity: 0, x: -14 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.08 + i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                >
                   <h3>{capability.title}</h3>
                   <p>{capability.description}</p>
-                </li>
+                </motion.li>
               ))}
             </ul>
             <Link to="/services/$slug" params={{ slug: service.slug }} className="btn-line">
@@ -110,7 +115,12 @@ export function ServiceExplorer() {
               <span>{service.index} / 02</span>
             </div>
             <Link to={proof.to} params={{ slug: proof.slug }} className="service-evidence-link">
-              <div className="service-evidence-image">
+              <motion.div
+                className="service-evidence-image"
+                initial={reduced ? false : { clipPath: "inset(0% 100% 0% 0%)" }}
+                animate={{ clipPath: "inset(0% 0% 0% 0%)" }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <img
                   src={proof.image}
                   alt={
@@ -123,7 +133,7 @@ export function ServiceExplorer() {
                   loading="lazy"
                   decoding="async"
                 />
-              </div>
+              </motion.div>
               <div className="service-evidence-caption">
                 <div>
                   <strong>{proof.title}</strong>

@@ -1,0 +1,31 @@
+# MaCo
+
+> Software / IT solutions based in Kochi, Kerala, India. Software and IT solutions for products that need to work.
+
+MaCo builds and maintains software that carries real operational weight — client platforms, internal tooling and the systems people log into every working day.
+
+Contact: info@maco.codes
+
+## Services
+
+- [Business Software](https://www.maco.codes/services/business-software): Task management, CRM and custom software for the operational systems a team runs on.
+- [Digital Solutions](https://www.maco.codes/services/digital-solutions): Websites, e-commerce, branding and design, and social media management.
+
+## Client work
+
+- [Ananta Nethralaya](https://www.maco.codes/work/ananta-nethralaya): Website for an eye clinic.
+- [Al Afzah](https://www.maco.codes/work/al-afzah): Website for a Qatar-based construction company.
+- [Soorath Autos](https://www.maco.codes/work/soorath-autos): Website for a pre-owned car showroom.
+- [HeadGreen](https://www.maco.codes/work/headgreen): Website for a corporate EV fleet cab service based in Kochi, Kerala.
+- [Ozone](https://www.maco.codes/work/ozone): A corporate website, in final development, and a 16-page brochure for a fit-out and contracting company in Qatar.
+
+## Products
+
+- [Driver's Diary](https://www.maco.codes/products/drivers-diary): Management, attendance, rides, payroll, documentation and reporting for HeadGreen operations.
+- [Bridge](https://www.maco.codes/products/bridge): Projects, tasks, team conversations and service maintenance in one connected workspace.
+
+## Company
+
+- [About](https://www.maco.codes/about)
+- [Clients](https://www.maco.codes/clients)
+- [Contact](https://www.maco.codes/contact)

@@ -1,4 +1,6 @@
-import type { CSSProperties } from "react";
+import { useRef, type CSSProperties } from "react";
+import { useScrollScene } from "@/hooks/use-scroll-scene";
+import { useLiveSite } from "@/hooks/use-live-site";
 import { clients, type Client } from "@/content/maco";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 
@@ -33,6 +35,48 @@ import { ScrubReveal } from "@/components/motion/scrub-reveal";
  */
 export function LogoReel() {
   const track = [...clients, ...clients];
+  const reelRef = useRef<HTMLUListElement>(null);
+
+  // The reel answers the scroll: it speeds up with velocity, runs backwards on
+  // an upward scroll, then eases back to its drift. Drives the CSS animation's
+  // own playback rate, so hover-pause and the reduced-motion stop still apply.
+  useScrollScene((rt) => {
+    const reel = reelRef.current;
+    const drift = reel?.getAnimations()[0];
+    if (!reel || !drift) return;
+    let rate = 1;
+    let target = 1;
+    let onScreen = false;
+    const onScroll = ({ velocity }: { velocity: number }) => {
+      if (!velocity) return;
+      target = Math.sign(velocity) * Math.min(1 + Math.abs(velocity) * 0.35, 7);
+    };
+    const tick = () => {
+      if (!onScreen) return;
+      // Back to a forward drift once the scroll stops.
+      target += (1 - target) * 0.05;
+      rate += (target - rate) * 0.12;
+      drift.playbackRate = rate;
+      reel.style.setProperty(
+        "--reel-lean",
+        (Math.max(-1, Math.min(1, (rate - 1) / 6)) * -4).toFixed(2) + "deg",
+      );
+    };
+    rt.ScrollTrigger.create({
+      trigger: reel,
+      start: "top bottom",
+      end: "bottom top",
+      onToggle: (self) => {
+        onScreen = self.isActive;
+      },
+    });
+    rt.lenis.on("scroll", onScroll);
+    rt.gsap.ticker.add(tick);
+    return () => {
+      rt.lenis.off("scroll", onScroll);
+      rt.gsap.ticker.remove(tick);
+    };
+  }, []);
 
   return (
     <section data-ground="paper" aria-label="Who we work with">
@@ -47,7 +91,11 @@ export function LogoReel() {
         </div>
 
         <div className="cb-reel-mask mt-10 overflow-x-hidden py-2 md:mt-14">
-          <ul className="cb-reel" style={{ "--reel-n": clients.length } as CSSProperties}>
+          <ul
+            ref={reelRef}
+            className="cb-reel"
+            style={{ "--reel-n": clients.length } as CSSProperties}
+          >
             {track.map((client, i) => (
               <li key={i} aria-hidden={i >= clients.length ? "true" : undefined}>
                 <LogoCard client={client} interactive={i < clients.length} />
@@ -61,6 +109,8 @@ export function LogoReel() {
 }
 
 function LogoCard({ client, interactive }: { client: Client; interactive: boolean }) {
+  const upcomingUrl = useLiveSite(client.slug);
+  const website = client.website ?? upcomingUrl;
   const inner = (
     <div className="flex flex-col items-center gap-3">
       {client.brand ? (
@@ -94,7 +144,8 @@ function LogoCard({ client, interactive }: { client: Client; interactive: boolea
   // The duplicated half is inert: not a link, not focusable, not in the
   // accessibility tree — it exists purely so the translate loop has
   // something to show while the first half wraps around.
-  if (!interactive) {
+  // Also inert for a client whose site hasn't launched: logo only, no dead link.
+  if (!interactive || !website) {
     return (
       <div className={className} style={style}>
         {inner}
@@ -103,13 +154,7 @@ function LogoCard({ client, interactive }: { client: Client; interactive: boolea
   }
 
   return (
-    <a
-      href={client.website}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={className}
-      style={style}
-    >
+    <a href={website} target="_blank" rel="noopener noreferrer" className={className} style={style}>
       {inner}
     </a>
   );

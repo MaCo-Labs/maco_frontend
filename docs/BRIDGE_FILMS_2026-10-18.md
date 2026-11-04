@@ -50,3 +50,7 @@ the source posters, and the website's existing product content.
 See the 2026-10-18 entries in `PROJECT_STATUS.md` and `AI_HANDOFF.md` for final
 checks and release state. Browser output and screenshots are local ignored QA
 artifacts under `frontend/.playwright-mcp/`.
+
+## Added 2026-11-05: AMC reel
+
+`public/media/bridge/amc-reel.mp4` comes from `D:\TaskFlow\promo-production\bridge-amc-reel-20261025\bridge-amc-reel-voice-heart.mp4`, 55s, re-encoded to 720×1280 H.264 CRF 25 with 112k AAC. Its asset ledger lists the music as original and the voice as Kokoro-82M (Apache-2.0). On-screen clients, people and figures are fictional.

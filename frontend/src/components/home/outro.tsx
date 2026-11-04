@@ -5,6 +5,7 @@ import { LineReveal } from "@/components/motion/line-reveal";
 import { ScrubReveal } from "@/components/motion/scrub-reveal";
 import { RuleDraw } from "@/components/motion/rule-draw";
 import { Magnetic } from "@/components/motion/magnetic";
+import { ParticleMark } from "@/components/inner/particle-mark";
 import { ArrowGlyph } from "@/components/motion/arrow-glyph";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
 
@@ -81,6 +82,7 @@ export function Outro() {
           </div>
 
           <div className="md:pt-16">
+            <ParticleMark className="mb-8 h-44 md:h-56" />
             <ScrubReveal as="p" hold className="lead max-w-lg">
               Tell us what has to work. We reply from {site.contact_email}.
             </ScrubReveal>

@@ -13,21 +13,30 @@ import { GroundHandoff } from "@/components/home/ground-handoff";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MaCo — Software & IT solutions for products that need to work" },
+      { title: "Software Company in Kochi, Kerala | Custom Software — MaCo" },
       {
         name: "description",
         content:
-          "MaCo is a software and IT solutions company. Web and app development, technical and software support, Bridge, our connected workspace, and Driver's Diary for HeadGreen.",
+          "MaCo is a software company in Kochi, Kerala: custom software, CRM, task management, websites and e-commerce, for businesses in India and the Middle East.",
       },
-      { property: "og:title", content: "MaCo — Software & IT solutions" },
+      { property: "og:title", content: "Software Company in Kochi, Kerala | MaCo" },
       {
         property: "og:description",
         content:
-          "Client platforms, operational software and long-term support. Selected work: Ananta Nethralaya, Al Afzah, Soorath Autos, HeadGreen.",
+          "Custom software, websites and long-term support. Work includes Ananta Nethralaya, Al Afzah, Soorath Autos and HeadGreen, plus our own product, Bridge.",
       },
       { property: "og:url", content: SITE_URL },
     ],
-    links: [{ rel: "canonical", href: SITE_URL }],
+    links: [
+      { rel: "canonical", href: SITE_URL },
+      // The hero's first screen, usually the page's LCP element.
+      {
+        rel: "preload",
+        as: "image",
+        href: "/media/work/ananta-nethralaya/1.webp",
+        fetchPriority: "high",
+      },
+    ],
   }),
   component: Home,
 });

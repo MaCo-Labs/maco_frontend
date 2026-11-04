@@ -34,3 +34,33 @@ export function breadcrumbJsonLd(crumbs: Crumb[]) {
     })),
   };
 }
+
+/** A case study as a schema.org CreativeWork made by MaCo. */
+export function caseStudyJsonLd(p: {
+  title: string;
+  description: string;
+  path: string;
+  image?: string | undefined;
+  sector: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: `${p.title} case study`,
+    description: p.description,
+    url: absoluteUrl(p.path),
+    about: p.sector,
+    creator: { "@id": ORGANIZATION_ID },
+    ...(p.image ? { image: absoluteUrl(p.image) } : {}),
+  };
+}
+
+/** og:image and twitter:image together, for pages with their own real picture. */
+export function socialImage(path: string | undefined) {
+  if (!path) return [];
+  const url = absoluteUrl(path);
+  return [
+    { property: "og:image", content: url },
+    { name: "twitter:image", content: url },
+  ];
+}

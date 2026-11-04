@@ -4,8 +4,24 @@
     {
       "name": "frontend-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "frontend"
+      ],
       "port": 3000
+    },
+    {
+      "name": "frontend-prod",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "frontend/.output/server/index.mjs"
+      ],
+      "port": 3100,
+      "env": {
+        "PORT": "3100"
+      }
     }
   ]
 }

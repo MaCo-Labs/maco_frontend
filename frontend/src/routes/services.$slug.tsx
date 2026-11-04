@@ -68,6 +68,8 @@ export const Route = createFileRoute("/services/$slug")({
         { property: "og:title", content: s.seo_title },
         { property: "og:description", content: s.seo_description },
         { property: "og:url", content: absoluteUrl(path) },
+        { name: "twitter:title", content: s.seo_title },
+        { name: "twitter:description", content: s.seo_description },
         {
           "script:ld+json": breadcrumbJsonLd([
             { name: "Home", path: "/" },
