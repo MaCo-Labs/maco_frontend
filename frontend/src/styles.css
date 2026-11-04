@@ -262,12 +262,80 @@ html[data-ground-now="deep"] body {
    attribute before hydration (reduced motion, or already shown once this
    session), so the loader is hidden from the very first paint rather than
    flashing then disappearing once React's own mount-time check catches up. */
+.maco-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  background: var(--bg-paper);
+  color: var(--text-paper);
+  /* Reveals the page even if JS never arrives to run the exit. */
+  animation: preloader-failsafe 0.4s 6s forwards;
+}
+/* Opposite of the first section, so the curved edge always reads. */
+html[data-ground-now="paper"] .maco-preloader {
+  background: var(--surface-inverted);
+  color: var(--text-inverted);
+}
 html[data-preload="skip"] .maco-preloader {
   display: none;
 }
-
-.preloader-skip:hover {
-  color: var(--text-inverted);
+.maco-preloader-words {
+  display: grid;
+  place-items: center;
+}
+/* Each word is on screen for one 170ms slot (FIRST_MS/STEP_MS, preloader.tsx).
+   Opacity only, so this keeps running on the compositor during hydration. */
+.maco-preloader-word {
+  grid-area: 1 / 1;
+  padding-inline: 1.5rem;
+  font-family: var(--maco-font-display), var(--font-script-fallback);
+  font-size: clamp(1.75rem, 4.2vw, 3.25rem);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  animation: preloader-word 170ms linear var(--start);
+}
+.maco-preloader-word:first-child {
+  animation: preloader-word-first 480ms ease;
+}
+.maco-preloader-word:last-child {
+  animation-fill-mode: forwards;
+}
+@keyframes preloader-word {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+@keyframes preloader-word-first {
+  from {
+    opacity: 0;
+  }
+  50%,
+  to {
+    opacity: 1;
+  }
+}
+/* Hangs below the panel: the corners clear first, then scaleY flattens it. */
+.maco-preloader-curve {
+  position: absolute;
+  top: calc(100% - 1px);
+  left: -10%;
+  width: 120%;
+  height: 22vh;
+  background: inherit;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  transform-origin: top;
+}
+@keyframes preloader-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
 }
 
 /* Item 2 — MobilePillNav hides during active scroll (chrome.tsx's shared

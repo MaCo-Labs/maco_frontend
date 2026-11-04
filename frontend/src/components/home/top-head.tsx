@@ -145,7 +145,8 @@ export function TopHead() {
         0.45,
       );
     if (preloader) {
-      const play = () => tl.play();
+      // A beat after the event: the panel's lift starts slowly.
+      const play = () => gsap.delayedCall(0.3, () => tl.play());
       window.addEventListener("maco:entered", play, { once: true });
     }
   }, []);

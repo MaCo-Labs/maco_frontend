@@ -1,5 +1,11 @@
 # MaCo Website — Roadmap
 
+## Preloader — 2026-11-05
+
+`components/preloader.tsx` replaces the logo-and-Enter-button intro, following an owner-supplied screen recording. Once per session: hello in MaCo's markets (English, Arabic, Hindi, Tamil, Kannada, Telugu, ending on Malayalam for Kochi), then the panel lifts away on a curved edge that flattens as it leaves. About 1.9s of words plus a 0.85s lift. The words are a CSS opacity sequence from first paint, so they don't wait on hydration or the network; JS only triggers the lift. Any click or key skips it; there is no visible Skip button. The panel takes the opposite ground of the page beneath it through `html[data-ground-now]`, and a CSS failsafe clears it after 6s if JavaScript never runs. Skipped entirely under reduced motion. `maco:entered` still fires at the start of the lift, and the hero entrance follows 0.3s later.
+
+---
+
 ## Ozone site and Bridge AMC reel — 2026-11-05
 
 Released to `main` and `prod` together with the 2026-11-04 pass below.
