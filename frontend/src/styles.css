@@ -42,17 +42,11 @@
    pseudo-element inherits from its originating element like any other
    descendant.
      --r     ScrubReveal progress            1 = fully revealed   (self)
-     --t     IDENTITY's dial position        0 = first script centred (inherited — each script reads the track's --t)
      --sweep light-pass band position        0.5 = centred, not moving (inherited — .light-pass::after reads its own element's --sweep) */
 @property --r {
   syntax: "<number>";
   inherits: false;
   initial-value: 1;
-}
-@property --t {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
 }
 @property --sweep {
   syntax: "<number>";
@@ -876,27 +870,6 @@ html::-webkit-scrollbar-thumb {
   transform: scaleY(var(--r));
 }
 
-/* IDENTITY's dial — backs components/home/identity.tsx. --t is set on the
-   track and inherited (see the --t registration above); --i is each
-   script's own fixed index, set inline. --d is signed (no wrap: a
-   SCRUBBED dial never needs the circular-distance trick a timer-driven
-   one did); --ad is its absolute value via max(x,-x), not abs() (see the
-   note on rule-draw-x's sibling usage in work-sequence.tsx for why). */
-@utility identity-script {
-  /* The pointer term nudges the dial up to +-0.25 of a step around
-     wherever scroll parked it — (--px - 0.5) ranges -0.5..0.5, so *0.5
-     caps the nudge at +-0.25. --px is unset (0.5 fallback, zero nudge)
-     under a coarse pointer or before the pointer has moved, so this is a
-     pure addition to the scroll-driven position, never a replacement
-     for it. */
-  --d: calc(var(--i, 0) - var(--t, 0) - ((var(--px, 0.5) - 0.5) * 0.5));
-  --ad: max(var(--d), calc(-1 * var(--d)));
-  transform: translate3d(calc(var(--d) * 100%), -50%, 0)
-    scale(calc(1 - min(0.55, var(--ad) * 0.34)));
-  opacity: clamp(0, calc(1 - var(--ad) * 0.5), 1);
-  will-change: transform, opacity;
-}
-
 /* Reveal math identical in shape to MethodLine's original hand-written
    band logic — see components/motion/stagger.tsx's doc comment. */
 @utility stagger-item {
@@ -1498,9 +1471,13 @@ html[data-theme="cobalt"] .footer-giant-mark {
    `--accent` — same reasoning as `.hero-backlight` below: `--accent`
    remaps to near-white on deep ground for both themes, `--focus` keeps
    each theme's own hue, so the ground/theme remap recolors this for free. */
+/* Overscan, so the drift below never exposes the layer's edge. */
+section:has(> .ambient-field) {
+  overflow: clip;
+}
 @utility ambient-field {
   position: absolute;
-  inset: 0;
+  inset: -8%;
   border-radius: inherit;
   pointer-events: none;
   background-image:
@@ -3195,4 +3172,140 @@ header.chrome-adaptive {
 /* OffscreenAnimationGate: endless loops don't run for nobody. */
 [data-offscreen] {
   animation-play-state: paused !important;
+}
+
+/* ============================================================
+   IDENTITY — the name in dots (components/home/identity.tsx)
+   ============================================================ */
+.identity-inner {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  padding-block: 4rem 6rem;
+}
+.identity-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.identity-now {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.identity-now-lang {
+  color: var(--text);
+  animation: identity-lang-in 450ms var(--ease-emphasis);
+}
+@keyframes identity-lang-in {
+  from {
+    opacity: 0;
+    translate: 0 0.5rem;
+  }
+}
+.identity-stage {
+  position: relative;
+  height: clamp(10rem, 52vw, 16rem);
+  display: grid;
+  place-items: center;
+  touch-action: pan-y;
+}
+.identity-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 500ms ease;
+}
+.identity-stage[data-ready] .identity-canvas {
+  opacity: 1;
+}
+.identity-static {
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 18vw, 11rem);
+  line-height: 1;
+  color: var(--text);
+  transition: opacity 400ms ease;
+}
+.identity-stage[data-ready] .identity-static {
+  opacity: 0;
+}
+.identity-foot {
+  display: grid;
+  gap: 1.25rem;
+}
+.identity-lead {
+  max-width: 28rem;
+}
+.identity-rail {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+.identity-rail-item {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding-block: 1.1rem 0.4rem;
+  text-align: left;
+  cursor: pointer;
+  color: var(--muted);
+  transition: color 250ms ease;
+}
+.identity-rail-bar {
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--text) 16%, transparent);
+  transition: background-color 300ms ease;
+}
+.identity-rail-item[aria-current] {
+  color: var(--text);
+}
+.identity-rail-item[aria-current] .identity-rail-bar {
+  background: var(--text);
+}
+.identity-rail-name {
+  display: none;
+  margin-top: 0.55rem;
+  font-size: 0.8rem;
+}
+.identity-rail-item:hover {
+  color: var(--text);
+}
+.identity-rail-item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+@media (min-width: 64rem) {
+  .identity-inner {
+    min-height: 100svh;
+    /* 5rem: the next section's rounded sheet overlaps the last 3rem. */
+    padding-block: 7rem 5rem;
+    gap: 1rem;
+  }
+  .identity-stage {
+    height: auto;
+    min-height: 16rem;
+  }
+  .identity-foot {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+    align-items: end;
+    gap: 3rem;
+  }
+  .identity-rail-name {
+    display: block;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .identity-now-lang {
+    animation: none;
+  }
 }

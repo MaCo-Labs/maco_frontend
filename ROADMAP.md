@@ -1,5 +1,11 @@
 # MaCo Website — Roadmap
 
+## Identity section — 2026-11-05
+
+`components/home/identity.tsx` replaces the sideways script dial with MaCo's name drawn in dots, flowing from one script to the next, the same dot language as `ParticleMark` and the hub globe. Each frame is a pure function of the dial position, so scrolling back retraces it exactly; it sleeps when still. Desktop pins for `+=200%` and scroll is the dial. Phones don't pin: the dial advances every 2.4s while on screen and pauses offscreen. A rail jumps to any script. Reduced motion is a still word that the rail switches instantly. Real text sits under the canvas for SSR and no-JS, and an sr-only list carries each script with its `lang`. No library or code was copied; the idea draws on Bencho's particle and heat-map blocks, Skiper's letter reels and Framer particle-word components. Noto faces arrive late per script, so words resample when they load. `.ambient-field` now overscans by 8% with its section clipping it, and `--t` is gone.
+
+---
+
 ## Preloader — 2026-11-05
 
 `components/preloader.tsx` replaces the logo-and-Enter-button intro, following an owner-supplied screen recording. Once per session: hello in MaCo's markets (English, Arabic, Hindi, Tamil, Kannada, Telugu, ending on Malayalam for Kochi), then the panel lifts away on a curved edge that flattens as it leaves. About 1.9s of words plus a 0.85s lift. The words are a CSS opacity sequence from first paint, so they don't wait on hydration or the network; JS only triggers the lift. Any click or key skips it; there is no visible Skip button. The panel takes the opposite ground of the page beneath it through `html[data-ground-now]`, and a CSS failsafe clears it after 6s if JavaScript never runs. Skipped entirely under reduced motion. `maco:entered` still fires at the start of the lift, and the hero entrance follows 0.3s later.

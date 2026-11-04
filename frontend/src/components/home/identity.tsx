@@ -1,167 +1,425 @@
-import { useRef, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { nameScripts } from "@/content/maco";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useScriptFontsWhenVisible } from "@/hooks/use-script-fonts";
 import { useScrollScene } from "@/hooks/use-scroll-scene";
-import { usePointerField } from "@/hooks/use-pointer-field";
+import type { ScrollRuntime } from "@/lib/scroll-runtime";
+import { clamp01, smootherstep } from "@/lib/motion";
 
-/**
- * IDENTITY — "One name. Many scripts." Scroll IS the dial: each script's
- * position is `--i - --t`, where `--i` is the script's own fixed index
- * (set once, inline) and `--t` is the track's current dial position,
- * written by one pinned ScrollTrigger and inherited down to every span —
- * pure CSS `calc()`, zero React re-render per frame, zero DOM measurement.
- *
- * This replaces a `setInterval`-driven reel (motion/react springs, a
- * WCAG 2.2.2 pause control for the auto-advance, and 13 items' worth of
- * animated `filter: blur()`) with a genuinely scroll-linked one:
- *  - Scroll-driven motion the user starts by scrolling isn't "automatic"
- *    in the WCAG 2.2.2 sense, so the pause control is gone — same as
- *    every other pinned section on the page (EVIDENCE, WORK, METHOD),
- *    none of which have one either.
- *  - `filter: blur()` is gone — it's an animated-blur, which the site's
- *    motion rules disallow (transform/opacity only); depth here comes
- *    from `scale` + `opacity` alone.
- *  - The signed circular-distance dance (13 items wrapping 12 -> 0) that
- *    the old timer-driven reel needed is gone with it: a SCRUBBED dial
- *    never wraps, `--d` is plain `i - t`, so there's no seam to manage.
- *  - Ownership becomes correct: `motion` no longer touches this section
- *    at all — it was the one place on the page where discrete-UI-only
- *    `motion` was driving something scroll-adjacent, which the site's own
- *    ownership rule (Lenis: position, GSAP: scroll-linked, motion:
- *    discrete UI) argues against.
- *
- * Reduced motion needs no special branch: `--t` (styles.css) is a
- * registered custom property with `initial-value: 0`, so with no
- * ScrollTrigger ever created, every span's `calc()` resolves exactly as
- * if `--t` were 0 — English centred, neighbours dimmed either side. That
- * IS the composed at-rest state, not a frozen frame of an animation.
- *
- * The script list itself lives in content/maco.ts (`nameScripts`) — the
- * footer's compact strip (chrome.tsx) reads the same array, so the two
- * can't drift apart the way they had before.
- */
 const SCRIPTS = nameScripts;
 const N = SCRIPTS.length;
+const REACH = 90;
+/** Phones have no pin to scroll through, so the dial runs on its own in view. */
+const AUTO_HOLD_MS = 2400;
+const HOLD_AFTER_TAP_MS = 7000;
 
+type Word = { x: Float32Array; y: Float32Array };
+
+/** Dot positions for one word, ordered left to right so morphs flow, not tangle. */
+function sampleWord(
+  script: (typeof SCRIPTS)[number],
+  font: string,
+  W: number,
+  H: number,
+  step: number,
+): [number, number][] {
+  const off = document.createElement("canvas");
+  off.width = W;
+  off.height = H;
+  const cx = off.getContext("2d", { willReadFrequently: true })!;
+  cx.textAlign = "center";
+  cx.textBaseline = "middle";
+  cx.direction = script.dir ?? "ltr";
+  // Every script is fitted to the same box, so none reads smaller than another.
+  cx.font = `600 200px ${font}`;
+  const m = cx.measureText(script.text);
+  const inkH = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent || 200;
+  const size = Math.min(200 * ((W * 0.92) / m.width), 200 * ((H * 0.86) / inkH));
+  cx.font = `600 ${size}px ${font}`;
+  const ink = cx.measureText(script.text);
+  const mid = (ink.actualBoundingBoxAscent - ink.actualBoundingBoxDescent) / 2;
+  cx.fillText(script.text, W / 2, H / 2 + mid);
+  const { data } = cx.getImageData(0, 0, W, H);
+  const points: [number, number][] = [];
+  for (let x = 0; x < W; x += step)
+    for (let y = 0; y < H; y += step) if (data[(y * W + x) * 4 + 3]! > 110) points.push([x, y]);
+  return points;
+}
+
+/** Every word resampled to the same dot count, so any two can morph. */
+function toWord(points: [number, number][], count: number): Word {
+  const x = new Float32Array(count);
+  const y = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    const p = points[Math.floor((i * points.length) / count)] ?? [0, 0];
+    x[i] = p[0];
+    y[i] = p[1];
+  }
+  return { x, y };
+}
+
+/**
+ * IDENTITY — "One name. Many scripts." MaCo's name drawn in dots, the same
+ * language as the logo mark and the hub globe, flowing from one script into the
+ * next. Each frame is a pure function of the dial position, so scrolling back
+ * retraces it exactly and nothing simulates while it's still.
+ *
+ * Desktop pins and scroll is the dial. Phones don't pin: the dial advances by
+ * itself while the section is on screen, and the rail below jumps to any script.
+ * Under reduced motion it's a still word that the rail switches instantly. The
+ * real text sits underneath until the dots are ready, for SSR and no-JS.
+ */
 export function Identity() {
-  // Pointer field on the SECTION (not the track) so --px/--py inherit down
-  // to identity-script's calc() in styles.css without competing with --t,
-  // which the pin below still writes on trackRef alone. Bails under a
-  // coarse pointer and rests at 0.5/0.5, same as everywhere else this
-  // hook is used — a touch scroll gets the dial exactly as before.
-  const sectionRef = usePointerField<HTMLElement>();
-  const trackRef = useRef<HTMLDivElement | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const scriptFontsRef = useScriptFontsWhenVisible<HTMLDivElement>();
+  const reduced = useReducedMotion();
+  const [active, setActive] = useState(0);
+  const [ready, setReady] = useState(false);
+  const dial = useRef({ t: 0, target: 0, wake: () => {}, holdUntil: 0 });
+  const triggerRef = useRef<{ start: number; end: number } | null>(null);
+  const runtimeRef = useRef<ScrollRuntime | null>(null);
 
   useScrollScene((rt) => {
     const section = sectionRef.current;
-    const track = trackRef.current;
-    if (!section || !track) return;
-
-    // gsap.matchMedia over useMediaQuery: created/reverted by GSAP itself
-    // and measured together with every other trigger on the page, which
-    // is what avoids the SSR-false-then-true-in-an-effect mount-order
-    // race useMediaQuery has (the documented cause of a past bug where
-    // METHOD's pin fired before WORK's spacer existed).
+    if (!section) return;
+    runtimeRef.current = rt;
     const mm = rt.gsap.matchMedia();
     mm.add("(min-width: 1024px)", () => {
       const trigger = rt.ScrollTrigger.create({
         trigger: section,
         start: "top top",
-        end: "+=90%",
+        end: "+=200%",
         pin: true,
         anticipatePin: 1,
         scrub: 0.25,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
-          track.style.setProperty("--t", String(self.progress * (N - 1)));
+          dial.current.target = self.progress * (N - 1);
+          dial.current.t = dial.current.target;
+          dial.current.wake();
         },
       });
+      triggerRef.current = trigger;
       return () => {
         trigger.kill();
-        track.style.removeProperty("--t");
-      };
-    });
-    mm.add("(max-width: 1023px)", () => {
-      const trigger = rt.ScrollTrigger.create({
-        trigger: section,
-        start: "top bottom",
-        end: "bottom top",
-        scrub: 0.25,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => track.style.setProperty("--t", String(self.progress * (N - 1))),
-      });
-      return () => {
-        trigger.kill();
-        track.style.removeProperty("--t");
+        triggerRef.current = null;
       };
     });
   }, []);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const stage = stageRef.current;
+    const cx = canvas?.getContext("2d");
+    if (!canvas || !stage || !cx) return;
+
+    let words: Word[] = [];
+    let count = 0;
+    let lift = new Float32Array(0);
+    let lag = new Float32Array(0);
+    let W = 0;
+    let H = 0;
+    let dot = 1.5;
+    let frame = 0;
+    let inView = false;
+    let last = performance.now();
+    let lastAuto = last;
+    let pointerX = -9999;
+    let pointerY = -9999;
+    let smoothX = -9999;
+    let smoothY = -9999;
+    let shownIndex = -1;
+    let built = false;
+    let colorText = "";
+    let colorMuted = "";
+    const state = dial.current;
+
+    const readColors = () => {
+      const s = getComputedStyle(stage);
+      colorText = s.getPropertyValue("--text");
+      colorMuted = s.getPropertyValue("--muted");
+    };
+
+    const fontStack = () => {
+      const s = getComputedStyle(stage);
+      return `${s.getPropertyValue("--maco-font-display")}, ${s.getPropertyValue("--font-script-fallback")}`;
+    };
+
+    function build() {
+      W = stage!.clientWidth;
+      H = stage!.clientHeight;
+      if (!W || !H) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas!.width = W * dpr;
+      canvas!.height = H * dpr;
+      cx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const font = fontStack();
+      const cap = W < 640 ? 2600 : 5200;
+      let step = W < 640 ? 3 : 4;
+      let sampled = SCRIPTS.map((s) => sampleWord(s, font, W, H, step));
+      const densest = Math.max(...sampled.map((p) => p.length));
+      // Widen the grid rather than thin the dots: skipping points out of a
+      // regular grid shows up as banding across the letters.
+      if (densest > cap) {
+        step = Math.ceil(step * Math.sqrt(densest / cap));
+        sampled = SCRIPTS.map((s) => sampleWord(s, font, W, H, step));
+      }
+      dot = step * 0.4;
+      count = Math.max(...sampled.map((p) => p.length));
+      words = sampled.map((p) => toWord(p, count));
+      lift = new Float32Array(count);
+      lag = new Float32Array(count);
+      for (let i = 0; i < count; i++) {
+        lift[i] = (Math.random() - 0.5) * H * 0.55;
+        lag[i] = Math.random() * 0.25 + (i / count) * 0.75;
+      }
+      built = true;
+      readColors();
+      setReady(true);
+      wake();
+    }
+
+    function draw() {
+      cx!.clearRect(0, 0, W, H);
+      const t = state.t;
+      const whole = Math.floor(t);
+      const from = words[whole % N];
+      const to = words[(whole + 1) % N];
+      if (!from || !to) return;
+      // Each word rests through part of its slot, so it can actually be read.
+      const local = smootherstep(clamp01((t - whole - 0.22) / 0.56));
+      const moving = local > 0 && local < 1;
+      cx!.fillStyle = colorText;
+      cx!.beginPath();
+      const travelling: number[] = [];
+      for (let i = 0; i < count; i++) {
+        const p = moving ? clamp01(local * 1.6 - lag[i]! * 0.6) : local;
+        const e = p * p * (3 - 2 * p);
+        let x = from.x[i]! + (to.x[i]! - from.x[i]!) * e;
+        let y = from.y[i]! + (to.y[i]! - from.y[i]!) * e + Math.sin(e * Math.PI) * lift[i]!;
+        const dx = x - smoothX;
+        const dy = y - smoothY;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < REACH * REACH) {
+          const d = Math.sqrt(d2) || 1;
+          const push = (1 - d / REACH) * (1 - d / REACH) * 46;
+          x += (dx / d) * push;
+          y += (dy / d) * push;
+        }
+        if (p > 0.04 && p < 0.96) {
+          travelling.push(x, y);
+          continue;
+        }
+        cx!.moveTo(x + dot, y);
+        cx!.arc(x, y, dot, 0, Math.PI * 2);
+      }
+      cx!.fill();
+      if (travelling.length) {
+        cx!.fillStyle = colorMuted;
+        cx!.beginPath();
+        for (let i = 0; i < travelling.length; i += 2) {
+          const x = travelling[i]!;
+          const y = travelling[i + 1]!;
+          cx!.moveTo(x + dot * 0.8, y);
+          cx!.arc(x, y, dot * 0.8, 0, Math.PI * 2);
+        }
+        cx!.fill();
+      }
+    }
+
+    function tick(now: number) {
+      frame = 0;
+      if (!inView || !built) return;
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      const pinned = triggerRef.current !== null;
+      let busy = false;
+
+      if (!pinned && !reduced && now > state.holdUntil && now - lastAuto > AUTO_HOLD_MS) {
+        lastAuto = now;
+        state.target = Math.round(state.target) + 1;
+      }
+      if (!pinned) {
+        const gap = state.target - state.t;
+        if (reduced || Math.abs(gap) < 0.002) state.t = state.target;
+        else {
+          state.t += gap * (1 - Math.exp(-dt * 2.2));
+          busy = true;
+        }
+      }
+      const hasPointer = pointerX > -9000;
+      if (hasPointer || smoothX > -9000) {
+        smoothX = smoothX < -9000 ? pointerX : smoothX + (pointerX - smoothX) * 0.18;
+        smoothY = smoothY < -9000 ? pointerY : smoothY + (pointerY - smoothY) * 0.18;
+        busy = hasPointer;
+        if (!hasPointer) smoothX = smoothY = -9999;
+      }
+
+      draw();
+      const index = ((Math.round(state.t) % N) + N) % N;
+      if (index !== shownIndex) {
+        shownIndex = index;
+        setActive(index);
+      }
+      // Phones keep ticking for the next auto step; a still pinned dial sleeps.
+      if (busy || (!pinned && !reduced)) frame = requestAnimationFrame(tick);
+    }
+
+    function wake() {
+      if (!frame && inView && !document.hidden) {
+        last = performance.now();
+        frame = requestAnimationFrame(tick);
+      }
+    }
+    state.wake = wake;
+
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      const r = stage.getBoundingClientRect();
+      pointerX = e.clientX - r.left;
+      pointerY = e.clientY - r.top;
+      wake();
+    };
+    const onLeave = () => {
+      pointerX = pointerY = -9999;
+      wake();
+    };
+    stage.addEventListener("pointermove", onMove);
+    stage.addEventListener("pointerleave", onLeave);
+
+    // Noto faces arrive late, per script: resample when they do, or the first
+    // sample's fallback glyphs stay forever.
+    let rebuild = 0;
+    const scheduleBuild = () => {
+      cancelAnimationFrame(rebuild);
+      rebuild = requestAnimationFrame(build);
+    };
+    const loadFonts = () => {
+      const font = fontStack();
+      void Promise.allSettled(
+        SCRIPTS.map((s) => document.fonts.load(`600 40px ${font}`, s.text)),
+      ).then(scheduleBuild);
+    };
+    document.fonts.addEventListener("loadingdone", scheduleBuild);
+    const resize = new ResizeObserver(scheduleBuild);
+    const view = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry?.isIntersecting ?? false;
+        if (inView) {
+          if (!built) {
+            build();
+            loadFonts();
+            resize.observe(stage);
+          }
+          lastAuto = performance.now();
+          wake();
+        }
+      },
+      { rootMargin: "200px 0px" },
+    );
+    view.observe(stage);
+    const theme = new MutationObserver(() => {
+      scheduleBuild();
+      loadFonts();
+    });
+    theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    document.addEventListener("visibilitychange", wake);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(rebuild);
+      state.wake = () => {};
+      view.disconnect();
+      resize.disconnect();
+      theme.disconnect();
+      document.fonts.removeEventListener("loadingdone", scheduleBuild);
+      document.removeEventListener("visibilitychange", wake);
+      stage.removeEventListener("pointermove", onMove);
+      stage.removeEventListener("pointerleave", onLeave);
+    };
+  }, [reduced]);
+
+  const jump = useCallback((index: number) => {
+    const state = dial.current;
+    const trigger = triggerRef.current;
+    if (trigger && runtimeRef.current) {
+      runtimeRef.current.lenis.scrollTo(
+        trigger.start + (trigger.end - trigger.start) * (index / (N - 1)),
+        { duration: 1 },
+      );
+      return;
+    }
+    // Forward from wherever the free-running dial has got to.
+    const current = Math.round(state.target);
+    state.target = current + ((((index - current) % N) + N) % N);
+    state.holdUntil = performance.now() + HOLD_AFTER_TAP_MS;
+    state.wake();
+  }, []);
+
+  const current = SCRIPTS[active]!;
+
   return (
     <section
-      ref={sectionRef as never}
+      ref={sectionRef}
       data-ground="paper"
-      className="relative z-[41] flex min-h-[100svh] flex-col items-center justify-center overflow-hidden"
+      className="identity relative z-[41] overflow-hidden"
       aria-label="MaCo, in one name and many scripts"
     >
       <div aria-hidden="true" className="ambient-field" />
-      <div className="shell cb-section flex flex-col items-center gap-6 text-center">
-        <p className="label">One name. Many scripts.</p>
+      <div className="shell identity-inner">
+        <div className="identity-head">
+          <p className="label">One name. Many scripts.</p>
+          <p className="identity-now" aria-hidden="true">
+            <span className="identity-now-index">
+              {String(active + 1).padStart(2, "0")} / {String(N).padStart(2, "0")}
+            </span>
+            <span key={current.code} className="identity-now-lang">
+              {current.lang}
+            </span>
+          </p>
+        </div>
 
         <div
           ref={(el) => {
-            trackRef.current = el;
+            stageRef.current = el;
             scriptFontsRef.current = el;
           }}
-          className="relative w-full overflow-hidden"
-          style={
-            {
-              "--slot": "clamp(13rem, 34vw, 30rem)",
-              height: "clamp(9rem, 20vw, 15rem)",
-              fontFamily: "var(--font-script-fallback)",
-              WebkitMaskImage:
-                "linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)",
-              maskImage:
-                "linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)",
-            } as CSSProperties
-          }
+          className="identity-stage"
+          data-ready={ready || undefined}
+          aria-hidden="true"
         >
-          {SCRIPTS.map((s, i) => (
-            <span
-              key={s.code}
-              lang={s.code}
-              dir={s.dir}
-              aria-hidden="true"
-              className="identity-script absolute left-1/2 top-1/2 block text-center"
-              style={
-                {
-                  "--i": i,
-                  width: "var(--slot)",
-                  marginLeft: "calc(var(--slot) / -2)",
-                  fontFamily: "var(--font-display)",
-                  fontWeight: 400,
-                  fontSize: "clamp(2.6rem, 9vw, 8rem)",
-                  // NOT display-hero's line-height (1.02) — that clips
-                  // Malayalam/Devanagari/Gujarati/Gurmukhi vowel marks and
-                  // Bengali/Odia ascenders.
-                  lineHeight: 1.25,
-                  letterSpacing: "-0.01em",
-                  whiteSpace: "nowrap",
-                  color: "var(--text)",
-                } as CSSProperties
-              }
-            >
-              {s.text}
-            </span>
-          ))}
+          <span className="identity-static">MaCo</span>
+          <canvas ref={canvasRef} className="identity-canvas" />
         </div>
 
-        <p className="lead max-w-md">MaCo works with clients across India and the Middle East.</p>
+        <div className="identity-foot">
+          <p className="lead identity-lead">
+            MaCo works with clients across India and the Middle East.
+          </p>
+          <ul className="identity-rail">
+            {SCRIPTS.map((s, i) => (
+              <li key={s.code}>
+                <button
+                  type="button"
+                  aria-label={`Show MaCo in ${s.lang}`}
+                  aria-current={active === i || undefined}
+                  className="identity-rail-item"
+                  onClick={() => jump(i)}
+                >
+                  <span className="identity-rail-bar" />
+                  <span className="identity-rail-name" aria-hidden="true">
+                    {s.lang}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-        {/* The one accessible representation — the reel above is aria-hidden.
-            Per-item lang so a screen reader switches voice/pronunciation
-            per script instead of reading all 13 as one English-tagged run. */}
+        {/* The one accessible representation of the name itself. Per-item lang
+            so a screen reader switches voice per script. */}
         <div className="sr-only">
           <p>MaCo, written in {N} scripts:</p>
           <ul>
